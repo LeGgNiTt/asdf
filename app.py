@@ -1,9 +1,33 @@
 # app.py
 from models import Tutor, SchoolType, Subject, TutorSubject, Student, Lesson
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session, logging
+from functools import wraps
 from models import db, SchoolType, Student # ... import other classes as needed
+from flask_login import LoginManager, login_user, logout_user, current_user
+from flask_bcrypt import Bcrypt
+
+
+
+
+
+
+def role_required(role):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if session.get('role') != role:
+                return "Access Denied", 403
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
 
 app = Flask(__name__)
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+bcrypt = Bcrypt(app)
 
 # Database configuration and initialization
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:rootroot@localhost/showcase'
@@ -114,6 +138,49 @@ def create_student_api():
 
     # Redirect to the same page (or another page if you prefer)
     return redirect(url_for('create_lesson'))
+
+@app.route('/tutor_dashboard')
+@role_required('tutor')
+def tutor_dashboard():
+    return "Tutor Dashboard"
+
+@app.route('/admin_dashboard')
+@role_required('admin')
+def admin_dashboard():
+    return "Admin Dashboard"
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    session.pop('role', None)
+    return redirect(url_for('index'))
+
+@app.route('/register', methods=['POST'])
+def register():
+    username = request.form.get('username')
+    email = request.form.get('email')
+    password = request.form.get('password')
+    
+    tutor = Tutor(username=username, email=email)
+    tutor.set_password(password)
+    
+    db.session.add(tutor)
+    db.session.commit()
+    
+    return redirect(url_for('index'))
+
+@app.route('/login', methods=['POST'])
+def login():
+    email = request.form.get('email')
+    password = request.form.get('password')
+    
+    tutor = Tutor.query.filter_by(email=email).first()
+    if tutor and tutor.check_password(password):
+        login_user(tutor)
+        session['role'] = tutor.role
+        return redirect(url_for('tutor_dashboard'))
+    else:
+        return "Invalid username or password", 401
 
 
 # ... other routes ...

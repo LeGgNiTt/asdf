@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
 
 db = SQLAlchemy()
 
@@ -30,6 +31,14 @@ class Tutor(db.Model):
     tutor_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     tutor_subjects = db.relationship('TutorSubject', backref='tutor', lazy=True)
+    role = db.Column(db.String(50), default='tutor')
+    password_hash = db.Column(db.String(128))
+
+    def set_password(self, password):
+        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+
+    def check_password(self, password):
+        return bcrypt.check_password_hash(self.password_hash, password)
 
 # Model for tutor_subjects table
 class TutorSubject(db.Model):
