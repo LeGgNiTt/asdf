@@ -1,34 +1,27 @@
 # app.py
 from models import Tutor, SchoolType, Subject, TutorSubject, Student, Lesson
-from flask import Flask, render_template, request, redirect, url_for, jsonify, session, logging
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session, logging, flash
 from functools import wraps
-from models import db, SchoolType, Student # ... import other classes as needed
+from models import db, SchoolType, Student, User # ... import other classes as needed
+from flask_bcrypt import Bcrypt
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_bcrypt import Bcrypt
 
 
 
-
-
-
-def role_required(role):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            if session.get('role') != role:
-                return "Access Denied", 403
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
-
-
 app = Flask(__name__)
+# Database configuration and initialization
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:rootroot@localhost/showcase'
+app.config['SECRET_KEY'] = 'development'
+db.init_app(app)
+login_manager = LoginManager(app)
 
 bcrypt = Bcrypt(app)
 
-# Database configuration and initialization
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:rootroot@localhost/showcase'
+with app.app_context():
+    db.create_all()
 
-db.init_app(app)
 
 @app.route('/')
 def index():
@@ -140,15 +133,33 @@ def create_student_api():
     # Redirect to the same page (or another page if you prefer)
     return redirect(url_for('create_lesson'))
 
-@app.route('/tutor_dashboard')
-@role_required('tutor')
-def tutor_dashboard():
-    return "Tutor Dashboard"
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(user_id)
 
-@app.route('/admin_dashboard')
-@role_required('admin')
-def admin_dashboard():
-    return "Admin Dashboard"
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        # Retrieve username and password from the form
+        username = request.form['username']
+        password = request.form['password']
+
+        # Query the database for the user
+        user = User.query.filter_by(username=username).first()
+
+        # Check if the user exists and the password is correct
+        if user and user.check_password(password):
+            # Log in the user
+            login_user(user)
+            flash('Logged in successfully.')
+            # Redirect to the page the user tried to access
+            return redirect(request.args.get('next') or url_for('index'))
+        else:
+            # Redirect to the login page if the login failed
+            flash('Invalid username or password')
+            return redirect(url_for('login'))
+    else:
+        return render_template('login.html')
 
 if __name__ == '__main__':
     with app.app_context():

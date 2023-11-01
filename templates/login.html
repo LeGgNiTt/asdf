@@ -1,0 +1,102 @@
+<!-- FILEPATH: /c:/Users/aleks/Documents/Projects/EduProj/templates/login.html -->
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Login Form</title>
+        <style>
+            /* Center the form */
+            body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+            }
+            
+            /* Style the form */
+            form {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 20px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            }
+            
+            input[type="text"],
+            input[type="password"] {
+                width: 100%;
+                padding: 10px;
+                margin-bottom: 10px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                box-sizing: border-box;
+            }
+            
+            input[type="submit"] {
+                width: 100%;
+                padding: 10px;
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+            
+            input[type="submit"]:hover {
+                background-color: #45a049;
+            }
+
+            .flashed-messages {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                width: 300px;
+            }
+
+            .flash {
+                padding: 10px;
+                margin-bottom: 5px;
+                border-radius: 5px;
+                text-align: center;
+            }
+
+            .flash.danger {
+                background-color: #f44336;
+                color: white;
+            }
+
+            .flash.success {
+                background-color: #4CAF50;
+                color: white;
+            }
+
+            .flash.info {
+                background-color: #2196F3;
+                color: white;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Display flashed messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flashed-messages">
+            {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        <form action="{{ url_for('login') }}" method="post">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+            
+            <input type="submit" value="Login">
+        </form>
+    </body>
+</html>
