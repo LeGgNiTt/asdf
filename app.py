@@ -3,7 +3,6 @@ from models import Tutor, SchoolType, Subject, TutorSubject, Student, Lesson
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, logging
 from functools import wraps
 from models import db, SchoolType, Student # ... import other classes as needed
-from flask_login import LoginManager, login_user, logout_user, current_user
 from flask_bcrypt import Bcrypt
 
 
@@ -24,9 +23,6 @@ def role_required(role):
 
 app = Flask(__name__)
 
-login_manager = LoginManager()
-login_manager.init_app(app)
-
 bcrypt = Bcrypt(app)
 
 # Database configuration and initialization
@@ -36,7 +32,12 @@ db.init_app(app)
 
 @app.route('/')
 def index():
-    return "Hello, World!"
+    return render_template('index.html')
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
 
 @app.route('/tutors')
 def list_tutors():
@@ -149,41 +150,6 @@ def tutor_dashboard():
 def admin_dashboard():
     return "Admin Dashboard"
 
-@app.route('/logout')
-def logout():
-    logout_user()
-    session.pop('role', None)
-    return redirect(url_for('index'))
-
-@app.route('/register', methods=['POST'])
-def register():
-    username = request.form.get('username')
-    email = request.form.get('email')
-    password = request.form.get('password')
-    
-    tutor = Tutor(username=username, email=email)
-    tutor.set_password(password)
-    
-    db.session.add(tutor)
-    db.session.commit()
-    
-    return redirect(url_for('index'))
-
-@app.route('/login', methods=['POST'])
-def login():
-    email = request.form.get('email')
-    password = request.form.get('password')
-    
-    tutor = Tutor.query.filter_by(email=email).first()
-    if tutor and tutor.check_password(password):
-        login_user(tutor)
-        session['role'] = tutor.role
-        return redirect(url_for('tutor_dashboard'))
-    else:
-        return "Invalid username or password", 401
-
-
-# ... other routes ...
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
