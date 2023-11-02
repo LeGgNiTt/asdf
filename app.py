@@ -23,6 +23,7 @@ with app.app_context():
     db.create_all()
 
 
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -135,7 +136,7 @@ def create_student_api():
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(user_id)
+    return db.session.get(User, user_id)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -160,6 +161,14 @@ def login():
             return redirect(url_for('login'))
     else:
         return render_template('login.html')
+    
+@app.route('/admin')
+@login_required
+def admin_dashboard():
+    if current_user.role != 'admin':
+        flash("You don't have permission to access this page.")
+        return(url_for('index'))
+    return render_template('admin_dashboard.html')
 
 if __name__ == '__main__':
     with app.app_context():
