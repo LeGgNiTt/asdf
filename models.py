@@ -12,12 +12,14 @@ class Role(db.Model):
     name = db.Column(db.String(50), unique=True)
 
 
-class User(db.Model, UserMixin):
+class Users(db.Model, UserMixin):
+    __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column('username', db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(128))
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
     role = db.relationship('Role', backref=db.backref('users', lazy=True))
+    tutor = db.relationship('Tutor', back_populates='user', uselist=False)
 
     def set_password(self, password):
         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -52,10 +54,10 @@ class Subject(db.Model):
 class Tutor(db.Model):
     __tablename__ = 'tutors'
     tutor_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     name = db.Column(db.String(255), nullable=False)
     tutor_subjects = db.relationship('TutorSubject', backref='tutor', lazy=True)
-    role = db.Column(db.String(50), default='tutor')
-    password_hash = db.Column(db.String(128))
+    user = db.relationship('Users', back_populates='tutor')
 
     def set_password(self, password):
         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')

@@ -2,12 +2,13 @@
 from models import Tutor, SchoolType, Subject, TutorSubject, Student, Lesson
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, logging, flash
 from functools import wraps
-from models import db, SchoolType, Student, User # ... import other classes as needed
+from models import db, SchoolType, Student, Users # ... import other classes as needed
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_bcrypt import Bcrypt
 from funcs import *
+from flask_migrate import Migrate
 
 
 
@@ -16,6 +17,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:rootroot@localhost/showcase'
 app.config['SECRET_KEY'] = 'development'
 db.init_app(app)
+migrate = Migrate(app, db)
 login_manager = LoginManager(app)
 
 bcrypt = Bcrypt(app)
@@ -137,7 +139,7 @@ def create_student_api():
 
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.get(User, user_id)
+    return db.session.get(Users, user_id)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -147,7 +149,7 @@ def login():
         password = request.form['password']
 
         # Query the database for the user
-        user = User.query.filter_by(username=username).first()
+        user = Users.query.filter_by(username=username).first()
 
         # Check if the user exists and the password is correct
         if user and user.check_password(password):
