@@ -10,6 +10,16 @@ from flask_bcrypt import Bcrypt
 from funcs import *
 from flask_migrate import Migrate
 from datetime import datetime, timedelta
+from functools import wraps
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role.name != 'admin':
+            flash("You don't have permission to access this page.", 'danger')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 def create_admin_user(username, password):
     
@@ -206,6 +216,7 @@ def login():
     
 @app.route('/admin')
 @login_required
+@admin_required
 def admin_dashboard():
     if current_user.role != 'admin':
         flash("You don't have permission to access this page.")
