@@ -276,6 +276,16 @@ def generate_calendar():
 
     return render_template('tutor_dashboard.html', events=events)
 
+@app.route('/modify_lesson')
+@login_required
+@admin_required
+def edit_lesson():
+    pass
+def delete_lesson():
+    pass
+def add_lesson():
+    pass
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
