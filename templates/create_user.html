@@ -1,0 +1,17 @@
+<!-- create_user.html -->
+<form action="{{ url_for('create_user') }}" method="post">
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required>
+    
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" required>
+    
+    <label for="role">Role:</label>
+    <select id="role" name="role" required>
+        <option value="admin">admin</option>
+        <option value="tutor">tutor</option>
+        <!-- Add other roles as necessary -->
+    </select>
+    
+    <input type="submit" value="Create User">
+</form>

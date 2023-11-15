@@ -1,102 +1,83 @@
 from flask_sqlalchemy import SQLAlchemy
-from flask_bcrypt import Bcrypt
+from datetime import datetime
+from flask_bcrypt import Bcrypt, check_password_hash
 from flask_login import UserMixin
 
 db = SQLAlchemy()
-bcrypt = Bcrypt()
 
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), nullable=False, unique=True)
+    password_hash = db.Column(db.String(128), nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=False)
+    role = db.relationship('Role', backref=db.backref('users', lazy=True))
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    
+    def is_active(self):
+        return True
 
 class Role(db.Model):
-    __tablename__ = 'roles'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), unique=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
 
-
-class Users(db.Model, UserMixin):
-    __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column('username', db.String(50), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128))
-    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
-    role = db.relationship('Role', backref=db.backref('users', lazy=True))
-    tutor = db.relationship('Tutor', back_populates='user', uselist=False)
-
-    def set_password(self, password):
-        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
-
-    def check_password(self, password):
-        return bcrypt.check_password_hash(self.password_hash, password)
-
-
-# Model for schooltypes table
-class SchoolType(db.Model):
-    __tablename__ = 'schooltypes'
-    schooltype_id = db.Column(db.Integer, primary_key=True)
-    schooltype_name = db.Column(db.String(255), nullable=False)
-    subjects = db.relationship('Subject', backref='schooltype', lazy=True)
-
-# Model for student table
-class Student(db.Model):
-    __tablename__ = 'student'
-    StudentID = db.Column(db.Integer, primary_key=True)
-    FirstName = db.Column(db.String(50), nullable=True)
-    LastName = db.Column(db.String(50), nullable=True)
-    DateOfBirth = db.Column(db.Date, nullable=True)
-
-# Model for subjects table
-class Subject(db.Model):
-    __tablename__ = 'subjects'
-    subject_id = db.Column(db.Integer, primary_key=True)
-    schooltype_id = db.Column(db.Integer, db.ForeignKey('schooltypes.schooltype_id'), nullable=False)
-    subject_name = db.Column(db.String(255), nullable=False)
-
-# Model for tutors table
 class Tutor(db.Model):
-    __tablename__ = 'tutors'
     tutor_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     name = db.Column(db.String(255), nullable=False)
-    tutor_subjects = db.relationship('TutorSubject', backref='tutor', lazy=True)
-    user = db.relationship('Users', back_populates='tutor')
+    role = db.Column(db.String(50), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    def set_password(self, password):
-        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+class Student(db.Model):
+    StudentID = db.Column(db.Integer, primary_key=True)
+    FirstName = db.Column(db.String(50), nullable=False)
+    LastName = db.Column(db.String(50), nullable=False)
+    DateOfBirth = db.Column(db.Date, nullable=False)
+    family_id = db.Column(db.Integer, db.ForeignKey('family.id'), nullable=False)
 
-    def check_password(self, password):
-        return bcrypt.check_password_hash(self.password_hash, password)
-
-# Model for tutor_subjects table
-class TutorSubject(db.Model):
-    __tablename__ = 'tutor_subjects'
-    tutor_id = db.Column(db.Integer, db.ForeignKey('tutors.tutor_id'), primary_key=True)
-    subject_id = db.Column(db.Integer, db.ForeignKey('subjects.subject_id'), primary_key=True)
-
-# Model for weekdays table
-class Weekday(db.Model):
-    __tablename__ = 'weekdays'
-    weekday_id = db.Column(db.Integer, primary_key=True)
-    weekday_name = db.Column(db.String(50), nullable=False)
-
-# Model for availability table
-class Availability(db.Model):
-    __tablename__ = 'availability'
-    availability_id = db.Column(db.Integer, primary_key=True)
-    tutor_id = db.Column(db.Integer, db.ForeignKey('tutors.tutor_id'), nullable=False)
-    weekday_id = db.Column(db.Integer, db.ForeignKey('weekdays.weekday_id'), nullable=False)
-    start_time = db.Column(db.Time, nullable=False)
-    end_time = db.Column(db.Time, nullable=False)
+class Family(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    address = db.Column(db.String(255), nullable=True)
+    phone_num = db.Column(db.String(20), nullable=True)
+    created_at = db.Column(db.TIMESTAMP, default=datetime.utcnow)
+    updated_at = db.Column(db.TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class Lesson(db.Model):
     lesson_id = db.Column(db.Integer, primary_key=True)
-    tutor_id = db.Column(db.Integer, db.ForeignKey('tutors.tutor_id'), nullable=False)
+    tutor_id = db.Column(db.Integer, db.ForeignKey('tutor.tutor_id'), nullable=False)
     student_id = db.Column(db.Integer, db.ForeignKey('student.StudentID'), nullable=False)
-    subject_id = db.Column(db.Integer, db.ForeignKey('subjects.subject_id'), nullable=False)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.subject_id'), nullable=False)
     date = db.Column(db.Date, nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
 
-    tutor = db.relationship('Tutor', backref=db.backref('lessons', lazy=True))
-    student = db.relationship('Student', backref=db.backref('lessons', lazy=True))
-    subject = db.relationship('Subject', backref=db.backref('lessons', lazy=True))
+class SchoolType(db.Model):
+    __tablename__ = 'schooltype'
+    schooltype_id = db.Column(db.Integer, primary_key=True)
+    schooltype_name = db.Column(db.String(255), nullable=False)
+
+class Subject(db.Model):
+    __tablename__ = 'subject'
+    subject_id = db.Column(db.Integer, primary_key=True)
+    schooltype_id = db.Column(db.Integer, db.ForeignKey('schooltype.schooltype_id'), nullable=False)
+    subject_name = db.Column(db.String(255), nullable=False)
 
 
+class Weekday(db.Model):
+    weekday_id = db.Column(db.Integer, primary_key=True)
+    weekday_name = db.Column(db.String(50), nullable=False)
+
+class Availability(db.Model):
+    availability_id = db.Column(db.Integer, primary_key=True)
+    tutor_id = db.Column(db.Integer, db.ForeignKey('tutor.tutor_id'), nullable=False)
+    weekday_id = db.Column(db.Integer, db.ForeignKey('weekday.weekday_id'), nullable=False)
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+
+class TutorSubject(db.Model):
+    tutor_id = db.Column(db.Integer, db.ForeignKey('tutor.tutor_id'), primary_key=True)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.subject_id'), primary_key=True)
+
+# You might also want to add backref for easier reverse queries
+# For example, in the Tutor class you could
