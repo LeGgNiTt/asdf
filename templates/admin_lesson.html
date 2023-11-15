@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Modify Lessons</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        /* Additional styles can go here */
+        #lessons-table tr.selected {
+            background-color: #add8e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Modify Lessons</h2>
+        <table class="table" id="lessons-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Tutor</th>
+                    <th>Subject</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- This section will be dynamically populated with lesson data -->
+            </tbody>
+        </table>
+        
+        <button id="add-btn" class="btn btn-success">Add</button>
+        <button id="delete-btn" class="btn btn-danger" disabled>Delete</button>
+        <button id="edit-btn" class="btn btn-primary" disabled>Edit</button>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        let selectedLessonId = null;
+    
+        // Function to handle clicking on a table row to select a lesson
+        function selectLesson(lessonId) {
+            if (selectedLessonId === lessonId) {
+                // Deselect if the same row is clicked again
+                selectedLessonId = null;
+                document.getElementById('delete-btn').disabled = true;
+                document.getElementById('edit-btn').disabled = true;
+            } else {
+                // Select the row and enable buttons
+                selectedLessonId = lessonId;
+                document.getElementById('delete-btn').disabled = false;
+                document.getElementById('edit-btn').disabled = false;
+            }
+        }
+    
+        // Attach the selectLesson function to each table row
+        document.querySelectorAll('#lessons-table tbody tr').forEach(row => {
+            row.addEventListener('click', function() {
+                selectLesson(this.dataset.lessonId);
+            });
+        });
+    
+        // You can attach event listeners to the add, delete, and edit buttons as needed here
+        // For example, for the add button, you can simply redirect to the add lesson page
+        document.getElementById('add-btn').addEventListener('click', function() {
+            window.location.href = '/add_lesson'; // The URL to your add lesson route
+        });
+    
+        // The delete and edit actions would be similarly simplified to just redirect to their respective URLs with the selectedLessonId
+    </script>    
+</body>
+</html>

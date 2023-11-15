@@ -62,6 +62,15 @@ def create_user_with_role(username ,password, role_name):
     else:
         print(f"Role '{role_name}' does not exist.")
 
+def calculate_monthly_income():
+    monthly_income = 0
+    return monthly_income
+def get_lessons_count():
+    lesson_count = 0
+    return lesson_count
+def get_detailed_statistics():
+    detailed_statistics = 0
+    return detailed_statistics
 
 app = Flask(__name__)
 # Database configuration and initialization
@@ -206,7 +215,10 @@ def login():
             login_user(user)
             flash('Logged in successfully.')
             # Redirect to the page the user tried to access
-            return redirect(request.args.get('next') or url_for('index'))
+            if user.role.name == 'admin':
+                return redirect(url_for('admin_dashboard'))
+            if user.role.name == 'tutor':
+                return redirect(url_for('tutor_dashboard'))
         else:
             # Redirect to the login page if the login failed
             flash('Invalid username or password')
@@ -214,14 +226,19 @@ def login():
     else:
         return render_template('login.html')
     
-@app.route('/admin')
+@app.route('/admin_dashboard', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def admin_dashboard():
-    if current_user.role != 'admin':
-        flash("You don't have permission to access this page.")
-        return(url_for('index'))
-    return render_template('admin_dashboard.html')
+    monthly_income = calculate_monthly_income()
+    lessons_count = get_lessons_count()
+    return render_template('admin_dashboard.html', monthly_income_summary=monthly_income, lessons_count_summary=lessons_count)
+
+@app.route('/detailed_statistics')
+@admin_required
+def detailed_statistics():
+    detailed_statistics = get_detailed_statistics()
+    return render_template('detailed_statistics.html', detailed_statistics=detailed_statistics)
 
 @app.route('/create_user', methods=['GET', 'POST'])
 @login_required
@@ -276,15 +293,71 @@ def generate_calendar():
 
     return render_template('tutor_dashboard.html', events=events)
 
-@app.route('/modify_lesson')
+@app.route('/admin_lessons', methods=['GET', 'POST'])
 @login_required
 @admin_required
+def admin_lesson():
+    lessons = Lesson.query.all()
+    lesson_info = [{
+        'date': lesson.date,
+        'tutor': lesson.tutor.name,
+        'subject': lesson.subject.name,
+
+    }for lesson in lessons]
+
+    return render_template('admin_lessons.html', lesson_info=lesson_info)
+
 def edit_lesson():
     pass
 def delete_lesson():
     pass
+
+
+
+@app.route('/add_lesson', methods=['GET', 'POST'])
+@login_required
+@admin_required
 def add_lesson():
-    pass
+    if request.method == 'POST':
+        # Extract data from form submission
+        date = request.form.get('date')
+        start_time = request.form.get('start_time')
+        end_time = request.form.get('end_time')
+        tutor_id = request.form.get('tutor_id')
+        student_id = request.form.get('student_id')
+        subject_id = request.form.get('subject_id')
+        
+        # Create a new Lesson object
+        new_lesson = Lesson(
+            date=date,
+            start_time=start_time,
+            end_time=end_time,
+            tutor_id=tutor_id,
+            student_id=student_id,
+            subject_id=subject_id
+        )
+        
+        # Add to the database
+        db.session.add(new_lesson)
+        db.session.commit()
+        
+        # Flash message for successful addition
+        flash('Lesson added successfully!', 'success')
+        
+        # Redirect to the admin_lessons page
+        return redirect(url_for('admin_lessons'))
+    
+    # If GET request, render the form template
+    # You need to pass the tutors, students, and subjects to the template
+    tutors = Tutor.query.all()
+    students = Student.query.all()
+    subjects = Subject.query.all()
+    return render_template(
+        'add_lesson.html', 
+        tutors=tutors, 
+        students=students, 
+        subjects=subjects
+    )
 
 if __name__ == '__main__':
     with app.app_context():
