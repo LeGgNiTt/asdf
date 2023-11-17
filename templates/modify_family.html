@@ -61,7 +61,7 @@
                     <p>Phone: {{ family.phone_num }}</p>
                     <!-- Add more details as needed -->
                     <a href="{{ url_for('edit_family', family_id=family.id) }}" class="btn btn-primary btn-sm">Edit Family</a>
-                    <a href="{{ ulr_for('add_student_to_family', family_id=damily-id) }}" class="btn btn-primary btn-sm">Add Student</a>
+                    <a href="{{ ulr_for('add_student_to_family', family_id=family-id) }}" class="btn btn-primary btn-sm">Add Student</a>
                 </div>
             </li>
             {% endfor %}

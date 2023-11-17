@@ -442,6 +442,15 @@ def edit_family(family_id):
 def add_student_to_family(family_id):
     if request.method == 'POST':
             first_name = request.form.get('first_name')
+            last_name = request.form.get('last_name')
+            schooltype_id = request.form.get('schooltype_id')
+            date_of_birth = request.form.get('date_of_birth')
+            preffered_time = request.form.get('preffered_time')
+            new_student = Student(FirstName=first_name, LastName=last_name, schooltype_id=schooltype_id, DateOfBirth=date_of_birth, preferred_time=preffered_time, family_id=family_id)
+            db.session.add(new_student)
+            db.session.commit()
+            return redirect(url_for('modify_family'))
+
     return render_template('add_student_to_F.html')
 
 
