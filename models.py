@@ -34,6 +34,9 @@ class Student(db.Model):
     LastName = db.Column(db.String(50), nullable=False)
     DateOfBirth = db.Column(db.Date, nullable=False)
     family_id = db.Column(db.Integer, db.ForeignKey('family.id'), nullable=False)
+    preferred_time = db.Column(db.String(50))
+    schooltype_id = db.Column(db.Integer, db.ForeignKey('schooltype.schooltype_id'), nullable=False)
+    schooltype = db.relationship('SchoolType', backref='student', lazy=True)
 
 class Family(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -56,6 +59,7 @@ class SchoolType(db.Model):
     __tablename__ = 'schooltype'
     schooltype_id = db.Column(db.Integer, primary_key=True)
     schooltype_name = db.Column(db.String(255), nullable=False)
+    subject = db.relationship('Subject', backref='schooltype', lazy=True)
 
 class Subject(db.Model):
     __tablename__ = 'subject'

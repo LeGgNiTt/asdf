@@ -40,34 +40,64 @@
         let selectedLessonId = null;
     
         // Function to handle clicking on a table row to select a lesson
-        function selectLesson(lessonId) {
+        function selectLesson(lessonId, row) {
             if (selectedLessonId === lessonId) {
                 // Deselect if the same row is clicked again
                 selectedLessonId = null;
                 document.getElementById('delete-btn').disabled = true;
                 document.getElementById('edit-btn').disabled = true;
+                row.classList.remove('selected');
             } else {
+                // Deselect previously selected row, if any
+                const previouslySelectedRow = document.querySelector('#lessons-table tr.selected');
+                if (previouslySelectedRow) {
+                    previouslySelectedRow.classList.remove('selected');
+                }
+                
                 // Select the row and enable buttons
                 selectedLessonId = lessonId;
                 document.getElementById('delete-btn').disabled = false;
                 document.getElementById('edit-btn').disabled = false;
+                row.classList.add('selected');
             }
         }
     
-        // Attach the selectLesson function to each table row
-        document.querySelectorAll('#lessons-table tbody tr').forEach(row => {
-            row.addEventListener('click', function() {
-                selectLesson(this.dataset.lessonId);
-            });
+        // Event delegation for row clicks
+        document.querySelector('#lessons-table tbody').addEventListener('click', function(event) {
+            // Check if the clicked element is a row
+            let row = event.target;
+            while (row !== this && row.tagName !== 'TR') {
+                row = row.parentNode;
+            }
+            if (row.tagName === 'TR') {
+                const lessonId = row.getAttribute('data-lesson-id');
+                if (lessonId) {
+                    selectLesson(lessonId, row);
+                }
+            }
         });
     
-        // You can attach event listeners to the add, delete, and edit buttons as needed here
-        // For example, for the add button, you can simply redirect to the add lesson page
+        // Add button logic
         document.getElementById('add-btn').addEventListener('click', function() {
             window.location.href = '/add_lesson'; // The URL to your add lesson route
         });
     
-        // The delete and edit actions would be similarly simplified to just redirect to their respective URLs with the selectedLessonId
-    </script>    
+        // Delete button logic
+        document.getElementById('delete-btn').addEventListener('click', function() {
+            if (selectedLessonId && confirm('Are you sure you want to delete this lesson?')) {
+                // Perform the deletion request, e.g., using fetch API or redirecting to a Flask route
+                // This part needs server-side handling and CSRF protection
+            }
+        });
+    
+        // Edit button logic
+        document.getElementById('edit-btn').addEventListener('click', function() {
+            if (selectedLessonId) {
+                window.location.href = '/edit_lesson/' + selectedLessonId; // The URL to your edit lesson route
+            }
+        });
+    
+    </script>
+        
 </body>
 </html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Modify Family</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <!-- Add any additional CSS files here -->
+    <style>
+        .fc-day-grid-event .fc-content {
+            white-space: normal;
+        }
+        .family-header {
+            cursor: pointer;
+        }
+        .family-header:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <!-- (Use the same navbar as in other admin pages) -->
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/add_lesson">Modify Lesson</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Modify Users</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_subjects">Modify Subjects</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/modify_family">Modify Family</a>
+                </li>
+                <!-- Add more links as needed -->
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <h2>Families</h2>
+        <ul class="list-group">
+            {% for family in families %}
+            <li class="list-group-item">
+                <div class="family-header" onclick="toggleFamilyDetails('{{ family.id }}')">
+                    {{ family.name }}
+                </div>
+                <div class="family-details" id="details-{{ family.id }}" style="display: none;">
+                    <!-- Family details and modification options go here -->
+                    <p>Address: {{ family.address }}</p>
+                    <p>Phone: {{ family.phone_num }}</p>
+                    <!-- Add more details as needed -->
+                    <a href="{{ url_for('edit_family', family_id=family.id) }}" class="btn btn-primary btn-sm">Edit Family</a>
+                    <a href="{{ ulr_for('add_student_to_family', family_id=damily-id) }}" class="btn btn-primary btn-sm">Add Student</a>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div>
+        <a href="{{ url_for('register_family') }}" class="btn btn-primary btn-sm">Register new Family</a>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script>
+        function toggleFamilyDetails(familyId) {
+            var detailsDiv = document.getElementById('details-' + familyId);
+            if (detailsDiv.style.display === 'none') {
+                detailsDiv.style.display = 'block';
+            } else {
+                detailsDiv.style.display = 'none';
+            }
+        }
+    </script>       
+</body>
+</html>

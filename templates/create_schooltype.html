@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Schooltype</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <!-- Add any additional CSS files here -->
+    <style>
+        .fc-day-grid-event .fc-content {
+            white-space: normal;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/add_lesson">Modify Lesson</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Modify Users</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/modify_subjects">Modify Subjects</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_family">Modify Family</a>
+                </li>
+                <!-- Add more links as needed -->
+            </ul>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        <h2>Add School Type</h2>
+        <form action="{{ url_for('add_schooltype') }}" method="post">
+            <label for="schooltype_name">School Type Name:</label>
+            <input type="text" id="schooltype_name" name="schooltype_name" required><br>
+            <input type="submit" value="Add School Type" class="btn btn-primary">
+        </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</body>
+
+</html>

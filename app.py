@@ -359,6 +359,93 @@ def add_lesson():
         subjects=subjects
     )
 
+@app.route('/add_schooltype', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_schooltype():
+    if request.method == 'POST':
+        schooltype_name = request.form.get('schooltype_name')
+        new_schooltype = SchoolType(schooltype_name=schooltype_name)
+        db.session.add(new_schooltype)
+        db.session.commit()
+        # Redirect or notify of success
+    return render_template('create_schooltype.html')
+
+@app.route('/add_subject', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_subject():
+    schooltypes = SchoolType.query.all()
+
+    if request.method == 'POST':
+        subject_name = request.form.get('subject_name')
+        schooltype_id = request.form.get('schooltype_id')
+
+        if schooltype_id:
+            schooltype_id = int(schooltype_id)  # Convert to integer
+            new_subject = Subject(schooltype_id=schooltype_id, subject_name=subject_name)
+            db.session.add(new_subject)
+            db.session.commit()
+            # Redirect or notify of success
+        else:
+            # Handle the case where school type is not selected
+            pass
+
+    return render_template('create_subject.html', schooltypes=schooltypes)
+
+
+@app.route('/modify_subjects')
+@login_required
+@admin_required
+def modify_subjects():
+    subjects = Subject.query.join(SchoolType).order_by(SchoolType.schooltype_name, Subject.subject_name).all()
+    return render_template('modify_subjects.html', subjects=subjects)
+
+@app.route('/modify_family')
+@login_required
+@admin_required
+def modify_family():
+    families = Family.query.order_by(Family.name).all()
+    return render_template('modify_family.html', families=families)
+
+
+@app.route('/register_family', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def register_family():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        address = request.form.get('address')
+        phone_num = request.form.get('phone_num')
+
+        new_family = Family(name=name, address=address, phone_num=phone_num)
+        db.session.add(new_family)
+        db.session.commit()
+    return render_template('create_family.html')
+
+@app.route('/edit_family/<int:family_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_family(family_id):
+    family = Family.query.get(family_id)
+    if request.method == 'POST':
+        family.name = request.form.get('name')
+        family.address = request.form.get('address')
+        family.phone_num = request.form.get('phone_num')
+        db.session.commit()
+        return redirect(url_for('modify_family'))
+    return render_template('edit_family.html', family=family)
+
+@app.route('/add_student_to_family/<int:family_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_student_to_family(family_id):
+    if request.method == 'POST':
+            first_name = request.form.get('first_name')
+    return render_template('add_student_to_F.html')
+
+
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
