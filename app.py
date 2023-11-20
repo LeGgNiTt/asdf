@@ -72,6 +72,11 @@ def get_detailed_statistics():
     detailed_statistics = 0
     return detailed_statistics
 
+def get_lessons_in_range(from_date, to_date):
+    lessons = Lesson.query.filter(Lesson.date >= from_date).filter(Lesson.date <= to_date).all()
+    return lessons
+
+
 app = Flask(__name__)
 # Database configuration and initialization
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:rootroot@localhost/showcase'
@@ -123,6 +128,19 @@ def create_lesson():
         elif 'new_student' in request.form:
             return redirect(url_for('create_student'))  
     return render_template('create_lesson.html')
+
+
+
+@app.route('/api/schooltype_for_student/<int:student_id>', methods=['GET'])
+@login_required
+@admin_required
+def get_schooltype_for_student(student_id):
+    student = Student.query.get(student_id)
+    if student:
+        schooltype = SchoolType.query.get(student.schooltype_id)
+        if schooltype:
+            return jsonify({'schooltype_id': schooltype.schooltype_id, 'schooltype_name': schooltype.schooltype_name})
+    return jsonify({}), 404
 
 
 
@@ -312,53 +330,6 @@ def edit_lesson():
 def delete_lesson():
     pass
 
-
-
-@app.route('/add_lesson', methods=['GET', 'POST'])
-@login_required
-@admin_required
-def add_lesson():
-    if request.method == 'POST':
-        # Extract data from form submission
-        date = request.form.get('date')
-        start_time = request.form.get('start_time')
-        end_time = request.form.get('end_time')
-        tutor_id = request.form.get('tutor_id')
-        student_id = request.form.get('student_id')
-        subject_id = request.form.get('subject_id')
-        
-        # Create a new Lesson object
-        new_lesson = Lesson(
-            date=date,
-            start_time=start_time,
-            end_time=end_time,
-            tutor_id=tutor_id,
-            student_id=student_id,
-            subject_id=subject_id
-        )
-        
-        # Add to the database
-        db.session.add(new_lesson)
-        db.session.commit()
-        
-        # Flash message for successful addition
-        flash('Lesson added successfully!', 'success')
-        
-        # Redirect to the admin_lessons page
-        return redirect(url_for('admin_lessons'))
-    
-    # If GET request, render the form template
-    # You need to pass the tutors, students, and subjects to the template
-    tutors = Tutor.query.all()
-    students = Student.query.all()
-    subjects = Subject.query.all()
-    return render_template(
-        'add_lesson.html', 
-        tutors=tutors, 
-        students=students, 
-        subjects=subjects
-    )
-
 @app.route('/add_schooltype', methods=['GET', 'POST'])
 @login_required
 @admin_required
@@ -406,6 +377,8 @@ def modify_subjects():
 @admin_required
 def modify_family():
     families = Family.query.order_by(Family.name).all()
+    for family in families:
+        family.students = Student.query.filter_by(family_id=family.id).all()
     return render_template('modify_family.html', families=families)
 
 
@@ -440,18 +413,125 @@ def edit_family(family_id):
 @login_required
 @admin_required
 def add_student_to_family(family_id):
+    schooltypes = SchoolType.query.all()
+    family = Family.query.get(family_id)
     if request.method == 'POST':
-            first_name = request.form.get('first_name')
-            last_name = request.form.get('last_name')
-            schooltype_id = request.form.get('schooltype_id')
-            date_of_birth = request.form.get('date_of_birth')
-            preffered_time = request.form.get('preffered_time')
-            new_student = Student(FirstName=first_name, LastName=last_name, schooltype_id=schooltype_id, DateOfBirth=date_of_birth, preferred_time=preffered_time, family_id=family_id)
-            db.session.add(new_student)
-            db.session.commit()
-            return redirect(url_for('modify_family'))
+        first_name = request.form.get('first_name')
+        last_name = request.form.get('last_name')
+        schooltype_id = request.form.get('schooltype_id')
+        date_of_birth_str = request.form.get('date_of_birth')
+        date_of_birth = datetime.strptime(date_of_birth_str, '%Y-%m-%d') if date_of_birth_str else None
+        if not date_of_birth:
+            flash('Date of birth is required', 'error')
+            return redirect(request.url)
+        new_student = Student(FirstName=first_name, LastName=last_name, schooltype_id=schooltype_id, DateOfBirth=date_of_birth, family_id=family_id)
+        db.session.add(new_student)
+        db.session.commit()
+        return redirect(url_for('modify_family'))
 
-    return render_template('add_student_to_F.html')
+    return render_template('add_student_to_F.html', family=family, schooltypes=schooltypes)
+
+@app.route('/edit_student/<int:student_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_student(student_id):
+    student = Student.query.get(student_id)
+    schooltypes = SchoolType.query.all()
+    if request.method == 'POST':
+        student = Student.query.get(student_id)
+        student.FirstName = request.form.get('first_name')
+        student.LastName = request.form.get('last_name')
+        student.DateOfBirth = request.form.get('date_of_birth')
+        student.schooltype_id = request.form.get('schooltype_id')
+        db.session.commit()
+        return redirect(url_for('modify_family'))
+    return render_template('edit_student.html', student=student, schooltypes=schooltypes)
+
+from datetime import datetime, timedelta
+
+@app.route('/modify_lessons', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def modify_lessons():
+    today = datetime.today().date()
+    default_from_date = today
+    default_to_date = today + timedelta(days=7)
+
+    if request.method == 'POST':
+        from_date = request.form.get('from_date', default_from_date)
+        to_date = request.form.get('to_date', default_to_date)
+    else:
+        from_date = default_from_date
+        to_date = default_to_date
+
+    lessons = get_lessons_in_range(from_date, to_date)
+    return render_template('modify_lessons.html', lessons=lessons, from_date=from_date, to_date=to_date)
+
+@app.route('/add_lesson', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_lesson():
+    if request.method == 'POST':
+        date = request.form.get('date')
+        start_time = request.form.get('start_time')
+        end_time = request.form.get('end_time')
+        tutor_id = request.form.get('tutor_id')
+        student_id = request.form.get('student_id')
+        subject_id = request.form.get('subject_id')
+
+        new_lesson = Lesson(
+            date=date,
+            start_time=start_time,
+            end_time=end_time,
+            tutor_id=tutor_id,
+            student_id=student_id,
+            subject_id=subject_id
+        )
+        db.session.add(new_lesson)
+        db.session.commit()
+        return redirect(url_for('modify_lessons'))
+    students = Student.query.all()
+    return render_template('add_lesson.html', students=students)
+
+from datetime import datetime
+
+@app.route('/api/potential_tutors/<int:subject_id>/<weekday>/<start_time>/<end_time>', methods=['GET'])
+def get_potential_tutors(subject_id, weekday, start_time, end_time):
+    # Convert start_time and end_time to time objects
+    start_time = datetime.strptime(start_time, '%H:%M').time()
+    end_time = datetime.strptime(end_time, '%H:%M').time()
+
+    # Step 1: Get tutors who can teach the subject
+    tutors_for_subject = Tutor.query.join(TutorSubject).filter(TutorSubject.subject_id == subject_id).all()
+
+    # Step 2: Filter based on availability
+    available_tutors = [tutor for tutor in tutors_for_subject if is_tutor_available(tutor, weekday, start_time, end_time)]
+
+    # Prepare data for JSON response
+    tutor_data = [{
+        'id': tutor.tutor_id,
+        'name': tutor.name
+        # Add other relevant fields here
+    } for tutor in available_tutors]
+
+    return jsonify(tutor_data)
+
+def is_tutor_available(tutor, weekday, start_time, end_time):
+    # Check tutor availability on the given weekday
+    availability = tutor.availabilities.filter_by(weekday_name=weekday).first()
+    if not availability or not (availability.start_time <= start_time and availability.end_time >= end_time):
+        return False
+    
+    # Check for conflicting lessons
+    conflicting_lesson = Lesson.query.filter(
+        Lesson.tutor_id == tutor.tutor_id,
+        Lesson.date == datetime.today().date(),  # Assuming the lesson is for today
+        Lesson.start_time < end_time,
+        Lesson.end_time > start_time
+    ).first()
+    
+    return conflicting_lesson is None
+
 
 
 
