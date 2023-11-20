@@ -52,15 +52,25 @@ def create_role(role_name):
         else:
             print(f"Role '{role_name}' already exists.")
 
-def create_user_with_role(username ,password, role_name):
+def create_user_with_role(username, password, role_name):
     role = Role.query.filter_by(name=role_name).first()
     if role:
         new_user = User(username=username, password_hash=bcrypt.generate_password_hash(password).decode('utf-8'), role_id=role.id)
         db.session.add(new_user)
         db.session.commit()
+
+        # If the role is tutor, create a corresponding tutor profile
+        if role_name == 'tutor':
+            new_tutor = Tutor(name=username, user_id=new_user.id)
+            db.session.add(new_tutor)
+            db.session.commit()
+
         print(f"User '{username}' created with role '{role_name}'")
+        return "User created successfully", True
     else:
         print(f"Role '{role_name}' does not exist.")
+        return f"Role '{role_name}' does not exist.", False
+
 
 def calculate_monthly_income():
     monthly_income = 0
@@ -260,11 +270,8 @@ def detailed_statistics():
 
 @app.route('/create_user', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def create_user():
-    if current_user.role.name != 'admin':  # Check the role name instead of role_id
-        flash("You don't have permission to access this page.", 'danger')
-        return redirect(url_for('index'))
-
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -531,6 +538,19 @@ def is_tutor_available(tutor, weekday, start_time, end_time):
     ).first()
     
     return conflicting_lesson is None
+
+@app.route('/tutor_profile', methods=['GET', 'POST'])
+@login_required
+def tutor_profile():
+    if current_user.role.name != 'tutor':
+        flash("You don't have permission to access this page.", 'danger')
+        return redirect(url_for('index'))
+
+    # Fetch tutor-specific data, if needed
+    tutor_info = ...  # Get tutor information
+    return render_template('tutor_profile.html', tutor=tutor_info)
+
+
 
 
 
