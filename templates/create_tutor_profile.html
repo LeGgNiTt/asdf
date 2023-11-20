@@ -34,37 +34,30 @@
                 <label for="name">Name</label>
                 <input type="text" class="form-control" id="name" name="name" required>
             </div>
-            <!-- Add more fields as needed for the tutor profile -->
-            <!-- Example: Subjects, Availability Times, etc. -->
-            <!-- Remember to modify your Tutor model if you're adding new fields -->
-
-            <button type="submit" class="btn btn-primary">Create Profile</button>
-        </form>
-    </div>
-    <div class="container mt-4">
-        <h2>Create Tutor Profile</h2>
-        <form action="{{ url_for('initialize_tutor_profile') }}" method="post">
-            <div class="form-group">
-                <label for="name">Name</label>
-                <input type="text" class="form-control" id="name" name="name" required>
-            </div>
 
             <!-- Availability Timetables -->
-            <h4>Availability</h4>
-            <div class="row">
-                <!-- Repeat for each day or each time slot -->
-                <!-- Example for one day -->
-                <div class="col-md-4">
-                    <h5>Monday</h5>
-                    <select class="form-control" name="monday_start">
-                        <!-- Time slots -->
-                    </select>
-                    <select class="form-control" name="monday_end">
-                        <!-- Time slots -->
-                    </select>
+            <h3>Availability</h3>
+            {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
+                <div class="form-group">
+                    <label>{{ day }}</label>
+                    <div class="row">
+                        <div class="col">
+                            <input type="time" class="form-control" name="{{ day|lower }}_start_1" placeholder="From">
+                        </div>
+                        <div class="col">
+                            <input type="time" class="form-control" name="{{ day|lower }}_end_1" placeholder="To">
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col">
+                            <input type="time" class="form-control" name="{{ day|lower }}_start_2" placeholder="From">
+                        </div>
+                        <div class="col">
+                            <input type="time" class="form-control" name="{{ day|lower }}_end_2" placeholder="To">
+                        </div>
+                    </div>
                 </div>
-                <!-- Repeat for other days -->
-            </div>
+            {% endfor %}
 
             <!-- Subject Choices -->
             <h4>Subjects</h4>

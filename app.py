@@ -1,8 +1,8 @@
 # app.py
-from models import Tutor, SchoolType, Subject, TutorSubject, Student, Lesson
+from models import Tutor, SchoolType, Subject, Student, Lesson
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, logging, flash
 from functools import wraps
-from models import db, SchoolType, Student, User, Role, Tutor, Lesson, Subject, Weekday, Availability, TutorSubject
+from models import db, SchoolType, Student, User, Role, Tutor, Lesson, Subject, TutorAvailability
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -177,8 +177,8 @@ def get_subjects(schooltype_id):
     subjects = Subject.query.filter_by(schooltype_id=schooltype_id).all()
     return jsonify([{'id': s.subject_id, 'name': s.subject_name} for s in subjects])
 
-@app.route('/get_tutors/<int:subject_id>', methods=['GET'])
-def get_tutors(subject_id):
+#@app.route('/get_tutors/<int:subject_id>', methods=['GET'])
+#def get_tutors(subject_id):
     tutors = db.session.query(Tutor).join(TutorSubject).filter(TutorSubject.subject_id == subject_id).all()
     return jsonify([{'id': tutor.tutor_id, 'name': tutor.name} for tutor in tutors])
 
@@ -259,8 +259,13 @@ def login():
             if user.role.name == 'admin':
                 return redirect(url_for('admin_dashboard'))
             if user.role.name == 'tutor':
-                tutor_id = Tutor.query.filter_by(user_id=user.id).first().tutor_id
-                return redirect(url_for('tutor_profile/<int:tutor_id>'))
+                tutor = Tutor.query.filter_by(user_id=user.id).first()
+                if tutor:
+                    return redirect(url_for('tutor_profile', tutor_id=tutor.tutor_id))
+                else:
+                    # If the tutor profile does not exist, redirect to create tutor profile
+                    return redirect(url_for('create_tutor_profile'))
+
         else:
             # Redirect to the login page if the login failed
             flash('Invalid username or password')
@@ -516,8 +521,8 @@ def add_lesson():
 
 from datetime import datetime
 
-@app.route('/api/potential_tutors/<int:subject_id>/<weekday>/<start_time>/<end_time>', methods=['GET'])
-def get_potential_tutors(subject_id, weekday, start_time, end_time):
+#@app.route('/api/potential_tutors/<int:subject_id>/<weekday>/<start_time>/<end_time>', methods=['GET'])
+"""def get_potential_tutors(subject_id, weekday, start_time, end_time):
     # Convert start_time and end_time to time objects
     start_time = datetime.strptime(start_time, '%H:%M').time()
     end_time = datetime.strptime(end_time, '%H:%M').time()
@@ -536,7 +541,7 @@ def get_potential_tutors(subject_id, weekday, start_time, end_time):
     } for tutor in available_tutors]
 
     return jsonify(tutor_data)
-
+"""
 def is_tutor_available(tutor, weekday, start_time, end_time):
     # Check tutor availability on the given weekday
     availability = tutor.availabilities.filter_by(weekday_name=weekday).first()
@@ -568,6 +573,14 @@ def tutor_profile(tutor_id):
         return render_template('tutor_profile.html', tutor=tutor)
 
 
+@app.route('/create_tutor_profile')
+@login_required
+@tutor_required
+def create_tutor_profile():
+    if request == 'POST':
+        name = form.
+        availability =
+        new_student = 
 
 
 

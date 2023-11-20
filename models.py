@@ -76,19 +76,13 @@ class Weekday(db.Model):
     weekday_id = db.Column(db.Integer, primary_key=True)
     weekday_name = db.Column(db.String(50), nullable=False)
 
-class Availability(db.Model):
+class TutorAvailability(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     tutor_id = db.Column(db.Integer, db.ForeignKey('tutor.tutor_id'), nullable=False)
-    weekdays = db.Column(db.Int(7), nullable=True)
-
-
-
-class TutorAvailability(db.Model):
-    tutor_id = db.Column(db.Integer, db.ForeignKey('tutor.tutor_id'), primary_key=True)
-    weekday_id = db.Column(db.Integer, db.ForeignKey('weekday.weekday_id'), primary_key=True)
+    weekday_id = db.Column(db.Integer, db.ForeignKey('weekday.weekday_id'), nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
 
-    tutor = db.relationship('Tutor', backref=db.backref('availabilities', lazy=True))
-    weekday = db.relationship('Weekday', backref=db.backref('tutor_availabilities', lazy=True))
+    tutor = db.relationship('Tutor', backref=db.backref('availabilities', lazy='dynamic'))
+    weekday = db.relationship('Weekday', backref=db.backref('tutor_availabilities', lazy='dynamic'))
 
