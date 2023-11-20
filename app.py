@@ -21,6 +21,26 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def tutor_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role.name != 'tutor':
+            flash("You don't have permission to access this page.", 'danger')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def tutor_with_id_required(f, user_id):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role.name != 'tutor' or current_user.id != user_id:
+            flash("You don't have permission to access this page.", 'danger')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+
 def create_admin_user(username, password):
     
     admin_role = Role.query.filter_by(name='admin').first()
@@ -58,13 +78,6 @@ def create_user_with_role(username, password, role_name):
         new_user = User(username=username, password_hash=bcrypt.generate_password_hash(password).decode('utf-8'), role_id=role.id)
         db.session.add(new_user)
         db.session.commit()
-
-        # If the role is tutor, create a corresponding tutor profile
-        if role_name == 'tutor':
-            new_tutor = Tutor(name=username, user_id=new_user.id)
-            db.session.add(new_tutor)
-            db.session.commit()
-
         print(f"User '{username}' created with role '{role_name}'")
         return "User created successfully", True
     else:
@@ -246,7 +259,8 @@ def login():
             if user.role.name == 'admin':
                 return redirect(url_for('admin_dashboard'))
             if user.role.name == 'tutor':
-                return redirect(url_for('tutor_dashboard'))
+                tutor_id = Tutor.query.filter_by(user_id=user.id).first().tutor_id
+                return redirect(url_for('tutor_profile/<int:tutor_id>'))
         else:
             # Redirect to the login page if the login failed
             flash('Invalid username or password')
@@ -539,16 +553,21 @@ def is_tutor_available(tutor, weekday, start_time, end_time):
     
     return conflicting_lesson is None
 
-@app.route('/tutor_profile', methods=['GET', 'POST'])
+@app.route('/tutor_profile/<int:tutor_id>', methods=['GET', 'POST'])
 @login_required
-def tutor_profile():
-    if current_user.role.name != 'tutor':
-        flash("You don't have permission to access this page.", 'danger')
+@tutor_required
+def tutor_profile(tutor_id):
+    tutor = Tutor.query.get(tutor_id)
+    if Tutor.query.filter_by(user_id=current_user.id).first() is None:
+        #create tutor profile for this user (redirect to create tutor profile page)
+        return redirect(url_for('create_tutor_profile'))
+    if tutor.user_id != current_user.id:
+        flash("You don't have permission to access this page.")
         return redirect(url_for('index'))
+    else:
+        return render_template('tutor_profile.html', tutor=tutor)
 
-    # Fetch tutor-specific data, if needed
-    tutor_info = ...  # Get tutor information
-    return render_template('tutor_profile.html', tutor=tutor_info)
+
 
 
 

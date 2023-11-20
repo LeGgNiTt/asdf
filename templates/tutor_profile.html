@@ -4,17 +4,90 @@
     <meta charset="UTF-8">
     <title>Tutor Profile</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
 </head>
 <body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Tutor Panel</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/reset_password">Reset Password</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/view_students">View Students</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/view_subjects">View Subjects</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
     <div class="container mt-4">
-        <h2>Complete Your Tutor Profile</h2>
-        <form action="{{ url_for('complete_tutor_profile') }}" method="post">
-            <!-- Fields for setting availability -->
-            <!-- Fields for selecting subjects -->
-            <button type="submit" class="btn btn-primary">Save Profile</button>
-        </form>
+        <h2>Welcome, {{ tutor.name }}</h2>
+        <div class="container mt-4">
+            <h2>Dashboard</h2>
+            <!-- Calendar and Stats -->
+            <div class="row">
+                <div class="col-md-12">
+                    <!-- Calendar Placeholder -->
+                    <div id="calendar-placeholder" style="min-height: 500px; background-color: #f0f0f0;">
+                        <!-- Embed your calendar here -->
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+
+    <!-- Calendar Script -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#calendar-placeholder').fullCalendar({
+                header: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'month,agendaWeek,agendaDay'
+                },
+                defaultView: 'month',
+                navLinks: true,
+                editable: true,
+                eventLimit: true,
+                events: [
+                    {
+                        title: 'Math',
+                        start: '2022-01-01T10:00:00',
+                        end: '2022-01-01T12:00:00',
+                        tutor: 'John Doe'
+                    },
+                    {
+                        title: 'Science',
+                        start: '2022-01-02T14:00:00',
+                        end: '2022-01-02T16:00:00',
+                        tutor: 'Jane Doe'
+                    },
+                    {
+                        title: 'English',
+                        start: '2022-01-03T09:00:00',
+                        end: '2022-01-03T11:00:00',
+                        tutor: 'John Doe'
+                    }
+                ],
+                eventRender: function(event, element) {
+                    element.find('.fc-title').html(event.title + '<br>' + event.tutor);
+                }
+            });
+        });
+    </script>
 </body>
 </html>
