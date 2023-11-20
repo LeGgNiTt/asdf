@@ -25,12 +25,28 @@ class Role(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
 
+
 class Tutor(db.Model):
     tutor_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(50), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    availabilities = db.relationship('Availability', backref='tutor', lazy=True)
+    availabilities = db.relationship('TutorAvailability', backref='tutor')
+
+
+class Weekday(db.Model):
+    weekday_id = db.Column(db.Integer, primary_key=True)
+    weekday_name = db.Column(db.String(50), nullable=False)
+
+class TutorAvailability(db.Model):
+    tutor_id = db.Column(db.Integer, db.ForeignKey('tutor.tutor_id'), primary_key=True)
+    weekday_id = db.Column(db.Integer, db.ForeignKey('weekday.weekday_id'), primary_key=True)
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+
+    # Assuming no need to explicitly declare 'tutor' here as it's covered by backref in Tutor
+    weekday = db.relationship('Weekday', backref='tutor_availabilities')
+
 
 class Student(db.Model):
     StudentID = db.Column(db.Integer, primary_key=True)
@@ -71,18 +87,12 @@ class Subject(db.Model):
     schooltype_id = db.Column(db.Integer, db.ForeignKey('schooltype.schooltype_id'), nullable=False)
     subject_name = db.Column(db.String(255), nullable=False)
 
+class TutorSubject(db.Model):
+    __tablename__ = 'tutorsubject'
+    tutor_id = db.Column(db.Integer, db.ForeignKey('tutor.tutor_id'), primary_key=True)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.subject_id'), primary_key=True)
 
-class Weekday(db.Model):
-    weekday_id = db.Column(db.Integer, primary_key=True)
-    weekday_name = db.Column(db.String(50), nullable=False)
+    tutor = db.relationship('Tutor', backref='tutor_subjects', lazy=True)
+    subject = db.relationship('Subject', backref='tutor_subjects', lazy=True)
 
-class TutorAvailability(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    tutor_id = db.Column(db.Integer, db.ForeignKey('tutor.tutor_id'), nullable=False)
-    weekday_id = db.Column(db.Integer, db.ForeignKey('weekday.weekday_id'), nullable=False)
-    start_time = db.Column(db.Time, nullable=False)
-    end_time = db.Column(db.Time, nullable=False)
-
-    tutor = db.relationship('Tutor', backref=db.backref('availabilities', lazy='dynamic'))
-    weekday = db.relationship('Weekday', backref=db.backref('tutor_availabilities', lazy='dynamic'))
 

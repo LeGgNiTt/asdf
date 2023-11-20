@@ -2,7 +2,7 @@
 from models import Tutor, SchoolType, Subject, Student, Lesson
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, logging, flash
 from functools import wraps
-from models import db, SchoolType, Student, User, Role, Tutor, Lesson, Subject, TutorAvailability
+from models import db, SchoolType, Student, User, Role, Tutor, Lesson, Subject, TutorAvailability, TutorSubject, Family, Weekday
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -172,10 +172,12 @@ def get_schooltypes():
     schooltypes = SchoolType.query.all()
     return jsonify([{'id': st.schooltype_id, 'name': st.schooltype_name} for st in schooltypes])
 
+
 @app.route('/api/subjects/<int:schooltype_id>')
 def get_subjects(schooltype_id):
     subjects = Subject.query.filter_by(schooltype_id=schooltype_id).all()
     return jsonify([{'id': s.subject_id, 'name': s.subject_name} for s in subjects])
+
 
 #@app.route('/get_tutors/<int:subject_id>', methods=['GET'])
 #def get_tutors(subject_id):
@@ -573,14 +575,65 @@ def tutor_profile(tutor_id):
         return render_template('tutor_profile.html', tutor=tutor)
 
 
-@app.route('/create_tutor_profile')
+from datetime import datetime
+from flask import request, redirect, url_for, flash, render_template
+
+@app.route('/create_tutor_profile', methods=['GET', 'POST'])
 @login_required
-@tutor_required
 def create_tutor_profile():
-    if request == 'POST':
-        name = form.
-        availability =
-        new_student = 
+    schooltypes = SchoolType.query.all()
+    if request.method == 'POST':
+        # Dictionary to hold availability data
+        availability_data = {}
+
+        for day in ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]:
+            for slot in ["1", "2"]:
+                start_time = request.form.get(f'{day}_start_{slot}')
+                end_time = request.form.get(f'{day}_end_{slot}')
+                
+                if start_time and end_time:
+                    start_time = datetime.strptime(start_time, '%H:%M').time()
+                    end_time = datetime.strptime(end_time, '%H:%M').time()
+                    # Save these times in the availability_data dictionary
+                    if day not in availability_data:
+                        availability_data[day] = []
+                    availability_data[day].append((start_time, end_time))
+
+        # Get the current user's tutor profile or create a new one
+        tutor = Tutor.query.filter_by(user_id=current_user.id).first()
+        if not tutor:
+            tutor = Tutor(user_id=current_user.id)
+            db.session.add(tutor)
+        
+        # Process the availability data
+        for day, times in availability_data.items():
+            weekday = Weekday.query.filter_by(weekday_name=day.capitalize()).first()
+            if not weekday:
+                continue  # Skip if the weekday is not found
+
+            for start_time, end_time in times:
+                availability = TutorAvailability(
+                    tutor_id=tutor.tutor_id,
+                    weekday_id=weekday.weekday_id,
+                    start_time=start_time,
+                    end_time=end_time
+                )
+                db.session.add(availability)
+
+
+        selected_subjects = request.form.getlist['subject_ids'].split(',')
+        for subject_id in selected_subjects:
+            if subject_id:   
+                tutor_subject = TutorSubject(tutor_id = tutor.tutor_id, subject_id = int(subject_id))
+                db.session.add(tutor_subject)
+
+        # Commit the changes to the database
+        db.session.commit()
+
+        flash('Tutor profile created successfully!', 'success')
+        return redirect(url_for('tutor_dashboard'))
+
+    return render_template('create_tutor_profile.html', schooltypes=schooltypes)
 
 
 
