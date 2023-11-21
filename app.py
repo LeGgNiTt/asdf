@@ -84,6 +84,15 @@ def create_user_with_role(username, password, role_name):
         print(f"Role '{role_name}' does not exist.")
         return f"Role '{role_name}' does not exist.", False
 
+def add_weekdays():
+    days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    for day in days:
+        existing_day = Weekday.query.filter_by(weekday_name=day).first()
+        if not existing_day:
+            new_day = Weekday(weekday_name=day)
+            db.session.add(new_day)
+    db.session.commit()
+
 
 def calculate_monthly_income():
     monthly_income = 0
@@ -523,41 +532,46 @@ def add_lesson():
 
 from datetime import datetime
 
-#@app.route('/api/potential_tutors/<int:subject_id>/<weekday>/<start_time>/<end_time>', methods=['GET'])
-"""def get_potential_tutors(subject_id, weekday, start_time, end_time):
-    # Convert start_time and end_time to time objects
-    start_time = datetime.strptime(start_time, '%H:%M').time()
-    end_time = datetime.strptime(end_time, '%H:%M').time()
+@app.route('/api/find_tutors/<int:subject_id>/<date_str>/<start_time_str>/<end_time_str>', methods=['GET'])
+def find_tutors(subject_id, date_str, start_time_str, end_time_str):
+    # Convert string to date and time objects
+    lesson_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    start_time = datetime.strptime(start_time_str, '%H:%M').time()
+    end_time = datetime.strptime(end_time_str, '%H:%M').time()
+    weekday = lesson_date.strftime('%A')
 
     # Step 1: Get tutors who can teach the subject
     tutors_for_subject = Tutor.query.join(TutorSubject).filter(TutorSubject.subject_id == subject_id).all()
 
     # Step 2: Filter based on availability
-    available_tutors = [tutor for tutor in tutors_for_subject if is_tutor_available(tutor, weekday, start_time, end_time)]
+    available_tutors = []
+    for tutor in tutors_for_subject:
+        if is_tutor_available(tutor, weekday, start_time, end_time, lesson_date):
+            available_tutors.append(tutor)
 
     # Prepare data for JSON response
-    tutor_data = [{
-        'id': tutor.tutor_id,
-        'name': tutor.name
-        # Add other relevant fields here
-    } for tutor in available_tutors]
+    tutor_data = [{'id': tutor.tutor_id, 'name': tutor.name} for tutor in available_tutors]
 
     return jsonify(tutor_data)
-"""
-def is_tutor_available(tutor, weekday, start_time, end_time):
+
+def is_tutor_available(tutor, weekday, start_time, end_time, lesson_date):
     # Check tutor availability on the given weekday
-    availability = tutor.availabilities.filter_by(weekday_name=weekday).first()
-    if not availability or not (availability.start_time <= start_time and availability.end_time >= end_time):
+    availability = TutorAvailability.query.filter(
+        TutorAvailability.tutor_id == tutor.tutor_id, 
+        TutorAvailability.weekday.weekday_name == weekday
+    ).all()
+
+    if not any(av.start_time <= start_time and av.end_time >= end_time for av in availability):
         return False
-    
+
     # Check for conflicting lessons
     conflicting_lesson = Lesson.query.filter(
         Lesson.tutor_id == tutor.tutor_id,
-        Lesson.date == datetime.today().date(),  # Assuming the lesson is for today
+        Lesson.date == lesson_date,
         Lesson.start_time < end_time,
         Lesson.end_time > start_time
     ).first()
-    
+
     return conflicting_lesson is None
 
 @app.route('/tutor_profile/<int:tutor_id>', methods=['GET', 'POST'])
@@ -575,6 +589,13 @@ def tutor_profile(tutor_id):
         return render_template('tutor_profile.html', tutor=tutor)
 
 
+@app.route('/tutor/<int:tutor_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def tutor_profil_id(tutor_id):
+    tutor = Tutor.query.get(tutor_id)
+    return render_template('admin_tutor_profile.html', tutor=tutor)
+
 from datetime import datetime
 from flask import request, redirect, url_for, flash, render_template
 
@@ -586,7 +607,7 @@ def create_tutor_profile():
         # Dictionary to hold availability data
         availability_data = {}
 
-        for day in ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]:
+        for day in ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]:
             for slot in ["1", "2"]:
                 start_time = request.form.get(f'{day}_start_{slot}')
                 end_time = request.form.get(f'{day}_end_{slot}')
@@ -598,11 +619,12 @@ def create_tutor_profile():
                     if day not in availability_data:
                         availability_data[day] = []
                     availability_data[day].append((start_time, end_time))
-
+        
         # Get the current user's tutor profile or create a new one
+        tutor_name = request.form.get('name')
         tutor = Tutor.query.filter_by(user_id=current_user.id).first()
         if not tutor:
-            tutor = Tutor(user_id=current_user.id)
+            tutor = Tutor(name = tutor_name, user_id = current_user.id)
             db.session.add(tutor)
         
         # Process the availability data
@@ -620,18 +642,17 @@ def create_tutor_profile():
                 )
                 db.session.add(availability)
 
-
-        selected_subjects = request.form.getlist['subject_ids'].split(',')
-        for subject_id in selected_subjects:
-            if subject_id:   
-                tutor_subject = TutorSubject(tutor_id = tutor.tutor_id, subject_id = int(subject_id))
+        selected_subject_ids = request.form.getlist('subject_ids')
+        for subject_id in selected_subject_ids:
+            if subject_id:  # Check if the subject_id is not empty
+                tutor_subject = TutorSubject(tutor_id=tutor.tutor_id, subject_id=int(subject_id))
                 db.session.add(tutor_subject)
 
         # Commit the changes to the database
         db.session.commit()
 
         flash('Tutor profile created successfully!', 'success')
-        return redirect(url_for('tutor_dashboard'))
+        return redirect(url_for('tutor_profile', tutor_id=tutor.tutor_id))
 
     return render_template('create_tutor_profile.html', schooltypes=schooltypes)
 
@@ -643,6 +664,7 @@ def create_tutor_profile():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+        add_weekdays()
         
 
 

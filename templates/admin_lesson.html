@@ -12,6 +12,30 @@
     </style>
 </head>
 <body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="/modify_lessons">Modify Lesson</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Modify Users</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_subjects">Modify Subjects</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_family">Modify Family</a>
+                </li>
+                <!-- Add more links as needed -->
+            </ul>
+        </div>
+    </nav>
     <div class="container mt-4">
         <h2>Modify Lessons</h2>
         <table class="table" id="lessons-table">

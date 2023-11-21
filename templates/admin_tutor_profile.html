@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tutor Profile</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        /* Additional styles can go here */
+        #lessons-table tr.selected {
+            background-color: #add8e6;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_lessons">Modify Lesson</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">Modify Users</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_subjects">Modify Subjects</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_family">Modify Family</a>
+                </li>
+                <!-- Add more links as needed -->
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Display Name -->
+    <div>
+        <h1>Name: [Insert Name Here]</h1>
+    </div>
+
+    <!-- School Types and Subjects Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>School Type</th>
+                <th>Subjects</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>[Insert School Type 1]</td>
+                <td>[Insert Subjects for School Type 1]</td>
+            </tr>
+            <tr>
+                <td>[Insert School Type 2]</td>
+                <td>[Insert Subjects for School Type 2]</td>
+            </tr>
+            <!-- Add more rows for additional school types and subjects -->
+        </tbody>
+    </table>
+
+    <!-- Scrollable Menu for Lessons -->
+    <div>
+        <h2>Lessons</h2>
+        <select size="5">
+            <option>[Insert Lesson 1 Info]</option>
+            <option>[Insert Lesson 2 Info]</option>
+            <!-- Add more options for additional lessons -->
+        </select>
+    </div>
+
+
+    
+
+</body>
