@@ -642,13 +642,13 @@ def create_tutor_profile():
                 )
                 db.session.add(availability)
 
-        selected_subject_ids = request.form.getlist('subject_ids')
-        for subject_id in selected_subject_ids:
-            if subject_id:  # Check if the subject_id is not empty
-                tutor_subject = TutorSubject(tutor_id=tutor.tutor_id, subject_id=int(subject_id))
-                db.session.add(tutor_subject)
-
-        # Commit the changes to the database
+        selected_subject_ids = request.form.get('selected_subject_ids', '')
+        if selected_subject_ids:
+            subject_ids = selected_subject_ids.split(',')
+            for subject_id in subject_ids:
+                if subject_id:
+                    tutor_subject = TutorSubject(tutor_id=tutor.tutor_id, subject_id=int(subject_id))
+                    db.session.add(tutor_subject)
         db.session.commit()
 
         flash('Tutor profile created successfully!', 'success')
