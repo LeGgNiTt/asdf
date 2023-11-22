@@ -174,6 +174,11 @@ def get_schooltype_for_student(student_id):
             return jsonify({'schooltype_id': schooltype.schooltype_id, 'schooltype_name': schooltype.schooltype_name})
     return jsonify({}), 404
 
+@app.route('/api/tutors/<int:subject_id>', methods=['GET'])
+def get_tutors_for_subject(subject_id):
+    # Query to find tutors who can teach the given subject
+    tutors = Tutor.query.join(TutorSubject).filter(TutorSubject.subject_id == subject_id).all()
+    return jsonify([{'id': tutor.tutor_id, 'name': tutor.name} for tutor in tutors])
 
 
 @app.route('/api/schooltypes')
@@ -538,7 +543,6 @@ def find_tutors(subject_id, date_str, start_time_str, end_time_str):
     lesson_date = datetime.strptime(date_str, '%Y-%m-%d').date()
     start_time = datetime.strptime(start_time_str, '%H:%M').time()
     end_time = datetime.strptime(end_time_str, '%H:%M').time()
-    weekday = lesson_date.strftime('%A')
 
     # Step 1: Get tutors who can teach the subject
     tutors_for_subject = Tutor.query.join(TutorSubject).filter(TutorSubject.subject_id == subject_id).all()
@@ -546,7 +550,7 @@ def find_tutors(subject_id, date_str, start_time_str, end_time_str):
     # Step 2: Filter based on availability
     available_tutors = []
     for tutor in tutors_for_subject:
-        if is_tutor_available(tutor, weekday, start_time, end_time, lesson_date):
+        if is_tutor_available(tutor.tutor_id, lesson_date, start_time, end_time):
             available_tutors.append(tutor)
 
     # Prepare data for JSON response
@@ -554,25 +558,22 @@ def find_tutors(subject_id, date_str, start_time_str, end_time_str):
 
     return jsonify(tutor_data)
 
-def is_tutor_available(tutor, weekday, start_time, end_time, lesson_date):
-    # Check tutor availability on the given weekday
-    availability = TutorAvailability.query.filter(
-        TutorAvailability.tutor_id == tutor.tutor_id, 
-        TutorAvailability.weekday.weekday_name == weekday
-    ).all()
+def is_tutor_available(tutor_id, date, start_time, end_time):
+    weekday_id = date.weekday()
+    # Query the database for the tutor's availability on the given date
+    lessons = query_lessons(date, tutor_id)
+    if lessons:
+        for lesson in lessons:
+            if lesson.start_time <= start_time and lesson.end_time >= end_time:
+                return False
+            if lesson.start_time >= start_time and lesson.start_time <= end_time:
+                return False
 
-    if not any(av.start_time <= start_time and av.end_time >= end_time for av in availability):
-        return False
+    return True
 
-    # Check for conflicting lessons
-    conflicting_lesson = Lesson.query.filter(
-        Lesson.tutor_id == tutor.tutor_id,
-        Lesson.date == lesson_date,
-        Lesson.start_time < end_time,
-        Lesson.end_time > start_time
-    ).first()
-
-    return conflicting_lesson is None
+def query_lessons(date, tutor_id):
+    lessons = Lesson.query.filter_by(date=date, tutor_id=tutor_id).all()
+    return lessons
 
 @app.route('/tutor_profile/<int:tutor_id>', methods=['GET', 'POST'])
 @login_required
