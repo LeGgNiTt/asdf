@@ -84,6 +84,9 @@ def create_user_with_role(username, password, role_name):
         print(f"Role '{role_name}' does not exist.")
         return f"Role '{role_name}' does not exist.", False
 
+
+
+
 def add_weekdays():
     days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
     for day in days:
@@ -179,6 +182,58 @@ def get_tutors_for_subject(subject_id):
     # Query to find tutors who can teach the given subject
     tutors = Tutor.query.join(TutorSubject).filter(TutorSubject.subject_id == subject_id).all()
     return jsonify([{'id': tutor.tutor_id, 'name': tutor.name} for tutor in tutors])
+
+from sqlalchemy import func
+
+def is_tutor_available(tutor, date, start_time, end_time):
+    # Convert date to weekday (assuming 'date' is a datetime object)
+    weekday_name = date.strftime("%A")
+
+    # Check availability on the given weekday
+    availabilities = TutorAvailability.query.filter(
+        TutorAvailability.tutor_id == tutor.tutor_id,
+        TutorAvailability.weekday.has(Weekday.weekday_name == weekday_name)
+    ).all()
+
+    for availability in availabilities:
+        # Convert start_time and end_time to time objects if they are not already
+        if isinstance(start_time, str):
+            start_time = datetime.strptime(start_time, '%H:%M').time()
+        if isinstance(end_time, str):
+            end_time = datetime.strptime(end_time, '%H:%M').time()
+
+        if availability.start_time <= start_time and availability.end_time >= end_time:
+            # Check for conflicting lessons
+            conflicting_lesson = Lesson.query.filter(
+                Lesson.tutor_id == tutor.tutor_id,
+                Lesson.date == date,
+                Lesson.start_time < end_time,
+                Lesson.end_time > start_time
+            ).first()
+
+            if not conflicting_lesson:
+                return True  # Tutor is available
+
+    return False  # Tutor is not available
+
+
+
+
+@app.route('/api/tutors/<int:subject_id>/<date>/<start_time>/<end_time>', methods=['GET'])
+def get_tutors_for_subject_and_time(subject_id, date, start_time, end_time):
+    start_time = datetime.strptime(start_time, '%H:%M').time()
+    end_time = datetime.strptime(end_time, '%H:%M').time()
+    date = datetime.strptime(date, '%Y-%m-%d').date()
+
+    tutors = Tutor.query.join(TutorSubject).filter(TutorSubject.subject_id == subject_id).all()
+
+    tutor_data = []
+    for tutor in tutors:
+        availability = is_tutor_available(tutor, date, start_time, end_time)
+        status = "available" if availability else "unavailable"
+        tutor_data.append({'id': tutor.tutor_id, 'name': tutor.name, 'status': status})
+
+    return jsonify(tutor_data)
 
 
 @app.route('/api/schooltypes')
@@ -322,6 +377,17 @@ def create_user():
             return redirect(url_for('create_user'))
 
     return render_template('create_user.html')
+
+@app.route('/edit_user/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_user(user_id):
+    user = User.query.get(user_id)
+    if request.method == 'POST':
+        return True
+    return true
+
+    
 
 
 @app.route('/tutor_dashboard')
@@ -491,23 +557,53 @@ def edit_student(student_id):
 
 from datetime import datetime, timedelta
 
-@app.route('/modify_lessons', methods=['GET', 'POST'])
+@app.route('/modify_lessons', methods=['GET'])
 @login_required
 @admin_required
 def modify_lessons():
-    today = datetime.today().date()
-    default_from_date = today
-    default_to_date = today + timedelta(days=7)
+    # Fetch all lessons
+    lessons = Lesson.query.all()
 
-    if request.method == 'POST':
-        from_date = request.form.get('from_date', default_from_date)
-        to_date = request.form.get('to_date', default_to_date)
-    else:
-        from_date = default_from_date
-        to_date = default_to_date
+    # Format lessons for display
+    formatted_lessons = []
+    for lesson in lessons:
+        # Fetch tutor, student, and subject names using separate queries
+        tutor_name = Tutor.query.filter_by(tutor_id=lesson.tutor_id).first().name
+        student = Student.query.filter_by(StudentID=lesson.student_id).first()
+        student_name = f"{student.FirstName} {student.LastName}"
+        subject_name = Subject.query.filter_by(subject_id=lesson.subject_id).first().subject_name
 
-    lessons = get_lessons_in_range(from_date, to_date)
-    return render_template('modify_lessons.html', lessons=lessons, from_date=from_date, to_date=to_date)
+        formatted_lessons.append({
+            'lesson_id': lesson.lesson_id,
+            'date': lesson.date.strftime('%Y-%m-%d'),
+            'start_time': lesson.start_time.strftime('%H:%M'),
+            'end_time': lesson.end_time.strftime('%H:%M'),
+            'tutor_name': tutor_name,
+            'student_name': student_name,
+            'subject_name': subject_name
+        })
+
+    return render_template('modify_lessons.html', lessons=formatted_lessons)
+
+@app.route('/modify_users')
+@login_required
+@admin_required
+def modify_users():
+    users = User.query.all()
+    user_data = []
+
+    for user in users:
+        is_tutor = Tutor.query.filter_by(user_id=user.id).first() is not None
+        user_data.append({
+            'user_id': user.id,
+            'username': user.username,
+            'role': user.role.name,
+            'is_tutor': is_tutor
+        })
+
+    return render_template('modify_users.html', users=user_data)
+
+
 
 @app.route('/add_lesson', methods=['GET', 'POST'])
 @login_required
@@ -558,18 +654,17 @@ def find_tutors(subject_id, date_str, start_time_str, end_time_str):
 
     return jsonify(tutor_data)
 
-def is_tutor_available(tutor_id, date, start_time, end_time):
-    weekday_id = date.weekday()
-    # Query the database for the tutor's availability on the given date
-    lessons = query_lessons(date, tutor_id)
-    if lessons:
-        for lesson in lessons:
-            if lesson.start_time <= start_time and lesson.end_time >= end_time:
-                return False
-            if lesson.start_time >= start_time and lesson.start_time <= end_time:
-                return False
+@app.route('/tutor/edit_tutor', methods=['GET', 'POST'])
+@login_required
+@tutor_required
+def edit_tutor():
+    tutor = Tutor.query.filter_by(user_id=current_user.id).first()
+    subjects = Subject.query.join(TutorSubject).filter(TutorSubject.tutor_id == tutor.tutor_id).all()
+    if request.method == 'POST':
+        return False
 
-    return True
+    return render_template('edit_tutor.html', tutor=tutor, subjects=subjects)
+
 
 def query_lessons(date, tutor_id):
     lessons = Lesson.query.filter_by(date=date, tutor_id=tutor_id).all()

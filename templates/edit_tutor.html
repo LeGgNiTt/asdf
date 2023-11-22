@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tutor Subjects</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+</head>
+<body>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Tutor Panel</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/reset_password">Reset Password</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/view_students">View Students</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/tutor/edit_tutor">View Subjects</a>
+                </li>
+                
+
+            </ul>
+        </div>
+    </nav>
+    <h2>Edit Tutor</h2>
+    <table>
+        <tr>
+            <th>Subject</th>
+            <th>School Type</th>
+            <th>Edit</th>
+        </tr>
+        <!-- BEGIN: For loop to populate subjects -->
+        {% for item in subjects %}
+        <tr>
+            <td>{{ item.subject_name }}</td>
+            <td>{{ item.schooltype_id }}</td>
+            <td><button class="edit-button">Edit</button></td>
+        </tr>
+        {% endfor %}
+        <!-- END: For loop to populate subjects -->
+    </table>
+</body>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+</html>

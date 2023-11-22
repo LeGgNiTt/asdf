@@ -37,41 +37,36 @@
     </nav>
     <div class="container mt-4">
         <h2>Modify Lessons</h2>
-
-        <!-- Date Range Form -->
-        <form id="date-range-form" action="" method="get" class="mb-3">
-            <div class="form-row align-items-center">
-                <div class="col-auto">
-                    <label for="from_date" class="sr-only">From Date</label>
-                    <input type="date" class="form-control mb-2" id="from_date" name="from_date" required>
-                </div>
-                <div class="col-auto">
-                    <label for="to_date" class="sr-only">To Date</label>
-                    <input type="date" class="form-control mb-2" id="to_date" name="to_date" required>
-                </div>
-                <div class="col-auto">
-                    <button type="submit" class="btn btn-primary mb-2">Filter Lessons</button>
-                </div>
-            </div>
-        </form>
-
         <table class="table" id="lessons-table">
             <thead>
                 <tr>
                     <th>Date</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
                     <th>Tutor</th>
+                    <th>Student</th>
                     <th>Subject</th>
-                    <th>Price</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                <!-- This section will be dynamically populated with lesson data -->
+                {% for lesson in lessons %}
+                <tr>
+                    <td>{{ lesson.date }}</td>
+                    <td>{{ lesson.start_time }}</td>
+                    <td>{{ lesson.end_time }}</td>
+                    <td>{{ lesson.tutor_name }}</td>
+                    <td>{{ lesson.student_name }}</td>
+                    <td>{{ lesson.subject_name }}</td>
+                    <td>
+                        <!-- Add buttons or links for editing and deleting lessons -->
+                        <a href="/edit_lesson/{{ lesson.lesson_id }}" class="btn btn-primary btn-sm">Edit</a>
+                        <a href="/delete_lesson/{{ lesson.lesson_id }}" class="btn btn-danger btn-sm">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
             </tbody>
         </table>
-        
-        <button id="add-btn" class="btn btn-success">Add</button>
-        <button id="delete-btn" class="btn btn-danger" disabled>Delete</button>
-        <button id="edit-btn" class="btn btn-primary" disabled>Edit</button>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>

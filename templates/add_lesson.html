@@ -90,7 +90,6 @@
                 </div>
 
                 <!-- Submit Button -->
-                <button type="button" class="btn btn-primary" onclick="fetchAvailableTutors()">Search Tutors</button>
                 <button type="submit" class="btn btn-primary">Add Lesson</button>
                 
             </form>
@@ -158,15 +157,32 @@
                         tutorSelect.innerHTML = '';
                     }
                 }
-                function fetch_the_Tutors(date, start_time, end_time, subjectId){
-                    fetch(`/api/tutors/${date}/${start_time}/${end_time}/${subjectId}`)
-                    .then(response => response.json())
-                    .then(tutors => {
-                        populateDropdown(tutorSelect, tutors);
-                    })
-                    .catch(error => console.error('Error:', error));
+                function updateTutorList() {
+                    const subjectId = subjectSelect.value;
+                    const date = dateInput.value;
+                    const startTime = startTimeInput.value;
+                    const endTime = endTimeInput.value;
 
+                    if (subjectId && date && startTime && endTime) {
+                        fetchTutorsForSubjectAndTime(subjectId, date, startTime, endTime);
+                    }
                 }
+
+                function fetchTutorsForSubjectAndTime(subjectId, date, startTime, endTime) {
+                    fetch(`/api/tutors/${subjectId}/${date}/${startTime}/${endTime}`)
+                        .then(response => response.json())
+                        .then(tutors => {
+                            let options = '<option value="">Select a Tutor</option>';
+                            tutors.forEach(tutor => {
+                                const color = tutor.status === 'available' ? 'green' : 'red';
+                                options += `<option value="${tutor.id}" style="color: ${color};">${tutor.name} (${tutor.status})</option>`;
+                            });
+                            tutorSelect.innerHTML = options;
+                        })
+                        .catch(error => console.error('Error:', error));
+                }
+
+                
                 function handleTutorSelection(){
                     const tutorId = this.value;
                     if (tutorId) {
@@ -190,7 +206,10 @@
                     subjectSelect.innerHTML = '';
                     tutorSelect.innerHTML = '';
                 }
-
+                dateInput.addEventListener('change', updateTutorList);
+                startTimeInput.addEventListener('change', updateTutorList);
+                endTimeInput.addEventListener('change', updateTutorList);
+                subjectSelect.addEventListener('change', updateTutorList);
             });
         </script>
     </body>
