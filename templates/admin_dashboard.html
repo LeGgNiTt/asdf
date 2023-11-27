@@ -4,15 +4,26 @@
     <meta charset="UTF-8">
     <title>Admin Panel</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <!-- Add any additional CSS files here -->
-    <style>
-        .fc-day-grid-event .fc-content {
-            white-space: normal;
-        }
-    </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
 </head>
 <body>
+    <div class="modal fade" id="lessonDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="lessonDetailsModalLabel">Lesson Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Dynamic lesson details will be loaded here -->
+                    <div id="lessonDetailsContent"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
@@ -38,70 +49,40 @@
         </div>
     </nav>
 
-    <!-- Main Content Area -->
-    <div class="container mt-4">
-        <h2>Dashboard</h2>
-        <!-- Calendar and Stats -->
-        <div class="row">
-            <div class="col-md-12">
-                <!-- Calendar Placeholder -->
-                <div id="calendar-placeholder" style="min-height: 500px; background-color: #f0f0f0;">
-                    <!-- Embed your calendar here -->
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Summary Statistics Widgets -->
-    <div class="statistics-widgets">
-        <!-- Income Summary Widget -->
-        <div class="widget income-statistics">
-        <h3>Monthly Income Summary</h3>
-        <p>${{ monthly_income_summary }}</p>
-        <a href="{{ url_for('detailed_statistics') }}">View Details</a>
-    </div>
-    <!-- Lessons Summary Widget -->
-    <div class="widget lesson-statistics">
-      <h3>Lessons This Month Summary</h3>
-      <p>{{ lessons_count_summary }}</p>
-      <a href="{{ url_for('detailed_statistics') }}">View Details</a>
-    </div>
-  </div>     
+    <div id="calendar"></div>
 
-    <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            var calendarEl = document.getElementById('calendar-placeholder');
+            var calendarEl = document.getElementById('calendar');
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                },
-                events: {{ lessons | tojson | safe }},
-                eventContent: function(arg) {
-                    // Custom rendering function to include tutor's name
-                    var title = document.createElement('div');
-                    title.innerText = arg.event.title;
-    
-                    var tutor = document.createElement('div');
-                    tutor.innerText = arg.event.extendedProps.tutor;
-    
-                    var arrayOfDomNodes = [ title, tutor ]
-                    return { domNodes: arrayOfDomNodes }
+                events: '/api/lessons', // API endpoint
+                eventClick: function(info) {
+                    // Fetch additional details if needed
+                    // For simplicity, let's assume all needed info is in 'info.event.extendedProps'
+                    var details = info.event.extendedProps;
+                    
+                    // Populate modal content
+                    var modalContent = `
+                        <h4>${info.event.title}</h4>
+                        <p><strong>Date:</strong> ${info.event.start.toLocaleString()}</p>
+                        <p><strong>Tutor:</strong> ${details.tutor}</p>
+                        <p><strong>Student:</strong> ${details.student}</p>
+                        <p><strong>Description:</strong> ${details.description}</p>
+                    `;
+                    document.getElementById('lessonDetailsContent').innerHTML = modalContent;
+                    
+                    // Show the modal
+                    $('#lessonDetailsModal').modal('show');
                 }
             });
             calendar.render();
         });
     </script>
-    
-    
-        
-    <!-- Add any additional JS files here -->
+
 </body>
 </html>

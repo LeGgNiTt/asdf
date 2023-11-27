@@ -409,7 +409,31 @@ def edit_user(user_id):
         return True
     return True
 
-    
+
+
+@app.route('/api/lessons')
+@login_required
+@admin_required
+def get_lessons():
+    lessons = Lesson.query.all()
+    lessons_data = []
+    for lesson in lessons:
+        tutor = Tutor.query.filter_by(tutor_id=lesson.tutor_id).first()
+        student = Student.query.filter_by(StudentID=lesson.student_id).first()
+        subject = Subject.query.filter_by(subject_id=lesson.subject_id).first()
+
+        # Combine date and time for start and end
+        start_datetime = datetime.combine(lesson.date, lesson.start_time)
+        end_datetime = datetime.combine(lesson.date, lesson.end_time)
+
+        lessons_data.append({
+            'id': lesson.lesson_id,
+            'title': f"{subject.subject_name} - {tutor.name}",
+            'start': start_datetime.isoformat(),
+            'end': end_datetime.isoformat(),
+            'description': f"Tutor: {tutor.name}, Student: {student.FirstName} {student.LastName}"
+        })
+    return jsonify(lessons_data)
 
 
 @app.route('/tutor_dashboard')

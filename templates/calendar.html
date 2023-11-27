@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Calendar</title>
+    <script>
+        // Fetch events from the API
+        fetch('/api/lessons')
+            .then(response => response.json())
+            .then(data => {
+                // Process the events data
+                // You can customize this part based on your requirements
+                data.forEach(event => {
+                    // Display the event details on the page
+                    const eventElement = document.createElement('div');
+                    eventElement.innerHTML = `
+                        <h3>${event.title}</h3>
+                        <p>Date: ${event.date}</p>
+                        <p>Time: ${event.time}</p>
+                        <p>Location: ${event.location}</p>
+                    `;
+                    document.body.appendChild(eventElement);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching events:', error);
+            });
+    </script>
+</head>
+<body>
+    <h1>Calendar</h1>
+    <div id="events"></div>
+</body>
+</html>
