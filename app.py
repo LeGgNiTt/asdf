@@ -350,7 +350,29 @@ def login():
 def admin_dashboard():
     monthly_income = calculate_monthly_income()
     lessons_count = get_lessons_count()
-    return render_template('admin_dashboard.html', monthly_income_summary=monthly_income, lessons_count_summary=lessons_count)
+    lessons = Lesson.query.all()
+
+    # Format lessons for display
+    formatted_lessons = []
+    for lesson in lessons:
+        tutor_name = Tutor.query.filter_by(tutor_id=lesson.tutor_id).first().name
+        student = Student.query.filter_by(StudentID=lesson.student_id).first()
+        student_name = f"{student.FirstName} {student.LastName}"
+        subject_name = Subject.query.filter_by(subject_id=lesson.subject_id).first().subject_name
+
+        start_datetime = datetime.combine(lesson.date, lesson.start_time)
+        end_datetime = datetime.combine(lesson.date, lesson.end_time)
+
+        formatted_lessons.append({
+            'id': lesson.lesson_id, 
+            'title': subject_name,
+            'start': start_datetime.isoformat(),
+            'end': end_datetime.isoformat(),
+            'tutor': tutor_name,
+            'student': student_name
+        })
+
+    return render_template('admin_dashboard.html', monthly_income_summary=monthly_income, lessons_count_summary=lessons_count, lessons=formatted_lessons)
 
 @app.route('/detailed_statistics')
 @admin_required
@@ -385,7 +407,7 @@ def edit_user(user_id):
     user = User.query.get(user_id)
     if request.method == 'POST':
         return True
-    return true
+    return True
 
     
 

@@ -74,43 +74,34 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
     <script>
-        $(document).ready(function() {
-            $('#calendar-placeholder').fullCalendar({
-                header: {
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar-placeholder');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
-                    right: 'month,agendaWeek,agendaDay'
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
                 },
-                defaultView: 'month',
-                navLinks: true,
-                editable: true,
-                eventLimit: true,
-                events: [
-                    {
-                        title: 'Math',
-                        start: '2022-01-01T10:00:00',
-                        end: '2022-01-01T12:00:00',
-                        tutor: 'John Doe'
-                    },
-                    {
-                        title: 'Science',
-                        start: '2022-01-02T14:00:00',
-                        end: '2022-01-02T16:00:00',
-                        tutor: 'Jane Doe'
-                    },
-                    {
-                        title: 'English',
-                        start: '2022-01-03T09:00:00',
-                        end: '2022-01-03T11:00:00',
-                        tutor: 'John Doe'
-                    }
-                ],
-                eventRender: function(event, element) {
-                    element.find('.fc-title').html(event.title + '<br>' + event.tutor);
+                events: {{ lessons | tojson | safe }},
+                eventContent: function(arg) {
+                    // Custom rendering function to include tutor's name
+                    var title = document.createElement('div');
+                    title.innerText = arg.event.title;
+    
+                    var tutor = document.createElement('div');
+                    tutor.innerText = arg.event.extendedProps.tutor;
+    
+                    var arrayOfDomNodes = [ title, tutor ]
+                    return { domNodes: arrayOfDomNodes }
                 }
             });
+            calendar.render();
         });
     </script>
+    
+    
+        
     <!-- Add any additional JS files here -->
 </body>
 </html>
