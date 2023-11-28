@@ -22,39 +22,55 @@
                     <a class="nav-link" href="/tutor/view_students">Schüler anzeigen</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/tutor/lessons">Stunden-Übersicht</a>
-                </li>
-                <li class="nav-item active">
                     <a class="nav-link" href="/tutor/edit_tutor">Fächer anzeigen</a>
                 </li>
             </ul>
         </div>
     </nav>
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ student.FirstName }} {{ student.LastName }}</h5>
+                <p class="card-text">Date of Birth: {{ student.DateOfBirth.strftime('%Y-%m-%d') }}</p>
+                <p class="card-text">Schooltype: {{ student.schooltype }}</p>
+            </div>
+        </div>
+    </div>
+    
     <div class="container mt-4">
-        <h2>Fächer</h2>
         <table class="table">
             <thead>
                 <tr>
-                    <th>Niveau</th>
-                    <th>Fach</th>
-                    <th>Löschen</th>
+                    <th>Note</th>
                 </tr>
             </thead>
             <tbody>
-                {% for subject in subjects %}
+                {% for note in notes %}
                 <tr>
-                    <td>{{ subject.schooltype.schooltype_name }}</td>
-                    <td>{{ subject.subject_name }}</td>
-                    <td><a href="/delete_subject/{{ subject.subject_id }}">Löschen</a></td>
+                    <td>
+                        <!-- Add a button to toggle the collapsible component -->
+                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#note-{{ note.id }}">
+                            {{ note.date.strftime('%Y-%m-%d') }} - {{ note.subject.subject_name }}
+                        </button>
+    
+                        <!-- Add a collapsible component for the note -->
+                        <div class="collapse" id="note-{{ note.id }}">
+                            <div class="card card-body">
+                                {{ note.content }}
+                            </div>
+                        </div>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        <button class="btn btn-primary" onclick="window.location.href='/add_subject'">Add Subject</button>
     </div>
 
 
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="script.js"></script>
 </body>
-<script>
-    
-</script>
+</html>

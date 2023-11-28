@@ -2,7 +2,7 @@
 from models import Tutor, SchoolType, Subject, Student, Lesson
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, logging, flash
 from functools import wraps
-from models import db, SchoolType, Student, User, Role, Tutor, Lesson, Subject, TutorAvailability, TutorSubject, Family, Weekday
+from models import db, SchoolType, Student, User, Role, Tutor, Lesson, Subject, TutorAvailability, TutorSubject, Family, Weekday, Note
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -165,6 +165,20 @@ def create_lesson():
     return render_template('create_lesson.html')
 
 
+@app.route('/api/lesson_status/<int:lesson_id>', methods=['POST'])
+def update_lesson_status(lesson_id):
+    lesson = Lesson.query.get(lesson_id)
+    if lesson is None:
+        return jsonify({'error': 'Lesson not found'}), 404
+
+    # Get the new status from the request data
+    new_status = request.json.get('has_occurred')
+    if new_status is not None:
+        lesson.has_occurred = new_status
+        db.session.commit()
+        return jsonify({'message': 'Lesson status updated'}), 200
+
+    return jsonify({'error': 'Invalid request'}), 400
 
 @app.route('/api/schooltype_for_student/<int:student_id>', methods=['GET'])
 @login_required
@@ -265,6 +279,10 @@ def get_students_for_subject(schooltype_id, subject_id):
     students = Student.query.filter_by(schooltype_id=schooltype_id, subject_id=subject_id).all()
     students_data = [{'id': student.StudentID, 'name': f'{student.FirstName} {student.LastName}'} for student in students]
     return jsonify(students_data)
+
+from flask import jsonify
+
+
 
 @app.route('/new_student', methods=['GET'])
 def new_student_form():
@@ -400,6 +418,54 @@ def create_user():
 
     return render_template('create_user.html')
 
+@app.route('/tutor/change_password', methods=['GET', 'POST'])
+@login_required
+@tutor_required
+def change_poassword():
+    user_id = current_user.id
+    user = User.query.get(user_id)
+    if request.method == 'POST':
+        old_password = request.form['old_password']
+        new_password = request.form['new_password']
+        repeat_password = request.form['repeat_password']
+        
+        
+        # Check if the old password matches the user's current password
+        if user.check_password(old_password):
+            # Check if the new password and repeat password match
+            if new_password == repeat_password:
+                password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+                user.password_hash = password
+
+
+                db.session.commit()
+                flash('Password updated successfully', 'success')
+            else:
+                flash('New password and repeat password do not match', 'danger')
+        else:
+            flash('Incorrect old password', 'danger')
+        
+        return redirect(url_for('tutor_dashboard', user_id=user_id))
+    
+    return render_template('change_password.html', user=user)
+    
+
+@app.route('/tutor/view_students', methods=['GET', 'POST'])
+@login_required
+@tutor_required
+def view_students():
+    user_id = current_user.id
+    tutor_id = Tutor.query.filter_by(user_id=user_id).first().tutor_id
+    lessons = Lesson.query.filter_by(tutor_id=tutor_id).all()
+    students = []
+    for lesson in lessons:
+        student = Student.query.filter_by(StudentID=lesson.student_id).first()
+        students.append(student)
+    return render_template('view_students.html', students=students)
+
+
+
+
 @app.route('/edit_user/<int:user_id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
@@ -408,6 +474,37 @@ def edit_user(user_id):
     if request.method == 'POST':
         return True
     return True
+
+
+@app.route('/student/<id>')
+def student(id):
+    # Fetch the student with the given ID from the database
+    student = Student.query.get(id)
+
+    # Check if the student exists
+    if student is None:
+        # If the student does not exist, redirect to the home page
+        return redirect(url_for('home'))
+
+    # Fetch the tutor associated with the current user
+    tutor = Tutor.query.filter_by(user_id=current_user.id).first()
+
+    # Check if the tutor exists
+    if tutor is None:
+        # If the tutor does not exist, redirect to the home page
+        return redirect(url_for('home'))
+
+    # Check if there exists a lesson with student_id equal to <id> and tutor_id equal to the fetched tutor's ID
+    lesson = Lesson.query.filter_by(student_id=id, tutor_id=tutor.tutor_id).first()
+    if lesson is None:
+        # If no such lesson exists, redirect to the home page
+        return redirect(url_for('home'))
+
+    # Fetch all notes associated with the student from the database
+    notes = Note.query.filter_by(student_id=id).all()
+
+    # Render the 'student.html' template and pass the student data and the notes to it
+    return render_template('student.html', student=student, notes=notes)
 
 
 
@@ -464,6 +561,82 @@ def generate_calendar():
         events.append(event)
 
     return render_template('tutor_dashboard.html', events=events)
+
+from sqlalchemy.orm import joinedload
+
+@app.route('/tutor/lessons')
+@login_required
+@tutor_required
+def tutor_lessons():
+    tutor = Tutor.query.filter_by(user_id=current_user.id).first()
+    lessons = (db.session.query(Lesson, Subject.subject_name)
+           .join(Subject, Lesson.subject_id == Subject.subject_id)
+           .filter(Lesson.tutor_id == tutor.tutor_id)
+           .all())
+
+    lesson_info = [{
+        'date': lesson_obj.date,
+        'subject': subject_name,
+        'notes': [{'date': note.date, 'content': note.content} for note in lesson_obj.notes]
+    } for lesson_obj, subject_name in lessons]
+
+    return render_template('tutor_lessons.html', lesson_info=lesson_info)
+
+
+@app.route('/api/lessons/<int:lesson_id>/note', methods=['GET'])
+@login_required
+def get_lesson_note(lesson_id):
+    # Fetch the note associated with the lesson
+    note = Note.query.filter_by(lesson_id=lesson_id).first()
+
+    # If the note exists, return it as JSON
+    if note:
+        return jsonify(note.to_dict())
+
+    # If the note doesn't exist, return an empty JSON object
+    return jsonify({})
+
+from flask import request, jsonify
+
+@app.route('/api/lesson_status/<int:lesson_id>', methods=['POST'])
+@login_required
+@tutor_required
+def save_lesson_status(lesson_id):
+    # Extract note content and has_occurred status from request body
+    note_content = request.form.get('note')
+    has_occurred = request.form.get('has_occurred') == 'true'
+
+    # Fetch the lesson from the database
+    lesson = Lesson.query.get(lesson_id)
+
+    # Update the has_occurred status of the lesson
+    lesson.has_occurred = has_occurred
+
+    # If the lesson has a note, update the note content
+    if lesson.note:
+        lesson.note.content = note_content
+    # If the lesson doesn't have a note, create a new note
+    else:
+        note = Note(content=note_content, lesson_id=lesson_id)
+        db.session.add(note)
+
+    # Save changes to the database
+    db.session.commit()
+
+    # Return a success response
+    return jsonify({'message': 'Lesson status and note saved successfully'}), 200
+
+@app.route('/edit_note/<int:note_id>', methods=['GET', 'POST'])
+@login_required
+@tutor_required
+def edit_note(note_id):
+    note = Note.query.get(note_id)
+    if request.method == 'POST':
+        note.content = request.form['content']
+        db.session.commit()
+        return redirect(url_for('tutor_lessons'))
+    return render_template('edit_note.html', note=note)
+
 
 @app.route('/admin_lessons', methods=['GET', 'POST'])
 @login_required
@@ -716,11 +889,11 @@ def query_lessons(date, tutor_id):
     lessons = Lesson.query.filter_by(date=date, tutor_id=tutor_id).all()
     return lessons
 
-@app.route('/tutor_profile/<int:tutor_id>', methods=['GET', 'POST'])
+@app.route('/tutor_profile/', methods=['GET', 'POST'])
 @login_required
 @tutor_required
-def tutor_profile(tutor_id):
-    tutor = Tutor.query.get(tutor_id)
+def tutor_profile():
+    tutor = Tutor.query.filter_by(user_id=current_user.id).first()
     if Tutor.query.filter_by(user_id=current_user.id).first() is None:
         #create tutor profile for this user (redirect to create tutor profile page)
         return redirect(url_for('create_tutor_profile'))

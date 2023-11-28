@@ -1,15 +1,18 @@
+<!-- FILEPATH: /c:/Users/aleks/Documents/Projects/EduProj/templates/tutor_lessons.html -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <title>Tutor Profil</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
 </head>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="#">Tutoren Kabinett</a>
+        <a class="navbar-brand" href="/tutor_profile">Tutoren Kabinett</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -22,39 +25,14 @@
                     <a class="nav-link" href="/tutor/view_students">Schüler anzeigen</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/tutor/lessons">Stunden-Übersicht</a>
-                </li>
-                <li class="nav-item active">
                     <a class="nav-link" href="/tutor/edit_tutor">Fächer anzeigen</a>
                 </li>
             </ul>
         </div>
     </nav>
-    <div class="container mt-4">
-        <h2>Fächer</h2>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Niveau</th>
-                    <th>Fach</th>
-                    <th>Löschen</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for subject in subjects %}
-                <tr>
-                    <td>{{ subject.schooltype.schooltype_name }}</td>
-                    <td>{{ subject.subject_name }}</td>
-                    <td><a href="/delete_subject/{{ subject.subject_id }}">Löschen</a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <button class="btn btn-primary" onclick="window.location.href='/add_subject'">Add Subject</button>
-    </div>
-
-
+    <form method="POST">
+        <textarea name="content">{{ note.content }}</textarea>
+        <button type="submit" class="btn btn-primary">Save</button>
+    </form>
 </body>
-<script>
-    
-</script>
+</html>

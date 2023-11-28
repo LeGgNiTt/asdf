@@ -73,6 +73,8 @@ class Lesson(db.Model):
     date = db.Column(db.Date, nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
+    notes = db.relationship('Note', backref='lesson', lazy=True)
+    has_occured = db.Column(db.Boolean, default=False)
 
 class SchoolType(db.Model):
     __tablename__ = 'schooltype'
@@ -94,4 +96,23 @@ class TutorSubject(db.Model):
     tutor = db.relationship('Tutor', backref='tutor_subjects', lazy=True)
     subject = db.relationship('Subject', backref='tutor_subjects', lazy=True)
 
+class Note(db.Model):
+    __tablename__ = 'note'
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('student.StudentID'))
+    lesson_id = db.Column(db.Integer, db.ForeignKey('lesson.lesson_id'))
+    tutor_id = db.Column(db.Integer, db.ForeignKey('tutor.tutor_id'))
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.subject_id'))
+    date = db.Column(db.DateTime, default=datetime.utcnow)
+    content = db.Column(db.Text)
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'student_id': self.student_id,
+            'lesson_id': self.lesson_id,
+            'tutor_id': self.tutor_id,
+            'subject_id': self.subject_id,
+            'date': self.date,
+            'content': self.content
+        }

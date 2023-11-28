@@ -18,43 +18,43 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/tutor/change_password">Passwort zurücksetzen</a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item active">
                     <a class="nav-link" href="/tutor/view_students">Schüler anzeigen</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/tutor/lessons">Stunden-Übersicht</a>
-                </li>
-                <li class="nav-item active">
                     <a class="nav-link" href="/tutor/edit_tutor">Fächer anzeigen</a>
                 </li>
             </ul>
         </div>
     </nav>
-    <div class="container mt-4">
-        <h2>Fächer</h2>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Niveau</th>
-                    <th>Fach</th>
-                    <th>Löschen</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for subject in subjects %}
-                <tr>
-                    <td>{{ subject.schooltype.schooltype_name }}</td>
-                    <td>{{ subject.subject_name }}</td>
-                    <td><a href="/delete_subject/{{ subject.subject_id }}">Löschen</a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <button class="btn btn-primary" onclick="window.location.href='/add_subject'">Add Subject</button>
+    <div id="student-list">
+        <!-- Student names will be populated here by the backend -->
     </div>
 
 
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Vorname</th>
+                <th>Nachname</th>
+                <th>Geburtstag</th>
+                <th>Niveau</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+            <tr>
+                <td><a href="/student/{{student.StudentID}}">{{student.FirstName}}</a></td>
+                <td>{{student.LastName}}</td>
+                <td>{{student.DateOfBirth}}</td>
+                <td>{{student.schooltype}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+
+
+
 </body>
-<script>
-    
-</script>
