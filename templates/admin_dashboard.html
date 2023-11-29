@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <title>Admin Panel</title>
@@ -11,47 +11,47 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="lessonDetailsModalLabel">Lesson Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title" id="lessonDetailsModalLabel">Lektion Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Dynamic lesson details will be loaded here -->
+                    <!-- Dynamische Lektionsdetails werden hier geladen -->
                     <div id="lessonDetailsContent"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
                 </div>
             </div>
         </div>
     </div>
-    <!-- Navigation Bar -->
+    <!-- Navigationsleiste -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Navigation umschalten">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="/modify_lessons">Modify Lesson</a>
+                    <a class="nav-link" href="/modify_lessons">Lektion bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/modify_users">Modify Users</a>
+                    <a class="nav-link" href="/modify_users">Benutzer bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/modify_subjects">Modify Subjects</a>
+                    <a class="nav-link" href="/modify_subjects">Fächer bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/modify_family">Modify Family</a>
+                    <a class="nav-link" href="/modify_family">Familie bearbeiten</a>
                 </li>
-                <!-- Add more links as needed -->
+                <!-- Weitere Links hinzufügen, falls erforderlich -->
             </ul>
         </div>
     </nav>
 
     <div id="calendar"></div>
 
-    <!-- Bootstrap and jQuery Scripts -->
+    <!-- Bootstrap und jQuery Skripte -->
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
@@ -65,26 +65,26 @@
                     right: 'month,agendaWeek,agendaDay'
                 },
                 defaultView: 'month',
-                height: 'auto', // Set the height to auto
+                height: 'auto', // Die Höhe auf auto setzen
                 navLinks: true,
                 editable: true,
                 eventLimit: true,
-                events: '/api/lessons', // Fetch events from the API endpoint
+                events: '/api/lessons', // Ereignisse von der API-Endpunkt abrufen
                 eventClick: function(calEvent, jsEvent, view) {
-                    // Fetch additional details if needed
+                    // Bei Bedarf zusätzliche Details abrufen
                     var details = calEvent.extendedProps;
 
-                    // Populate modal content
+                    // Modalinhalte befüllen
                     var modalContent = `
                         <h4>${calEvent.title}</h4>
-                        <p><strong>Date:</strong> ${calEvent.start.toLocaleString()}</p>
+                        <p><strong>Datum:</strong> ${calEvent.start.toLocaleString()}</p>
                         <p><strong>Tutor:</strong> ${details.tutor}</p>
-                        <p><strong>Student:</strong> ${details.student}</p>
-                        <p><strong>Description:</strong> ${details.description}</p>
+                        <p><strong>Schüler:</strong> ${details.student}</p>
+                        <p><strong>Beschreibung:</strong> ${details.description}</p>
                     `;
                     document.getElementById('lessonDetailsContent').innerHTML = modalContent;
 
-                    // Show the modal
+                    // Das Modal anzeigen
                     $('#lessonDetailsModal').modal('show');
                 }
             });
