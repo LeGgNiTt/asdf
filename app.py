@@ -165,21 +165,6 @@ def create_lesson():
     return render_template('create_lesson.html')
 
 
-@app.route('/api/lesson_status/<int:lesson_id>', methods=['POST'])
-def update_lesson_status(lesson_id):
-    lesson = Lesson.query.get(lesson_id)
-    if lesson is None:
-        return jsonify({'error': 'Lesson not found'}), 404
-
-    # Get the new status from the request data
-    new_status = request.json.get('has_occurred')
-    if new_status is not None:
-        lesson.has_occurred = new_status
-        db.session.commit()
-        return jsonify({'message': 'Lesson status updated'}), 200
-
-    return jsonify({'error': 'Invalid request'}), 400
-
 @app.route('/api/schooltype_for_student/<int:student_id>', methods=['GET'])
 @login_required
 @admin_required
@@ -568,18 +553,25 @@ from sqlalchemy.orm import joinedload
 @login_required
 @tutor_required
 def tutor_lessons():
+    # Fetch the tutor associated with the current user
     tutor = Tutor.query.filter_by(user_id=current_user.id).first()
-    lessons = (db.session.query(Lesson, Subject.subject_name)
-           .join(Subject, Lesson.subject_id == Subject.subject_id)
-           .filter(Lesson.tutor_id == tutor.tutor_id)
-           .all())
 
+    # Fetch all lessons associated with this tutor
+    lessons = (db.session.query(Lesson, Subject.subject_name)
+               .join(Subject, Lesson.subject_id == Subject.subject_id)
+               .filter(Lesson.tutor_id == tutor.tutor_id)
+               .all())
+
+    # Create a list of lesson dictionaries
     lesson_info = [{
         'date': lesson_obj.date,
         'subject': subject_name,
-        'notes': [{'date': note.date, 'content': note.content} for note in lesson_obj.notes]
+        'notes': [{'date': note.date, 'content': note.content} for note in lesson_obj.notes],
+        'has_occured': lesson_obj.has_occured,
+        'id': lesson_obj.lesson_id
     } for lesson_obj, subject_name in lessons]
 
+    # Render the template with the lesson info
     return render_template('tutor_lessons.html', lesson_info=lesson_info)
 
 
@@ -598,33 +590,32 @@ def get_lesson_note(lesson_id):
 
 from flask import request, jsonify
 
-@app.route('/api/lesson_status/<int:lesson_id>', methods=['POST'])
-@login_required
-@tutor_required
-def save_lesson_status(lesson_id):
-    # Extract note content and has_occurred status from request body
-    note_content = request.form.get('note')
-    has_occurred = request.form.get('has_occurred') == 'true'
+import urllib.parse
 
-    # Fetch the lesson from the database
+@app.route('/api/lesson_status/<int:lesson_id>', methods=['POST'])
+def update_lesson_status(lesson_id):
+    data = request.get_json()
+
+    # Get the lesson
     lesson = Lesson.query.get(lesson_id)
 
-    # Update the has_occurred status of the lesson
-    lesson.has_occurred = has_occurred
+    if not lesson:
+        return jsonify({'message': 'Lesson not found'}), 404
 
-    # If the lesson has a note, update the note content
-    if lesson.note:
-        lesson.note.content = note_content
+
+    lesson.has_occured = int(data['has_occurred'])
+
+    # If the lesson has a note, update the content of the first note
+    if lesson.notes:
+        lesson.notes[0].content = data['note']
     # If the lesson doesn't have a note, create a new note
     else:
-        note = Note(content=note_content, lesson_id=lesson_id)
+        note = Note(content=data['note'], lesson_id=lesson_id, tutor_id=lesson.tutor_id, student_id=lesson.student_id, subject_id=lesson.subject_id)
         db.session.add(note)
 
-    # Save changes to the database
     db.session.commit()
 
-    # Return a success response
-    return jsonify({'message': 'Lesson status and note saved successfully'}), 200
+    return jsonify({'message': 'Lesson status and note updated successfully'}), 200
 
 @app.route('/edit_note/<int:note_id>', methods=['GET', 'POST'])
 @login_required

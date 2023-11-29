@@ -47,17 +47,16 @@
                         </button>
                     </h2>
                 </div>
-    
                 <div id="collapse-{{ loop.index }}" class="collapse" aria-labelledby="heading-{{ loop.index }}" data-parent="#lessonAccordion">
                     <div class="card-body">
                         <!-- Lesson details go here -->
                         <p>Lesson content: {{ lesson.content }}</p>
                         <!-- Add more details as needed -->
-    
+                        
                         <!-- Quality Control Checkbox and Note -->
-                        <form method="POST" action="/api/lesson_status/{{ lesson.id }}">
-                            <input type="checkbox" name="has_occurred" value="true" {% if lesson.has_occurred %} checked {% endif %}>
-                            <textarea name="note" id="noteTextBox-{{ loop.index }}" class="form-control" rows="3">{{ lesson.note.content if lesson.note else '' }}</textarea>
+                        <form id="lessonForm-{{ loop.index }}" method="POST" action="/api/lesson_status/{{ lesson.id }}">
+                            <input type="checkbox" name="has_occurred" {% if lesson.has_occured == 1 %} checked {% endif %}> Stunde hat stattgefunden
+                            <textarea name="note" id="noteTextBox-{{ loop.index }}" class="form-control" rows="3">{{ lesson.notes[0].content if lesson.notes else '' }}</textarea>
                             <button class="btn btn-primary mt-2" id="saveNoteButton-{{ loop.index }}">Save Note and Update Status</button>
                         </form>
                     </div>
@@ -66,6 +65,42 @@
             {% endfor %}
         </div>
     </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script>
+$(document).ready(function() {
+    {% for lesson in lesson_info %}
+    $("#lessonForm-{{ loop.index }}").submit(function(event) {
+        event.preventDefault();  // Prevent the form from submitting normally
+
+        var url = $(this).attr('action');  // Get the form action URL
+        // Get the checkbox value ('true' if checked, 'false' if not checked)
+        var has_occurred = $(this).find('input[type="checkbox"]').prop('checked') ? '1' : '0';
+
+        // Get the note content
+        var note_content = $(this).find('textarea').val();
+
+        // Create the data object to send in the POST request
+        var data = {
+            'note': note_content,
+            'has_occurred': has_occurred
+        };
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: JSON.stringify(data),
+            contentType: 'application/json'
+        })
+        .done(function(response) {
+            alert("Lesson status and note updated successfully");
+        })
+        .fail(function() {
+            alert("Error updating lesson status");
+        });
+    });
+    {% endfor %}
+});
+</script>
 </body>
 
 </html>
