@@ -72,18 +72,27 @@ def create_role(role_name):
         else:
             print(f"Role '{role_name}' already exists.")
 
-def create_user_with_role(username, password, role_name):
+def create_user_with_role(username, password, role_name, paygrade=None):
     role = Role.query.filter_by(name=role_name).first()
-    if role:
+    if role and role.name == 'admin':
         new_user = User(username=username, password_hash=bcrypt.generate_password_hash(password).decode('utf-8'), role_id=role.id)
         db.session.add(new_user)
         db.session.commit()
         print(f"User '{username}' created with role '{role_name}'")
         return "User created successfully", True
+    elif role and role.name == 'tutor':
+        if paygrade is not None:
+            new_user = User(username=username, password_hash=bcrypt.generate_password_hash(password).decode('utf-8'), role_id=role.id, paygrade_id=paygrade.id)
+            db.session.add(new_user)
+            db.session.commit()
+            print(f"User '{username}' created with role '{role_name}'")
+            return "User created successfully", True
+        else:
+            print("Paygrade is required for tutor role.")
+            return "Paygrade is required for tutor role.", False
     else:
         print(f"Role '{role_name}' does not exist.")
         return f"Role '{role_name}' does not exist.", False
-
 
 
 
@@ -391,9 +400,13 @@ def create_user():
         username = request.form['username']
         password = request.form['password']
         role_name = request.form['role']
+        paygrade_id = request.form.get('paygrade')  # get paygrade from the form
+
+        # Fetch the paygrade from the database if paygrade_id is provided
+        paygrade = Paygrade.query.get(paygrade_id) if paygrade_id else None
 
         # Call your create_user_with_role function
-        message, success = create_user_with_role(username, password, role_name)
+        message, success = create_user_with_role(username, password, role_name, paygrade)
         flash(message, 'success' if success else 'danger')
 
         if success:
@@ -401,7 +414,8 @@ def create_user():
         else:
             return redirect(url_for('create_user'))
 
-    return render_template('create_user.html')
+    paygrades = Paygrade.query.all()  # get all paygrades
+    return render_template('create_user.html', paygrades=paygrades)
 
 @app.route('/tutor/change_password', methods=['GET', 'POST'])
 @login_required
@@ -790,7 +804,10 @@ def modify_lessons():
             'end_time': lesson.end_time.strftime('%H:%M'),
             'tutor_name': tutor_name,
             'student_name': student_name,
-            'subject_name': subject_name
+            'subject_name': subject_name,
+            'has_occurred': lesson.has_occured,
+            'notes': ', '.join(note.content for note in lesson.notes) if lesson.notes else ''
+
         })
 
     return render_template('modify_lessons.html', lessons=formatted_lessons)

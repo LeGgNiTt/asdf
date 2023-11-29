@@ -56,11 +56,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
 
-    <!-- Calendar Container -->
-    <div class="container mt-4">
-        <div id="calendar"></div>
-    </div>
-
     <script>
         $(document).ready(function() {
             $('#calendar').fullCalendar({
@@ -69,7 +64,8 @@
                     center: 'title',
                     right: 'month,agendaWeek,agendaDay'
                 },
-                defaultView: 'dayGridMonth',
+                defaultView: 'month',
+                height: 'auto', // Set the height to auto
                 navLinks: true,
                 editable: true,
                 eventLimit: true,

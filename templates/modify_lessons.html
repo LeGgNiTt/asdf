@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Modify Lessons</title>
+    <title>Benutzer erstellen</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <style>
         #lessons-table tr.selected {
@@ -19,39 +19,40 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_lessons">Lektion bearbeiten</a>
+                </li>
                 <li class="nav-item active">
-                    <a class="nav-link" href="/modify_lessons">Modify Lesson</a>
+                    <a class="nav-link" href="/modify_users">Benutzer bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Modify Users</a>
+                    <a class="nav-link" href="/modify_subjects">Fächer bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/modify_subjects">Modify Subjects</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/modify_family">Modify Family</a>
+                    <a class="nav-link" href="/modify_family">Familie bearbeiten</a>
                 </li>
                 <!-- Add more links as needed -->
             </ul>
         </div>
     </nav>
     <div class="container mt-4">
-        <h2>Modify Lessons</h2>
+        <h2>Lektion bearbeiten</h2>
+        <a href="{{ url_for('add_lesson') }}" class="btn btn-primary mb-3">Lektion hinzufügen</a>
         <table class="table" id="lessons-table">
             <thead>
                 <tr>
-                    <th>Date</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
+                    <th>Datum</th>
+                    <th>Startzeit</th>
+                    <th>Endzeit</th>
                     <th>Tutor</th>
-                    <th>Student</th>
-                    <th>Subject</th>
-                    <th>Actions</th>
+                    <th>Schüler</th>
+                    <th>Fach</th>
+                    <th>Aktionen</th>
                 </tr>
             </thead>
             <tbody>
                 {% for lesson in lessons %}
-                <tr>
+                <tr data-toggle="collapse" data-target="#details{{ loop.index }}">
                     <td>{{ lesson.date }}</td>
                     <td>{{ lesson.start_time }}</td>
                     <td>{{ lesson.end_time }}</td>
@@ -59,9 +60,19 @@
                     <td>{{ lesson.student_name }}</td>
                     <td>{{ lesson.subject_name }}</td>
                     <td>
-                        <!-- Add buttons or links for editing and deleting lessons -->
-                        <a href="/edit_lesson/{{ lesson.lesson_id }}" class="btn btn-primary btn-sm">Edit</a>
-                        <a href="/delete_lesson/{{ lesson.lesson_id }}" class="btn btn-danger btn-sm">Delete</a>
+                        <a href="/edit_lesson/{{ lesson.lesson_id }}" class="btn btn-primary btn-sm">Bearbeiten</a>
+                        <a href="/delete_lesson/{{ lesson.lesson_id }}" class="btn btn-danger btn-sm">Löschen</a>
+                    </td>
+                </tr>
+                <tr id="details{{ loop.index }}" class="collapse">
+                    <td colspan="7">
+                        <strong>Notizen:</strong> {{ lesson.notes }}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="hasOccurredCheck{{ loop.index }}" {% if lesson.has_occurred %}checked{% endif %}>
+                            <label class="form-check-label" for="hasOccurredCheck{{ loop.index }}">
+                                Hat stattgefunden
+                            </label>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -98,7 +109,7 @@
 
             // Delete button logic
             document.getElementById('delete-btn').addEventListener('click', function() {
-                if (selectedLessonId && confirm('Are you sure you want to delete this lesson?')) {
+                if (selectedLessonId && confirm('Sind Sie sicher, dass Sie diese Lektion löschen möchten?')) {
                     // Perform the deletion request
                     window.location.href = '/delete_lesson/' + selectedLessonId; // URL to delete lesson route
                 }

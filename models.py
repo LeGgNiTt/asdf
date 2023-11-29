@@ -7,6 +7,10 @@ from sqlalchemy.orm import relationship
 
 db = SQLAlchemy()
 
+class Paygrade(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    value = db.Column(db.Float, nullable=False)
+
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), nullable=False, unique=True)
@@ -14,6 +18,8 @@ class User(db.Model, UserMixin):
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=False)
     role = db.relationship('Role', backref=db.backref('users', lazy=True))
     tutor_profile = db.relationship('Tutor', backref='user', lazy=True)
+    paygrade_id = db.Column(db.Integer, db.ForeignKey('paygrade.id'), nullable=False)
+    paygrade = db.relationship('Paygrade', backref='users')
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)

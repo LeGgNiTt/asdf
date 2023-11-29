@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Create User</title>
+    <title>Benutzer erstellen</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 </head>
 <body>
@@ -14,44 +14,61 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="/modify_lessons">Modify Lesson</a>
+                    <a class="nav-link" href="/modify_lessons">Lektion bearbeiten</a>
                 </li>
                 <li class="nav-item active">
-                    <a class="nav-link" href="#">Modify Users</a>
+                    <a class="nav-link" href="/modify_users">Benutzer bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/modify_subjects">Modify Subjects</a>
+                    <a class="nav-link" href="/modify_subjects">Fächer bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/modify_family">Modify Family</a>
+                    <a class="nav-link" href="/modify_family">Familie bearbeiten</a>
                 </li>
                 <!-- Add more links as needed -->
             </ul>
         </div>
     </nav>
     <div class="container mt-4">
-        <h2>Create New User</h2>
+        <h2>Neuen Benutzer erstellen</h2>
         <form action="{{ url_for('create_user') }}" method="post">
             <div class="form-group">
-                <label for="username">Username</label>
+                <label for="username">Benutzername</label>
                 <input type="text" class="form-control" id="username" name="username" required>
             </div>
             <div class="form-group">
-                <label for="password">Password</label>
+                <label for="password">Passwort</label>
                 <input type="password" class="form-control" id="password" name="password" required>
             </div>
             <div class="form-group">
-                <label for="role">Role</label>
+                <label for="role">Rolle</label>
                 <select class="form-control" id="role" name="role">
-                    <option value="tutor">tutor</option>
-                    <option value="admin">admin</option>
+                    <option value="tutor">Tutor</option>
+                    <option value="admin">Admin</option>
                     <!-- Add other roles as needed -->
                 </select>
             </div>
-            <button type="submit" class="btn btn-primary">Create User</button>
+            <div class="form-group" id="paygradeGroup" style="display: none;">
+                <label for="paygrade">Gehaltsstufe</label>
+                <select class="form-control" id="paygrade" name="paygrade">
+                    {% for paygrade in paygrades %}
+                    <option value="{{ paygrade.id }}">{{ paygrade.value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Benutzer erstellen</button>
         </form>
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script>
+        document.getElementById('role').addEventListener('change', function() {
+            if (this.value == 'tutor') {
+                document.getElementById('paygradeGroup').style.display = 'block';
+            } else {
+                document.getElementById('paygradeGroup').style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html>
