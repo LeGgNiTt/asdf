@@ -124,7 +124,7 @@ def get_lessons_in_range(from_date, to_date):
 
 app = Flask(__name__)
 # Database configuration and initialization
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://Legnnit:unterkirhersconsulting@Legnnit.mysql.eu.pythonanywhere-services.com/Legnnit$deployment'    
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://Legnnit:unterkirhersconsulting@Legnnit.mysql.pythonanywhere-services.com/Legnnit$deployment'
 app.config['SECRET_KEY'] = 'development'
 db.init_app(app)
 with app.app_context():
