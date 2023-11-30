@@ -12,6 +12,7 @@ from flask_migrate import Migrate
 from datetime import datetime, timedelta
 from functools import wraps
 
+
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -123,11 +124,11 @@ def get_lessons_in_range(from_date, to_date):
 
 app = Flask(__name__)
 # Database configuration and initialization
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqldb://Legnnit:unterkirhersconsulting@Legnnit.mysql.pythonanywhere-services.com/Legnnit$deployment'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://Legnnit:unterkirhersconsulting@Legnnit.mysql.eu.pythonanywhere-services.com/Legnnit$deployment'    
 app.config['SECRET_KEY'] = 'development'
-
 db.init_app(app)
-db.create_all(app=app)
+with app.app_context():
+    db.create_all()
 
 migrate = Migrate(app, db)
 login_manager = LoginManager(app)
@@ -987,10 +988,7 @@ def create_tutor_profile():
 
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-        add_weekdays()
-        
+      
 
 
     app.run(debug=True)
