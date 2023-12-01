@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+</head>
+<body>
+    <div class="modal fade" id="lessonDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="lessonDetailsModalLabel">Lektion Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Dynamische Lektionsdetails werden hier geladen -->
+                    <div id="lessonDetailsContent"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Navigationsleiste -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Navigation umschalten">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_lessons">Lektion bearbeiten</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_users">Benutzer bearbeiten</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_subjects">Fächer bearbeiten</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_family">Familie bearbeiten</a>
+                </li>
+                <!-- Weitere Links hinzufügen, falls erforderlich -->
+            </ul>
+        </div>
+    </nav>
+    <form method="POST">
+        <label for="from_date">From Date:</label>
+        <input type="date" id="from_date" name="from_date" required>
+        <label for="end_date">End Date:</label>
+        <input type="date" id="end_date" name="end_date" required>
+        <input type="submit" value="Submit">
+    </form>
+    
+    <!-- Lessons Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Price Adjustment</th>
+                <th>Final Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lesson in lessons %}
+            <tr>
+                <td>{{ lesson.name }}</td>
+                <td>{{ lesson.price }}</td>
+                <td>{{ lesson.price_adjustment.name }}</td>
+                <td>{{ lesson.final_price }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>

@@ -7,6 +7,11 @@ from sqlalchemy.orm import relationship
 
 db = SQLAlchemy()
 
+lesson_students = db.Table('lesson_students',
+    db.Column('student_id', db.Integer, db.ForeignKey('student.StudentID')),
+    db.Column('lesson_id', db.Integer, db.ForeignKey('lesson.lesson_id'))
+)
+
 class Paygrade(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     value = db.Column(db.Float, nullable=False)
@@ -62,6 +67,8 @@ class Student(db.Model):
     preferred_time = db.Column(db.String(50))
     schooltype_id = db.Column(db.Integer, db.ForeignKey('schooltype.schooltype_id'), nullable=False)
     schooltype = db.relationship('SchoolType', backref='student', lazy=True)
+    enrolled_lessons = db.relationship('Lesson', secondary=lesson_students, lazy='subquery', backref=db.backref('students', lazy='dynamic'))
+
 
 class Family(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -71,16 +78,39 @@ class Family(db.Model):
     created_at = db.Column(db.TIMESTAMP, default=datetime.utcnow)
     updated_at = db.Column(db.TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+class PriceAdjustment(db.Model):
+    __tablename__ = 'price_adjustment'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), index=True)
+    value = db.Column(db.Float, nullable=False)
+
+    lessons = db.relationship('Lesson', backref='price_adjustment', lazy='dynamic')
+
+class LessonType(db.Model):
+    __tablename__ = 'lesson_type'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), index=True)
+    value = db.Column(db.Float, nullable=False)
+
+    lessons = db.relationship('Lesson', backref='lesson_type', lazy='dynamic')
+
 class Lesson(db.Model):
     lesson_id = db.Column(db.Integer, primary_key=True)
     tutor_id = db.Column(db.Integer, db.ForeignKey('tutor.tutor_id'), nullable=False)
-    student_id = db.Column(db.Integer, db.ForeignKey('student.StudentID'), nullable=False)
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.subject_id'), nullable=False)
     date = db.Column(db.Date, nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
     notes = db.relationship('Note', backref='lesson', lazy=True)
     has_occured = db.Column(db.Boolean, default=False)
+    price = db.Column(db.Float)
+    price_adjustment_id = db.Column(db.Integer, db.ForeignKey('price_adjustment.id'), nullable=True)
+    final_price = db.Column(db.Float)
+    lesson_type_id = db.Column(db.Integer, db.ForeignKey('lesson_type.id'), nullable=True)
+
+
 
 class SchoolType(db.Model):
     __tablename__ = 'schooltype'

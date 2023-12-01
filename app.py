@@ -43,23 +43,23 @@ def tutor_with_id_required(f, user_id):
 
 
 def create_admin_user(username, password):
-    
-    admin_role = Role.query.filter_by(name='admin').first()
-    if not admin_role:
-        admin_role = Role(name='admin')
-        db.session.add(admin_role)
-        db.session.commit()
+    with app.app_context():
+        admin_role = Role.query.filter_by(name='admin').first()
+        if not admin_role:
+            admin_role = Role(name='admin')
+            db.session.add(admin_role)
+            db.session.commit()
 
-    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    user = User.query.filter_by(username=username).first()
-    if user is not None:
-        raise ValueError('User already exists')
-    
-    
-    admin_user = User(username=username, password_hash=hashed_password, role_id=admin_role.id)
-    db.session.add(admin_user)
-    db.session.commit()
-    print(f"Admin user '{username}'  created.")
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        user = User.query.filter_by(username=username).first()
+        if user is not None:
+            print(f"User '{username}' already exists. No new user created.")
+            return
+
+        admin_user = User(username=username, password_hash=hashed_password, role_id=admin_role.id)
+        db.session.add(admin_user)
+        db.session.commit()
+        print(f"Admin user '{username}'  created.")
 
 def create_role(role_name):
     with app.app_context():
@@ -124,7 +124,7 @@ def get_lessons_in_range(from_date, to_date):
 
 app = Flask(__name__)
 # Database configuration and initialization
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://Legnnit:unterkirhersconsulting@Legnnit.mysql.pythonanywhere-services.com/Legnnit$deployment'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:rootroot@localhost/showcase'
 app.config['SECRET_KEY'] = 'development'
 db.init_app(app)
 with app.app_context():
@@ -924,6 +924,7 @@ def tutor_profil_id(tutor_id):
 
 from datetime import datetime
 from flask import request, redirect, url_for, flash, render_template
+from datetime import datetime, timedelta
 
 @app.route('/create_tutor_profile', methods=['GET', 'POST'])
 @login_required
@@ -983,12 +984,28 @@ def create_tutor_profile():
     return render_template('create_tutor_profile.html', schooltypes=schooltypes)
 
 
+@app.route('/admin/finances', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_finances():
+    today = datetime.now()
+    from_date = datetime(today.year, today.month, 1)
+    end_date = datetime(today.year, today.month + 1, 1) - timedelta(days=1)
+    lessons = get_lessons_in_range(from_date, end_date)
+    tutors = Tutor.query.all()
+    if request.method == 'POST':
+        from_date_str = request.form.get('from_date')
+        end_date_str = request.form.get('end_date')
+        from_date = datetime.strptime(from_date_str, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+        lessons = get_lessons_in_range(from_date, end_date)
+    return render_template('admin_finances.html', lessons=lessons, tutors=tutors)
+
+
 
 
 
 
 if __name__ == '__main__':
-      
-
-
+    create_admin_user('hansueli', 'v4-puns5')
     app.run(debug=True)
