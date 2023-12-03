@@ -9,6 +9,21 @@
         #lessons-table tr.selected {
             background-color: #add8e6;
         }
+        html, body {
+            text-align: center;
+            margin: 0;
+        }
+        form {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .footer {
+            background-color: #343a40;
+            color: white;
+            text-align: left;
+            border-top: 5px solid #343a40;
+            height: 30px;   
+        }
     </style>
     </head>
     <body>
@@ -40,25 +55,42 @@
         <div class="container mt-4">
             <h2>Add Lesson</h2>
             <form method="post">
-                <!-- Student Dropdown -->
+
+                <!-- Ferienkurs Checkbox -->
                 <div class="form-group">
-                    <label for="student">Student</label>
-                    <select class="form-control" id="student" name="student_id" onchange="updateSchoolTypeAndSubjects()">
-                        <option value="">Select a Student</option>
+                    <label for="ferienkurs">Ferienkurs</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="ferienkurs" name="ferienkurs">
+                        <label class="form-check-label" for="ferienkurs">
+                            Ferienkurs
+                        </label>
+                    </div>
+                </div>
+                <!-- Students Checkboxes -->
+                <div class="form-group">
+                    <label for="students">Students</label>
+                    <div style="height: 200px; overflow-y: scroll; border: 1px solid #ced4da; padding: .375rem .75rem; border-radius: .25rem;">
                         {% for student in students %}
-                        <option value="{{ student.StudentID }}">{{ student.FirstName }} {{ student.LastName }}</option>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="{{ student.StudentID }}" id="student{{ student.StudentID }}" name="student_ids">
+                                <label class="form-check-label" for="student{{ student.StudentID }}">
+                                    {{ student.FirstName }} {{ student.LastName }}
+                                </label>
+                            </div>
                         {% endfor %}
-                    </select>
+                    </div>
                 </div>
 
-                <!-- Schooltype Dropdown (Initially Empty) -->
+                <!-- Schooltype Dropdown -->
                 <div class="form-group">
                     <label for="schooltype">School Type</label>
                     <select class="form-control" id="schooltype" name="schooltype_id">
-                        <!-- Options will be dynamically populated -->
+                        <option value="">Select a School Type</option>
+                        {% for schooltype in schooltypes %}
+                        <option value="{{ schooltype.schooltype_id}}">{{ schooltype.schooltype_name }}</option>
+                        {% endfor %}
                     </select>
                 </div>
-
                 <!-- Subject Dropdown (Initially Empty) -->
                 <div class="form-group">
                     <label for="subject">Subject</label>
@@ -88,13 +120,24 @@
                         <!-- Options will be dynamically populated -->
                     </select>
                 </div>
+                <div class="form-group">
+                    <label for="price">Price</label>
+                    <input type="number" class="form-control" id="price" name="price" value="90" required>
+                </div>
                 <!-- Price Adjustment Dropdown -->
                 <div class="form-group">
                     <label for="price_adjustment">Price Adjustment</label>
                     <select class="form-control" id="price_adjustment" name="price_adjustment_id">
                         <option value="">Select a Price Adjustment</option>
-                        <!-- Options will be dynamically populated -->
+                        {% for price_adjustment in price_adjustments %}
+                        <option value="{{ price_adjustment.id }}">{{ price_adjustment.name }}</option>
+                        {% endfor %}
                     </select>
+                </div>
+                <!-- Regelmässig Checkbox -->
+                <div class="form-group">
+                    <label for="regelmaessig">Regelmässig</label>
+                    <input type="checkbox" class="form-control" id="regelmaessig" name="regelmaessig">
                 </div>
 
                 <!-- Submit Button -->
@@ -109,99 +152,50 @@
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                const studentSelect = document.getElementById('student');
                 const schooltypeSelect = document.getElementById('schooltype');
                 const subjectSelect = document.getElementById('subject');
                 const dateInput = document.getElementById('date');
                 const startTimeInput = document.getElementById('start_time');
                 const endTimeInput = document.getElementById('end_time');
                 const tutorSelect = document.getElementById('tutor');
-
-                // Handle change in student selection
-                studentSelect.addEventListener('change', handleStudentSelection);
-
-                // Function to handle change in student selection
-                function handleStudentSelection() {
-                    const studentId = this.value;
-                    if (studentId) {
-                        fetchSchoolTypeForStudent(studentId);
+            
+                // Function to handle change in schooltype selection
+                function handleSchooltypeSelection() {
+                    console.log('Schooltype selection changed');
+                    const schooltypeId = this.value;
+                    console.log(`schooltypeId: ${schooltypeId}`);  // Add this line
+                    if (schooltypeId) {
+                        fetchSubjects(schooltypeId);
                     } else {
                         clearDropdowns();
                     }
                 }
-
-                // Function to fetch school type for a selected student
-                function fetchSchoolTypeForStudent(studentId) {
-                    fetch(`/api/schooltype_for_student/${studentId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.schooltype_id) {
-                            schooltypeSelect.innerHTML = `<option value="${data.schooltype_id}">${data.schooltype_name}</option>`;
-                            fetchSubjects(data.schooltype_id);
-                        }
-                    })
-                    .catch(error => console.error('Error:', error));
-                }
-
+            
                 // Function to fetch and populate subjects
                 function fetchSubjects(schooltypeId) {
+                    console.log('Fetching subjects for schooltype', schooltypeId);
                     fetch(`/api/subjects/${schooltypeId}`)
                     .then(response => response.json())
                     .then(subjects => {
-                        populateDropdown(subjectSelect, subjects);
+                        populateDropdown(subjectSelect, subjects, 'Select a Subject');
                     })
                     .catch(error => console.error('Error:', error));
                 }
-
-                // Listen for changes in the subject to fetch tutors
-                subjectSelect.addEventListener('change', handleSubjectSelection);
-
-                // Function to handle change in subject selection
-                function handleSubjectSelection() {
-                    const subjectId = this.value;
-                    if (subjectId) {
-                        fetch_the_Tutors(dateInput.value, startTimeInput.value, endTimeInput.value, subjectId);
-                    } else {
-                        tutorSelect.innerHTML = '';
-                    }
-                }
-                function updateTutorList() {
-                    const subjectId = subjectSelect.value;
-                    const date = dateInput.value;
-                    const startTime = startTimeInput.value;
-                    const endTime = endTimeInput.value;
-
-                    if (subjectId && date && startTime && endTime) {
-                        fetchTutorsForSubjectAndTime(subjectId, date, startTime, endTime);
-                    }
-                }
-
+                schooltypeSelect.addEventListener('change', handleSchooltypeSelection);
+            
+                // Function to fetch and populate tutors
                 function fetchTutorsForSubjectAndTime(subjectId, date, startTime, endTime) {
                     fetch(`/api/tutors/${subjectId}/${date}/${startTime}/${endTime}`)
-                        .then(response => response.json())
-                        .then(tutors => {
-                            let options = '<option value="">Select a Tutor</option>';
-                            tutors.forEach(tutor => {
-                                const color = tutor.status === 'available' ? 'green' : 'red';
-                                options += `<option value="${tutor.id}" style="color: ${color};">${tutor.name} (${tutor.status})</option>`;
-                            });
-                            tutorSelect.innerHTML = options;
-                        })
-                        .catch(error => console.error('Error:', error));
+                    .then(response => response.json())
+                    .then(tutors => {
+                        populateDropdown(tutorSelect, tutors, 'Select a Tutor');
+                    })
+                    .catch(error => console.error('Error:', error));
                 }
-
-                
-                function handleTutorSelection(){
-                    const tutorId = this.value;
-                    if (tutorId) {
-                        fetchTutor(tutorId);
-                    } else {
-                        tutorSelect.innerHTML = '';
-                    }
-                }
+            
                 // Helper function to populate dropdown options
-                function populateDropdown(dropdown, items) {
-                    let options = '<option value="">Select a Tutor</option>';
+                function populateDropdown(dropdown, items, defaultOptionText) {
+                    let options = `<option value="">${defaultOptionText}</option>`;
                     items.forEach(item => {
                         options += `<option value="${item.id}">${item.name}</option>`;
                     });
@@ -210,15 +204,41 @@
             
                 // Helper function to clear dropdowns
                 function clearDropdowns() {
-                    schooltypeSelect.innerHTML = '';
                     subjectSelect.innerHTML = '';
                     tutorSelect.innerHTML = '';
                 }
+            
+                // Event listeners
+                
+                subjectSelect.addEventListener('change', function() {
+                    const subjectId = this.value;
+                    const date = dateInput.value;
+                    const startTime = startTimeInput.value;
+                    const endTime = endTimeInput.value;
+            
+                    if (subjectId && date && startTime && endTime) {
+                        fetchTutorsForSubjectAndTime(subjectId, date, startTime, endTime);
+                    }
+                });
                 dateInput.addEventListener('change', updateTutorList);
                 startTimeInput.addEventListener('change', updateTutorList);
                 endTimeInput.addEventListener('change', updateTutorList);
-                subjectSelect.addEventListener('change', updateTutorList);
+            
+                function updateTutorList() {
+                    const subjectId = subjectSelect.value;
+                    const date = dateInput.value;
+                    const startTime = startTimeInput.value;
+                    const endTime = endTimeInput.value;
+            
+                    if (subjectId && date && startTime && endTime) {
+                        fetchTutorsForSubjectAndTime(subjectId, date, startTime, endTime);
+                    }
+                }
             });
-        </script>
+            </script>
+        <footer class="footer">
+            <p>Software by: Aleksandrs Unterkirhers</p>
+        </footer>
     </body>
-    </html>
+
+</html>

@@ -2,7 +2,7 @@
 from models import Tutor, SchoolType, Subject, Student, Lesson
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, logging, flash
 from functools import wraps
-from models import db, SchoolType, Student, User, Role, Tutor, Lesson, Subject, TutorAvailability, TutorSubject, Family, Weekday, Note
+from models import db, SchoolType, Student, User, Role, Tutor, Lesson, Subject, TutorAvailability, TutorSubject, Family, Weekday, Note, lesson_students, PriceAdjustment
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -371,8 +371,8 @@ def admin_dashboard():
     formatted_lessons = []
     for lesson in lessons:
         tutor_name = Tutor.query.filter_by(tutor_id=lesson.tutor_id).first().name
-        student = Student.query.filter_by(StudentID=lesson.student_id).first()
-        student_name = f"{student.FirstName} {student.LastName}"
+        students = lesson.students
+        student_name = [f"{student.FirstName} {student.LastName}" for student in students]
         subject_name = Subject.query.filter_by(subject_id=lesson.subject_id).first().subject_name
 
         start_datetime = datetime.combine(lesson.date, lesson.start_time)
@@ -518,20 +518,22 @@ def get_lessons():
     lessons_data = []
     for lesson in lessons:
         tutor = Tutor.query.filter_by(tutor_id=lesson.tutor_id).first()
-        student = Student.query.filter_by(StudentID=lesson.student_id).first()
         subject = Subject.query.filter_by(subject_id=lesson.subject_id).first()
 
         # Combine date and time for start and end
         start_datetime = datetime.combine(lesson.date, lesson.start_time)
         end_datetime = datetime.combine(lesson.date, lesson.end_time)
 
-        lessons_data.append({
-            'id': lesson.lesson_id,
-            'title': f"{subject.subject_name} - {tutor.name}",
-            'start': start_datetime.isoformat(),
-            'end': end_datetime.isoformat(),
-            'description': f"Tutor: {tutor.name}, Student: {student.FirstName} {student.LastName}"
-        })
+        for student_lesson in lesson.students:
+            student = Student.query.filter_by(StudentID=student_lesson.StudentID).first()
+
+            lessons_data.append({
+                'id': lesson.lesson_id,
+                'title': f"{subject.subject_name} - {student.LastName} - {tutor.name}",
+                'start': start_datetime.isoformat(),
+                'end': end_datetime.isoformat(),
+                'description': f"Tutor: {tutor.name}, Student: {student.FirstName} {student.LastName}"
+            })
     return jsonify(lessons_data)
 
 
@@ -794,10 +796,11 @@ def modify_lessons():
     # Format lessons for display
     formatted_lessons = []
     for lesson in lessons:
+        today = datetime.today().strftime('%Y-%m-%d')
         # Fetch tutor, student, and subject names using separate queries
         tutor_name = Tutor.query.filter_by(tutor_id=lesson.tutor_id).first().name
-        student = Student.query.filter_by(StudentID=lesson.student_id).first()
-        student_name = f"{student.FirstName} {student.LastName}"
+        students = lesson.students
+        student_names = [f"{student.FirstName} {student.LastName}" for student in students]
         subject_name = Subject.query.filter_by(subject_id=lesson.subject_id).first().subject_name
 
         formatted_lessons.append({
@@ -806,12 +809,53 @@ def modify_lessons():
             'start_time': lesson.start_time.strftime('%H:%M'),
             'end_time': lesson.end_time.strftime('%H:%M'),
             'tutor_name': tutor_name,
-            'student_name': student_name,
+            'student_name': student_names,
             'subject_name': subject_name,
             'has_occurred': lesson.has_occured,
             'notes': ', '.join(note.content for note in lesson.notes) if lesson.notes else ''
 
         })
+        if request.method == 'POST':
+            from_date_str = request.form.get('from_date')
+            to_date_str = request.form.get('to_date')
+            schooltype_id = request.form.get('schooltype_id')
+            subject_id = request.form.get('subject_id')
+
+            from_date = datetime.strptime(from_date_str, '%Y-%m-%d').date() if from_date_str else None
+            to_date = datetime.strptime(to_date_str, '%Y-%m-%d').date() if to_date_str else None
+
+            lessons_query = Lesson.query
+
+            if from_date and to_date:
+                lessons_query = lessons_query.filter(Lesson.date.between(from_date, to_date))
+            elif from_date:
+                lessons_query = lessons_query.filter(Lesson.date >= from_date)
+            elif to_date:
+                lessons_query = lessons_query.filter(Lesson.date <= to_date)
+
+            if schooltype_id:
+                lessons_query = lessons_query.filter(Lesson.schooltype_id == schooltype_id)
+
+            if subject_id:
+                lessons_query = lessons_query.filter(Lesson.subject_id == subject_id)
+
+            lessons = lessons_query.all()
+
+            formatted_lessons = []
+            for lesson in lessons:
+                formatted_lessons.append({
+                    'lesson_id': lesson.id,
+                    'date': lesson.date.strftime('%Y-%m-%d'),
+                    'start_time': lesson.start_time.strftime('%H:%M'),
+                    'end_time': lesson.end_time.strftime('%H:%M'),
+                    'tutor_name': lesson.tutor.user.full_name,
+                    'student_name': lesson.student.user.full_name,
+                    'subject_name': lesson.subject.subject_name,
+                    'has_occurred': lesson.has_occurred,
+                    'notes': lesson.notes
+                })
+
+            return render_template('modify_lessons.html', lessons=formatted_lessons)
 
     return render_template('modify_lessons.html', lessons=formatted_lessons)
 
@@ -841,25 +885,85 @@ def modify_users():
 def add_lesson():
     if request.method == 'POST':
         date = request.form.get('date')
+        date = datetime.strptime(date, '%Y-%m-%d').date()
         start_time = request.form.get('start_time')
         end_time = request.form.get('end_time')
         tutor_id = request.form.get('tutor_id')
         student_id = request.form.get('student_id')
         subject_id = request.form.get('subject_id')
+        price = request.form.get('price')
+        
+        price_adjustment_id = request.form.get('price_adjustment_id')
+        price_adjustment = PriceAdjustment.query.get(price_adjustment_id)
 
-        new_lesson = Lesson(
-            date=date,
-            start_time=start_time,
-            end_time=end_time,
-            tutor_id=tutor_id,
-            student_id=student_id,
-            subject_id=subject_id
-        )
-        db.session.add(new_lesson)
-        db.session.commit()
-        return redirect(url_for('modify_lessons'))
+        adjustment_value = price_adjustment.value
+        ferienkurs = request.form.get('ferienkurs') is not None
+
+        student_ids = request.form.getlist('student_ids')
+        if ferienkurs == True:
+            for i in range(0,5):
+                new_lesson = Lesson(
+                    date=date + timedelta(days=i),
+                    start_time=start_time,
+                    end_time=end_time,
+                    tutor_id=tutor_id,
+                    subject_id=subject_id,
+                    price=111,
+                    price_adjustment_id=3,
+                    final_price = 111,
+                    lesson_type_id = 3
+                )
+
+                for student_id in student_ids:
+                    student = Student.query.get(student_id)
+                    student.enrolled_lessons.append(new_lesson)
+
+                db.session.add(new_lesson)
+            db.session.commit()
+            return redirect(url_for('modify_lessons'))
+        if len(student_ids) > 1:
+            new_lesson = Lesson(
+                date=date,
+                start_time=start_time,
+                end_time=end_time,
+                tutor_id=tutor_id,
+                subject_id=subject_id,
+                price=price,
+                final_price= price,
+                lesson_type_id = 2 
+            )
+            for student_id in student_ids:
+                student = Student.query.get(student_id)
+                student.enrolled_lessons.append(new_lesson)
+            db.session.add(new_lesson)
+            db.session.commit()
+            return redirect(url_for('modify_lessons'))
+
+
+        else:
+            new_lesson = Lesson(
+                date=date,
+                start_time=start_time,
+                end_time=end_time,
+                tutor_id=tutor_id,
+                subject_id=subject_id,
+                price=price,
+                price_adjustment_id=price_adjustment_id,
+                final_price= (float(price) - adjustment_value),
+                lesson_type_id = 1
+            )
+            for student_id in student_ids:
+                student = Student.query.get(student_id)
+                student.enrolled_lessons.append(new_lesson) # Add the lesson to the student's enrolled lessons
+            db.session.add(new_lesson)
+            db.session.commit()
+            return redirect(url_for('modify_lessons'))
+
+    
     students = Student.query.all()
-    return render_template('add_lesson.html', students=students)
+    price_adjustments = PriceAdjustment.query.all()
+    schooltypes = SchoolType.query.all()
+    return render_template('add_lesson.html', students=students, price_adjustments=price_adjustments, schooltypes=schooltypes)
 
 from datetime import datetime
 
@@ -1001,7 +1105,65 @@ def admin_finances():
         lessons = get_lessons_in_range(from_date, end_date)
     return render_template('admin_finances.html', lessons=lessons, tutors=tutors)
 
+@app.route('/lesson/<int:lesson_id>')
+@login_required
+def lesson_detail(lesson_id):
+    
+    user = User.query.get(current_user.id)
+    lesson = Lesson.query.get(lesson_id)
+    tutor_id = lesson.tutor_id
+    tutor = Tutor.query.get(tutor_id)
+    impostor = Tutor.query.filter_by(user_id=current_user.id).first()
+    if user.role.name == 'tutor':
+        if impostor != tutor:
+            return redirect(url_for('error_page'))
+    if lesson is None:
+        if user.role.name == 'admin':
+            return redirect(url_for('admin_dashboard'))
+        if user.role.name == 'tutor':
+            return redirect(url_for('tutor_dashboard', user_id=user.id))
 
+    is_admin = user.role.name == 'admin'
+    subject = Subject.query.get(lesson.subject_id)
+    schooltypes = SchoolType.query.all()
+    tutors = Tutor.query.all()
+    notes = Note.query.filter_by(lesson_id=lesson_id).all()
+    return render_template('lesson_detail.html', lesson=lesson, is_admin=is_admin, schooltypes=schooltypes, subject=subject, tutor=tutor, tutoren=tutors, notes=notes)
+
+from datetime import datetime
+
+@app.route('/lesson/<int:lesson_id>/update', methods=['POST'])
+@login_required
+def update_lesson(lesson_id):
+    lesson = Lesson.query.get(lesson_id)
+    if lesson is None:
+        return redirect(url_for('modify_lessons'))
+
+    # Update the lesson details
+    subject = Subject.query.filter_by(subject_name=request.form['subject']).one()
+    lesson.subject_id = subject.subject_id
+    lesson.date = datetime.strptime(request.form['date'], '%Y-%m-%d').date()
+    start_time = request.form['start_time']
+    if len(start_time) == 5:  # 'HH:MM' format
+        start_time += ':00'  # Add seconds
+    lesson.start_time = datetime.strptime(start_time, '%H:%M:%S').time()
+
+    end_time = request.form['end_time']
+    if len(end_time) == 5:  # 'HH:MM' format
+        end_time += ':00'  # Add seconds
+    lesson.end_time = datetime.strptime(end_time, '%H:%M:%S').time()
+
+    # Check if 'tutor_id' and 'price' fields are in the form data
+    if 'tutor_id' in request.form:
+        tutor_id = request.form['tutor_id']
+        lesson.tutor_id = tutor_id
+    if 'price' in request.form:
+        lesson.price = float(request.form['price'])
+        lesson.final_price = float(request.form['final_price'])
+
+    db.session.commit()
+
+    return redirect(url_for('lesson_detail', lesson_id=lesson.lesson_id))
 
 
 

@@ -77,6 +77,7 @@ class Family(db.Model):
     phone_num = db.Column(db.String(20), nullable=True)
     created_at = db.Column(db.TIMESTAMP, default=datetime.utcnow)
     updated_at = db.Column(db.TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
+    entrance_fee = db.Column(db.Float, default=False)
 
 class PriceAdjustment(db.Model):
     __tablename__ = 'price_adjustment'
@@ -109,6 +110,7 @@ class Lesson(db.Model):
     price_adjustment_id = db.Column(db.Integer, db.ForeignKey('price_adjustment.id'), nullable=True)
     final_price = db.Column(db.Float)
     lesson_type_id = db.Column(db.Integer, db.ForeignKey('lesson_type.id'), nullable=True)
+
 
 
 

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+</head>
+<body>
+    <button onclick="goBack()" style="margin: 20px; padding: 10px;">Go Back</button>
+    <div class="container">
+        <h1>Edit Lesson</h1>
+        <form method="POST" action="{{ url_for('update_lesson', lesson_id=lesson.lesson_id) }}">
+            <div class="form-group">
+                <label for="schooltype">School Type</label>
+                <select class="form-control" id="schooltype" name="schooltype" required>
+                    {% for schooltype in schooltypes %}
+                        <option value="{{ schooltype.schooltype_id }}" {% if schooltype.schooltype_id == subject.schooltype_id %}selected{% endif %}>{{ schooltype.schooltype_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="subject">Subject</label>
+                <input type="text" class="form-control" id="subject" name="subject" value="{{ subject.subject_name }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="date">Date</label>
+                <input type="date" class="form-control" id="date" name="date" value="{{ lesson.date }}" required>
+            </div>
+            <div class="form-group">
+                <label for="start_time">Start Time</label>
+                <input type="time" class="form-control" id="start_time" name="start_time" value="{{ lesson.start_time }}" required>
+            </div>
+            <div class="form-group">
+                <label for="end_time">End Time</label>
+                <input type="time" class="form-control" id="end_time" name="end_time" value="{{ lesson.end_time }}" required>
+            </div>
+            <div class="form-group">
+                <label for="notes">Notes</label>
+                {% for note in notes %}
+                    <p>{{ note.content }}</p>
+                {% endfor %}
+            </div>
+            {% if is_admin %}
+            <div class="form-group">
+                <label for="tutor_id">Tutor</label>
+                <select name="tutor_id">
+                    {% for teacher in tutoren %}
+                    <option value="{{ teacher.tutor_id }}" {% if teacher.tutor_id == tutor.tutor_id %} selected {% endif %}>{{ teacher.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="price">Price</label>
+                <input type="number" step="1" class="form-control" id="price" name="price" value="{{ lesson.price }}" required>
+            </div>
+            <div class="form-group">
+                <label for="final_price">Final Price</label>
+                <input type="number" step="1" class="form-control" id="final_price" name="final_price" value="{{ lesson.final_price }}" required>
+            </div>
+            {% endif %}
+            <button type="submit" class="btn btn-primary">Update Lesson</button>
+        </form>
+    </div>
+</body>
+<script>
+    const schooltypeSelect = document.getElementById('schooltype');
+    const subjectSelect = document.getElementById('subject');
+
+    function handleSchooltypeSelection() {
+        const schooltypeId = this.value;
+        if (schooltypeId) {
+            fetchSubjects(schooltypeId);
+        } else {
+            clearDropdown(subjectSelect);
+        }
+    }
+
+    function fetchSubjects(schooltypeId) {
+        fetch(`/api/subjects/${schooltypeId}`)
+        .then(response => response.json())
+        .then(subjects => {
+            populateDropdown(subjectSelect, subjects, 'Select a Subject');
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function clearDropdown(dropdown) {
+        while (dropdown.firstChild) {
+            dropdown.removeChild(dropdown.firstChild);
+        }
+    }
+
+    function populateDropdown(dropdown, items, defaultText) {
+        clearDropdown(dropdown);
+
+        const defaultOption = document.createElement('option');
+        defaultOption.text = defaultText;
+        dropdown.add(defaultOption);
+
+        items.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.id;
+            option.text = item.name;
+            dropdown.add(option);
+        });
+    }
+
+    schooltypeSelect.addEventListener('change', handleSchooltypeSelection);
+</script>
+<script>
+function goBack() {
+    window.history.back();
+}
+</script>

@@ -35,6 +35,33 @@
             </ul>
         </div>
     </nav>
+    <!-- Add this at the top of the page -->
+    <div class="container mt-4">
+        <h2>Filter Lessons</h2>
+        <form id="filter-form" method="post">
+            <div class="form-group">
+                <label for="from_date">From Date</label>
+                <input type="date" class="form-control" id="from_date" value="{{ today }}">
+            </div>
+            <div class="form-group">
+                <label for="to_date">To Date</label>
+                <input type="date" class="form-control" id="to_date" value="{{ today }}">
+            </div>
+            <div class="form-group">
+                <label for="schooltype">School Type</label>
+                <select class="form-control" id="schooltype">
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="subject">Subject</label>
+                <select class="form-control" id="subject">
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+            </div>
+            <button type="submit">Apply Filters</button>
+        </form>
+    </div>
     <div class="container mt-4">
         <h2>Lektion bearbeiten</h2>
         <a href="{{ url_for('add_lesson') }}" class="btn btn-primary mb-3">Lektion hinzufügen</a>
@@ -60,7 +87,7 @@
                     <td>{{ lesson.student_name }}</td>
                     <td>{{ lesson.subject_name }}</td>
                     <td>
-                        <a href="/edit_lesson/{{ lesson.lesson_id }}" class="btn btn-primary btn-sm">Bearbeiten</a>
+                        <a href="{{ url_for('lesson_detail', lesson_id=lesson.lesson_id) }}" class="btn btn-primary btn-sm">Bearbeiten</a>
                         <a href="/delete_lesson/{{ lesson.lesson_id }}" class="btn btn-danger btn-sm">Löschen</a>
                     </td>
                 </tr>
@@ -85,6 +112,73 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('from_date').value = today;
+            document.getElementById('to_date').value = today;
+            // Fetch school types and populate the school type dropdown
+            fetch('/api/schooltypes')
+            .then(response => response.json())
+            .then(schooltypes => {
+                const schooltypeSelect = document.getElementById('schooltype');
+                schooltypes.forEach((schooltype, index) => {
+                    const option = document.createElement('option');
+                    option.value = schooltype.id;
+                    option.text = schooltype.name;
+                    if (index === 0) {
+                        option.selected = true;
+                    }
+                    schooltypeSelect.add(option);
+                });
+            });
+                // Add an event listener to the school type dropdown to populate the subject dropdown when the selected school type changes
+                document.getElementById('schooltype').addEventListener('change', function() {
+                    fetch('/api/subjects/' + this.value)
+                        .then(response => response.json())
+                        .then(subjects => {
+                            const subjectSelect = document.getElementById('subject');
+                            subjectSelect.innerHTML = subjects.map(subject => 
+                                `<option value="${subject.id}">${subject.name}</option>`
+                            ).join('');
+                        });
+                });
+                // Add an event listener to the filter form to apply the filters when the form is submitted
+                document.getElementById('filter-form').addEventListener('submit', function(event) {
+                    event.preventDefault();
+
+                    const date = document.getElementById('date').value;
+                    const schooltypeId = document.getElementById('schooltype').value;
+                    const subjectId = document.getElementById('subject').value;
+
+                    fetch('/modify_lessons', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: new URLSearchParams({
+                            'date': date,
+                            'schooltype_id': schooltypeId,
+                            'subject_id': subjectId
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(lessons => {
+                        // Update the lessons table with the filtered lessons
+                        // This will depend on how your table is structured
+                        // Here's a basic example:
+                        const lessonsTable = document.getElementById('lessons-table');
+                        lessonsTable.innerHTML = lessons.map(lesson => 
+                            `<tr>
+                                <td>${lesson.date}</td>
+                                <td>${lesson.start_time} - ${lesson.end_time}</td>
+                                <td>${lesson.tutor_name}</td>
+                                <td>${lesson.student_name}</td>
+                                <td>${lesson.subject_name}</td>
+                                <td>${lesson.has_occurred ? 'Yes' : 'No'}</td>
+                                <td>${lesson.notes}</td>
+                            </tr>`
+                        ).join('');
+                    });
+                });
             // Event delegation for row clicks
             document.querySelector('#lessons-table tbody').addEventListener('click', function(event) {
                 // Check if the clicked element is a row

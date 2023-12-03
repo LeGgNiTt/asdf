@@ -71,21 +71,7 @@
                 eventLimit: true,
                 events: '/api/lessons', // Ereignisse von der API-Endpunkt abrufen
                 eventClick: function(calEvent, jsEvent, view) {
-                    // Bei Bedarf zusätzliche Details abrufen
-                    var details = calEvent.extendedProps;
-
-                    // Modalinhalte befüllen
-                    var modalContent = `
-                        <h4>${calEvent.title}</h4>
-                        <p><strong>Datum:</strong> ${calEvent.start.toLocaleString()}</p>
-                        <p><strong>Tutor:</strong> ${details.tutor}</p>
-                        <p><strong>Schüler:</strong> ${details.student}</p>
-                        <p><strong>Beschreibung:</strong> ${details.description}</p>
-                    `;
-                    document.getElementById('lessonDetailsContent').innerHTML = modalContent;
-
-                    // Das Modal anzeigen
-                    $('#lessonDetailsModal').modal('show');
+                    window.location.href = '/lesson/' + calEvent.id;
                 }
             });
         });
