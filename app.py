@@ -1171,6 +1171,5 @@ def update_lesson(lesson_id):
 
 
 if __name__ == '__main__':
-    create_admin_user('hansueli', 'v4-puns5')
-    create_admin_user('roott', 'rootroot')
+    create_admin_user('hansueli', 'V4-guns5')
     app.run(debug=True)
