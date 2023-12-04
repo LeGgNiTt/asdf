@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Modify Subjects</title>
+    <title>Fächer bearbeiten</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <!-- Add any additional CSS files here -->
+    <!-- Fügen Sie hier zusätzliche CSS-Dateien hinzu -->
     <style>
         .fc-day-grid-event .fc-content {
             white-space: normal;
@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
 </head>
 <body>
-    <!-- Navigation Bar -->
+    <!-- Navigationsleiste -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -21,35 +21,35 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="/modify_lessons">Modify Lesson</a>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/modify_lessons">Lektion bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Modify Users</a>
+                    <a class="nav-link active" href="/modify_users">Benutzer bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link active" href="/modify_subjects">Modify Subjects</a>
+                    <a class="nav-link" href="/modify_subjects">Fächer bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/modify_family">Modify Family</a>
+                    <a class="nav-link" href="/modify_family">Familie bearbeiten</a>
                 </li>
-                <!-- Add more links as needed -->
+                <!-- Weitere Links hinzufügen, falls erforderlich -->
             </ul>
         </div>
     </nav>
 
-    <!-- Main Content -->
+    <!-- Hauptinhalt -->
     <div class="container mt-4">
-        <h2>Modify Subjects</h2>
+        <h2>Fächer bearbeiten</h2>
 
         
 
-        <!-- List of Subjects -->
+        <!-- Liste der Fächer -->
         <table class="table">
             <thead>
                 <tr>
-                    <th>School Type</th>
-                    <th>Subject Name</th>
+                    <th>Schulart</th>
+                    <th>Fachname</th>
                 </tr>
             </thead>
             <tbody>
@@ -63,15 +63,15 @@
         </table>
         
         <div class="my-2">
-            <a href="{{ url_for('add_schooltype') }}" class="btn btn-primary">Add School Type</a>
-            <a href="{{ url_for('add_subject') }}" class="btn btn-secondary">Add Subject</a>
+            <a href="{{ url_for('add_schooltype') }}" class="btn btn-primary">Schulart hinzufügen</a>
+            <a href="{{ url_for('add_subject') }}" class="btn btn-secondary">Fach hinzufügen</a>
         </div>
 
     </div>
 
-    <!-- Scripts -->
-    <!-- Bootstrap and jQuery scripts here -->
-    <!-- Bootstrap and jQuery scripts -->
+    <!-- Skripte -->
+    <!-- Bootstrap- und jQuery-Skripte hier -->
+    <!-- Bootstrap- und jQuery-Skripte -->
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 

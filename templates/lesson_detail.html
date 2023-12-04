@@ -7,12 +7,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
 </head>
 <body>
-    <button onclick="goBack()" style="margin: 20px; padding: 10px;">Go Back</button>
+    <button onclick="goBack()" style="margin: 20px; padding: 10px;">Zurück</button>
     <div class="container">
-        <h1>Edit Lesson</h1>
+        <h1>Lektion bearbeiten</h1>
         <form method="POST" action="{{ url_for('update_lesson', lesson_id=lesson.lesson_id) }}">
             <div class="form-group">
-                <label for="schooltype">School Type</label>
+                <label for="schooltype">Schultyp</label>
                 <select class="form-control" id="schooltype" name="schooltype" required>
                     {% for schooltype in schooltypes %}
                         <option value="{{ schooltype.schooltype_id }}" {% if schooltype.schooltype_id == subject.schooltype_id %}selected{% endif %}>{{ schooltype.schooltype_name }}</option>
@@ -20,24 +20,24 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="subject">Subject</label>
+                <label for="subject">Fach</label>
                 <input type="text" class="form-control" id="subject" name="subject" value="{{ subject.subject_name }}" required>
             </div>
             
             <div class="form-group">
-                <label for="date">Date</label>
+                <label for="date">Datum</label>
                 <input type="date" class="form-control" id="date" name="date" value="{{ lesson.date }}" required>
             </div>
             <div class="form-group">
-                <label for="start_time">Start Time</label>
+                <label for="start_time">Startzeit</label>
                 <input type="time" class="form-control" id="start_time" name="start_time" value="{{ lesson.start_time }}" required>
             </div>
             <div class="form-group">
-                <label for="end_time">End Time</label>
+                <label for="end_time">Endzeit</label>
                 <input type="time" class="form-control" id="end_time" name="end_time" value="{{ lesson.end_time }}" required>
             </div>
             <div class="form-group">
-                <label for="notes">Notes</label>
+                <label for="notes">Notizen</label>
                 {% for note in notes %}
                     <p>{{ note.content }}</p>
                 {% endfor %}
@@ -52,15 +52,15 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="price">Price</label>
+                <label for="price">Preis</label>
                 <input type="number" step="1" class="form-control" id="price" name="price" value="{{ lesson.price }}" required>
             </div>
             <div class="form-group">
-                <label for="final_price">Final Price</label>
+                <label for="final_price">Endpreis</label>
                 <input type="number" step="1" class="form-control" id="final_price" name="final_price" value="{{ lesson.final_price }}" required>
             </div>
             {% endif %}
-            <button type="submit" class="btn btn-primary">Update Lesson</button>
+            <button type="submit" class="btn btn-primary">Lektion aktualisieren</button>
         </form>
     </div>
 </body>
@@ -81,9 +81,9 @@
         fetch(`/api/subjects/${schooltypeId}`)
         .then(response => response.json())
         .then(subjects => {
-            populateDropdown(subjectSelect, subjects, 'Select a Subject');
+            populateDropdown(subjectSelect, subjects, 'Fach auswählen');
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => console.error('Fehler:', error));
     }
 
     function clearDropdown(dropdown) {

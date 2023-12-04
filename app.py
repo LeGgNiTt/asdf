@@ -56,7 +56,7 @@ def create_admin_user(username, password):
             print(f"User '{username}' already exists. No new user created.")
             return
 
-        admin_user = User(username=username, password_hash=hashed_password, role_id=admin_role.id)
+        admin_user = User(username=username, password_hash=hashed_password, role_id=admin_role.id, paygrade_id=1)
         db.session.add(admin_user)
         db.session.commit()
         print(f"Admin user '{username}'  created.")
@@ -447,7 +447,7 @@ def change_poassword():
         else:
             flash('Incorrect old password', 'danger')
         
-        return redirect(url_for('tutor_dashboard', user_id=user_id))
+        return redirect(url_for('tutor_dashboard'))
     
     return render_template('change_password.html', user=user)
     
@@ -629,7 +629,9 @@ def update_lesson_status(lesson_id):
         lesson.notes[0].content = data['note']
     # If the lesson doesn't have a note, create a new note
     else:
-        note = Note(content=data['note'], lesson_id=lesson_id, tutor_id=lesson.tutor_id, student_id=lesson.student_id, subject_id=lesson.subject_id)
+    # Get the student_id from the lesson_student association table
+        student_id = lesson.students[0].StudentID if lesson.students else None
+        note = Note(content=data['note'], lesson_id=lesson_id, tutor_id=lesson.tutor_id, student_id=student_id, subject_id=lesson.subject_id)
         db.session.add(note)
 
     db.session.commit()
@@ -1170,4 +1172,5 @@ def update_lesson(lesson_id):
 
 if __name__ == '__main__':
     create_admin_user('hansueli', 'v4-puns5')
+    create_admin_user('roott', 'rootroot')
     app.run(debug=True)

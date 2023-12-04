@@ -64,7 +64,7 @@
                     center: 'title',
                     right: 'month,agendaWeek,agendaDay'
                 },
-                defaultView: 'month',
+                defaultView: 'agendaWeek',
                 height: 'auto', // Die Höhe auf auto setzen
                 navLinks: true,
                 editable: true,
@@ -72,7 +72,9 @@
                 events: '/api/lessons', // Ereignisse von der API-Endpunkt abrufen
                 eventClick: function(calEvent, jsEvent, view) {
                     window.location.href = '/lesson/' + calEvent.id;
-                }
+                },
+                timeFormat: 'H:mm', // Zeitformat
+                locale: 'de'
             });
         });
     </script>

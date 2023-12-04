@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Modify Users</title>
+    <title>Benutzer bearbeiten</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <style>
         #lessons-table tr.selected {
@@ -11,7 +11,7 @@
     </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
+    <!-- Navigationsleiste -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,31 +20,31 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
                 <li class="nav-item active">
-                    <a class="nav-link" href="/modify_lessons">Modify Lesson</a>
+                    <a class="nav-link" href="/modify_lessons">Lektion bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link active" href="/modify_users">Modify Users</a>
+                    <a class="nav-link active" href="/modify_users">Benutzer bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/modify_subjects">Modify Subjects</a>
+                    <a class="nav-link" href="/modify_subjects">Fächer bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/modify_family">Modify Family</a>
+                    <a class="nav-link" href="/modify_family">Familie bearbeiten</a>
                 </li>
-                <!-- Add more links as needed -->
+                <!-- Weitere Links hinzufügen, falls erforderlich -->
             </ul>
         </div>
     </nav>
     <div class="container mt-4">
-        <h2>Users</h2>
+        <h2>Benutzer</h2>
         <table class="table">
             <thead>
                 <tr>
-                    <th>User ID</th>
-                    <th>Username</th>
-                    <th>Role</th>
-                    <th>Is Tutor</th>
-                    <th>Edit</th> <!-- Add new column for Edit button -->
+                    <th>Benutzer-ID</th>
+                    <th>Benutzername</th>
+                    <th>Rolle</th>
+                    <th>Ist Tutor</th>
+                    <th>Bearbeiten</th> <!-- Neue Spalte für Bearbeiten-Button hinzufügen -->
                 </tr>
             </thead>
             <tbody>
@@ -54,12 +54,12 @@
                     <td>{{ user.username }}</td>
                     <td>{{ user.role }}</td>
                     <td>{{ user.is_tutor }}</td>
-                    <td><a href="/edit_user/{{ user.user_id }}">Edit</a></td> <!-- Add Edit button with dynamic user_id -->
+                    <td><a href="/edit_user/{{ user.user_id }}">Bearbeiten</a></td> <!-- Bearbeiten-Button mit dynamischer Benutzer-ID hinzufügen -->
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        <button class="btn btn-primary" onclick="window.location.href='/create_user'">Add New User</button>
+        <button class="btn btn-primary" onclick="window.location.href='/create_user'">Neuen Benutzer hinzufügen</button>
     </div>
 
 
