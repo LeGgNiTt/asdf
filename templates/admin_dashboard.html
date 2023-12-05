@@ -5,6 +5,13 @@
     <title>Admin Panel</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+    <style>
+        .container {
+            max-width: 80%; /* or any other percentage or fixed width */
+            margin: auto; /* center the container */
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
     <div class="modal fade" id="lessonDetailsModal" tabindex="-1" aria-hidden="true">
@@ -49,12 +56,18 @@
         </div>
     </nav>
 
-    <div id="calendar"></div>
+
+
+    <div class="container">
+        <div id="calendar"></div>
+    </div>
+
 
     <!-- Bootstrap und jQuery Skripte -->
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/locale/de.js"></script>
 
     <script>
         $(document).ready(function() {
@@ -65,7 +78,7 @@
                     right: 'month,agendaWeek,agendaDay'
                 },
                 defaultView: 'agendaWeek',
-                height: 'auto', // Die Höhe auf auto setzen
+                height: 800, // Die Höhe auf auto setzen
                 navLinks: true,
                 editable: true,
                 eventLimit: true,

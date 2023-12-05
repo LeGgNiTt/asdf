@@ -1,52 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
     <head>
         <meta charset="UTF-8">
-        <title>Edit Family</title>
+        <title>Familie bearbeiten</title>
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-        <!-- Additional styles can be added here -->
+        <!-- Zusätzliche Styles können hier hinzugefügt werden -->
     </head>
 <body>
-    <!-- Navigation Bar -->
+    <!-- Navigationsleiste -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="#">Admin Panel</a>
+        <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="/modify_lessons">Modify Lesson</a>
+                <li class="nav-item ">
+                    <a class="nav-link" href="/modify_lessons">Lektion bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Modify Users</a>
+                    <a class="nav-link" href="/modify_users">Benutzer bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/modify_subjects">Modify Subjects</a>
+                    <a class="nav-link" href="/modify_subjects">Fächer bearbeiten</a> 
                 </li>
                 <li class="nav-item active">
-                    <a class="nav-link" href="/modify_family">Modify Family</a>
+                    <a class="nav-link" href="/modify_family">Familie bearbeiten</a>
                 </li>
-                <!-- Additional navbar items can be added here -->
+                <!-- Weitere Links hinzufügen, falls erforderlich -->
             </ul>
         </div>
     </nav>
 
 
-    <!-- Main Content -->
+    <!-- Hauptinhalt -->
     <div class="container mt-4">
-        <h2>Add Student to {{ family.name }}</h2>
+        <h2>Schüler zu {{ family.name }} hinzufügen</h2>
         <form action="{{ url_for('add_student_to_family', family_id=family.id) }}" method="post">
             <div class="form-group">
-                <label for="first_name">First Name</label>
+                <label for="first_name">Vorname</label>
                 <input type="text" class="form-control" id="first_name" name="first_name" required>
             </div>
             <div class="form-group">
-                <label for="last_name">Last Name</label>
+                <label for="last_name">Nachname</label>
                 <input type="text" class="form-control" id="last_name" name="last_name" value="{{ family.name }}" required>
             </div>
             <div class="form-group">
-                <label for="schooltype">School Type</label>
+                <label for="schooltype">Schultyp</label>
                 <select class="form-control" id="schooltype" name="schooltype_id" required>
                     {% for schooltype in schooltypes %}
                         <option value="{{ schooltype.schooltype_id }}">{{ schooltype.schooltype_name }}</option>
@@ -54,17 +54,17 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="date_of_birth">Date of Birth</label>
+                <label for="date_of_birth">Geburtsdatum</label>
                 <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" required>
             </div>
             
-            <!-- Additional fields for the student's details -->
-            <button type="submit" class="btn btn-primary">Add Student</button>
+            <!-- Zusätzliche Felder für die Schülerdetails -->
+            <button type="submit" class="btn btn-primary">Schüler hinzufügen</button>
         </form>
     </div>
     
 
-    <!-- Scripts (Bootstrap JS, etc.) -->
+    <!-- Skripte (Bootstrap JS, etc.) -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>

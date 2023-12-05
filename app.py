@@ -73,17 +73,17 @@ def create_role(role_name):
         else:
             print(f"Role '{role_name}' already exists.")
 
-def create_user_with_role(username, password, role_name, paygrade=None):
+def create_user_with_role(username, password, role_name, paygrade=1):
     role = Role.query.filter_by(name=role_name).first()
     if role and role.name == 'admin':
-        new_user = User(username=username, password_hash=bcrypt.generate_password_hash(password).decode('utf-8'), role_id=role.id)
+        new_user = User(username=username, password_hash=bcrypt.generate_password_hash(password).decode('utf-8'), role_id=role.id, paygrade_id=1)
         db.session.add(new_user)
         db.session.commit()
         print(f"User '{username}' created with role '{role_name}'")
         return "User created successfully", True
     elif role and role.name == 'tutor':
         if paygrade is not None:
-            new_user = User(username=username, password_hash=bcrypt.generate_password_hash(password).decode('utf-8'), role_id=role.id, paygrade_id=paygrade.id)
+            new_user = User(username=username, password_hash=bcrypt.generate_password_hash(password).decode('utf-8'), role_id=role.id, paygrade_id=paygrade)
             db.session.add(new_user)
             db.session.commit()
             print(f"User '{username}' created with role '{role_name}'")
@@ -407,9 +407,10 @@ def create_user():
 
         # Fetch the paygrade from the database if paygrade_id is provided
         paygrade = Paygrade.query.get(paygrade_id) if paygrade_id else None
+        paygrade_id = paygrade.id if paygrade else None
 
         # Call your create_user_with_role function
-        message, success = create_user_with_role(username, password, role_name, paygrade)
+        message, success = create_user_with_role(username, password, role_name, paygrade_id)
         flash(message, 'success' if success else 'danger')
 
         if success:
@@ -679,6 +680,7 @@ def add_schooltype():
         db.session.add(new_schooltype)
         db.session.commit()
         # Redirect or notify of success
+        return redirect(url_for('modify_subjects'))
     return render_template('create_schooltype.html')
 
 @app.route('/add_subject', methods=['GET', 'POST'])
@@ -696,6 +698,7 @@ def add_subject():
             new_subject = Subject(schooltype_id=schooltype_id, subject_name=subject_name)
             db.session.add(new_subject)
             db.session.commit()
+            return redirect(url_for('modify_subjects'))
             # Redirect or notify of success
         else:
             # Handle the case where school type is not selected

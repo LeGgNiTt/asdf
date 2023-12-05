@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Create Subjects</title>
+    <title>Fächer erstellen</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <!-- Add any additional CSS files here -->
+    <!-- Fügen Sie hier zusätzliche CSS-Dateien hinzu -->
     <style>
         .fc-day-grid-event .fc-content {
             white-space: normal;
@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
 </head>
 <body>
-    <!-- Navigation Bar -->
+    <!-- Navigationsleiste -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -21,37 +21,37 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="/modify_lessons">Modify Lesson</a>
+                <li class="nav-item ">
+                    <a class="nav-link" href="/modify_lessons">Lektion bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Modify Users</a>
-                </li>
-                <li class="nav-item active">
-                    <a class="nav-link" href="/modify_subjects">Modify Subjects</a>
+                    <a class="nav-link" href="/modify_users">Benutzer bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/modify_family">Modify Family</a>
+                    <a class="nav-link active" href="/modify_subjects">Fächer bearbeiten</a>
                 </li>
-                <!-- Add more links as needed -->
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_family">Familie bearbeiten</a>
+                </li>
+                <!-- Weitere Links hinzufügen, falls erforderlich -->
             </ul>
         </div>
     </nav>
     <div class="container mt-4">
-        <h2>Add Subject</h2>
+        <h2>Fach hinzufügen</h2>
         <form action="{{ url_for('add_subject') }}" method="post">
-            <label for="subject_name">Subject Name:</label>
+            <label for="subject_name">Fachname:</label>
             <input type="text" id="subject_name" name="subject_name" required><br>
 
-            <label for="schooltype_id">School Type:</label>
+            <label for="schooltype_id">Schultyp:</label>
             <select id="schooltype_id" name="schooltype_id" required>
-                <option value="">Select a School Type</option>
+                <option value="">Wählen Sie einen Schultyp aus</option>
                 {% for schooltype in schooltypes %}
                 <option value="{{ schooltype.schooltype_id }}">{{ schooltype.schooltype_name }}</option>
                 {% endfor %}
             </select><br>
 
-            <input type="submit" value="Add Subject" class="btn btn-primary">
+            <input type="submit" value="Fach hinzufügen" class="btn btn-primary">
         </form>
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
