@@ -38,25 +38,25 @@
                 <!-- Am Anfang der Seite hinzufügen -->
                 <div class="container mt-4">
                     <h2>Lektionen filtern</h2>
-                    <form id="filter-form" method="post">
+                    <form id="filter-form" method="post" action="/modify_lessons">
                         <div class="form-group">
                             <label for="from_date">Von Datum</label>
-                            <input type="date" class="form-control" id="from_date" value="{{ today }}">
+                            <input type="date" class="form-control" id="from_date" name="from_date" value="{{ today }}">
                         </div>
                         <div class="form-group">
                             <label for="to_date">Bis Datum</label>
-                            <input type="date" class="form-control" id="to_date" value="{{ today }}">
+                            <input type="date" class="form-control" id="to_date" name="to_date" value="{{ today }}">
                         </div>
                         <div class="form-group">
                             <label for="schooltype">Schultyp</label>
-                            <select class="form-control" id="schooltype">
-                                <!-- Optionen werden von JavaScript befüllt -->
+                            <select class="form-control" id="schooltype" name="schooltype_id">
+                                <!-- Options will be filled by JavaScript -->
                             </select>
                         </div>
                         <div class="form-group">
                             <label for="subject">Fach</label>
-                            <select class="form-control" id="subject">
-                                <!-- Optionen werden von JavaScript befüllt -->
+                            <select class="form-control" id="subject" name="subject_id">
+                                <!-- Options will be filled by JavaScript -->
                             </select>
                         </div>
                         <button type="submit">Filter anwenden</button>

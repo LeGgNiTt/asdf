@@ -791,7 +791,7 @@ def edit_student(student_id):
 
 from datetime import datetime, timedelta
 
-@app.route('/modify_lessons', methods=['GET'])
+@app.route('/modify_lessons', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def modify_lessons():
@@ -897,6 +897,7 @@ def add_lesson():
         student_id = request.form.get('student_id')
         subject_id = request.form.get('subject_id')
         price = request.form.get('price')
+        regelmaessig = request.form.get('regelmaessig') is not None
         
         price_adjustment_id = request.form.get('price_adjustment_id')
         price_adjustment = PriceAdjustment.query.get(price_adjustment_id)
@@ -926,6 +927,26 @@ def add_lesson():
                 db.session.add(new_lesson)
             db.session.commit()
             return redirect(url_for('modify_lessons'))
+        if regelmaessig:
+            for i in range(4):  # create a lesson for each of the next 4 weeks
+                new_lesson = Lesson(
+                    date=date + timedelta(weeks=i),
+                    start_time=start_time,
+                    end_time=end_time,
+                    tutor_id=tutor_id,
+                    subject_id=subject_id,
+                    price=price,
+                    price_adjustment_id=price_adjustment_id,
+                    final_price=(float(price) - adjustment_value),
+                    lesson_type_id=1
+                )
+                for student_id in student_ids:
+                    student = Student.query.get(student_id)
+                    student.enrolled_lessons.append(new_lesson)
+                db.session.add(new_lesson)
+            db.session.commit()
+            return redirect(url_for('modify_lessons'))
+
         if len(student_ids) > 1:
             new_lesson = Lesson(
                 date=date,
