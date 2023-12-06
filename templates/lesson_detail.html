@@ -12,6 +12,16 @@
         <h1>Lektion bearbeiten</h1>
         <form method="POST" action="{{ url_for('update_lesson', lesson_id=lesson.lesson_id) }}">
             <div class="form-group">
+                <label for="students">Students</label>
+                {% for student in students %}
+                    <p>{{ student.FirstName }} {{ student.LastName }}</p>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                <label for="has_occured">Hat stattgefunden</label>
+                <input type="checkbox" id="has_occured" name="has_occured" {% if lesson.has_occured %}checked{% endif %}>
+            </div>
+            <div class="form-group">
                 <label for="schooltype">Schultyp</label>
                 <select class="form-control" id="schooltype" name="schooltype" required>
                     {% for schooltype in schooltypes %}
@@ -24,18 +34,23 @@
                 <input type="text" class="form-control" id="subject" name="subject" value="{{ subject.subject_name }}" required>
             </div>
             
-            <div class="form-group">
-                <label for="date">Datum</label>
-                <input type="date" class="form-control" id="date" name="date" value="{{ lesson.date }}" required>
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label for="date">Datum</label>
+                    <input type="date" class="form-control" id="date" name="date" value="{{ lesson.date }}" required>
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="start_time">Startzeit</label>
+                    <input type="time" class="form-control" id="start_time" name="start_time" value="{{ lesson.start_time }}" required>
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="end_time">Endzeit</label>
+                    <input type="time" class="form-control" id="end_time" name="end_time" value="{{ lesson.end_time }}" required>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="start_time">Startzeit</label>
-                <input type="time" class="form-control" id="start_time" name="start_time" value="{{ lesson.start_time }}" required>
-            </div>
-            <div class="form-group">
-                <label for="end_time">Endzeit</label>
-                <input type="time" class="form-control" id="end_time" name="end_time" value="{{ lesson.end_time }}" required>
-            </div>
+            
+            
+            
             <div class="form-group">
                 <label for="notes">Notizen</label>
                 {% for note in notes %}
@@ -51,14 +66,25 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="form-group">
-                <label for="price">Preis</label>
-                <input type="number" step="1" class="form-control" id="price" name="price" value="{{ lesson.price }}" required>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="price">Preis</label>
+                    <input type="number" step="1" class="form-control" id="price" name="price" value="{{ lesson.price }}" required>
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="price_adjustment">Price Adjustment</label>
+                    <select class="form-control" id="price_adjustment" name="price_adjustment" required>
+                        {% for adjustment in price_adjustments %}
+                            <option value="{{ adjustment.id }}" data-value="{{ adjustment.value }}" {% if adjustment.id == lesson.price_adjustment_id %}selected{% endif %}>{{ adjustment.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
             <div class="form-group">
                 <label for="final_price">Endpreis</label>
                 <input type="number" step="1" class="form-control" id="final_price" name="final_price" value="{{ lesson.final_price }}" required>
             </div>
+            
             {% endif %}
             <button type="submit" class="btn btn-primary">Lektion aktualisieren</button>
         </form>
@@ -67,6 +93,40 @@
 <script>
     const schooltypeSelect = document.getElementById('schooltype');
     const subjectSelect = document.getElementById('subject');
+    // Get the price, price adjustment, and final price fields
+    const priceField = document.getElementById('price');
+    const priceAdjustmentField = document.getElementById('price_adjustment');
+    const finalPriceField = document.getElementById('final_price');
+    // Flag to track if the price or price adjustment has been changed by the user
+    let isUserChanged = false;
+
+    // Function to calculate the final price
+    function calculateFinalPrice() {
+        // If the price or price adjustment has not been changed by the user, do not calculate and update the final price
+        if (!isUserChanged) {
+            return;
+        }
+
+        const price = parseFloat(priceField.value);
+        const priceAdjustmentOption = priceAdjustmentField.options[priceAdjustmentField.selectedIndex];
+        const priceAdjustment = parseFloat(priceAdjustmentOption.getAttribute('data-value'));
+
+        // Calculate the final price
+        const finalPrice = price - priceAdjustment;
+
+        // Set the value of the final price field
+        finalPriceField.value = finalPrice.toFixed(2);
+    }
+
+    // Add event listeners to the price and price adjustment fields
+    priceField.addEventListener('input', function() {
+        isUserChanged = true;
+        calculateFinalPrice();
+    });
+    priceAdjustmentField.addEventListener('change', function() {
+        isUserChanged = true;
+        calculateFinalPrice();
+    });
 
     function handleSchooltypeSelection() {
         const schooltypeId = this.value;

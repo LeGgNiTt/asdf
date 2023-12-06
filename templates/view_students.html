@@ -39,6 +39,7 @@
                 <th>Nachname</th>
                 <th>Geburtstag</th>
                 <th>Niveau</th>
+                <th>Lesson</th> <!-- Added column for lesson -->
             </tr>
         </thead>
         <tbody>
@@ -48,13 +49,9 @@
                 <td>{{student.LastName}}</td>
                 <td>{{student.DateOfBirth}}</td>
                 <td>{{student.schooltype}}</td>
+                <td><a href="/add_lesson/{{student.StudentID}}">Add Lesson</a></td> <!-- Added lesson link -->
             </tr>
             {% endfor %}
         </tbody>
     </table>
-
-
-
-
-
 </body>

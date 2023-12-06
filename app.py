@@ -462,8 +462,9 @@ def view_students():
     lessons = Lesson.query.filter_by(tutor_id=tutor_id).all()
     students = []
     for lesson in lessons:
-        student = Student.query.filter_by(StudentID=lesson.student_id).first()
-        students.append(student)
+        for student_lesson in lesson.students:
+            student = Student.query.filter_by(StudentID=student_lesson.StudentID).first()
+            students.append(student)
     return render_template('view_students.html', students=students)
 
 
@@ -511,6 +512,8 @@ def student(id):
 
 
 
+from datetime import datetime
+
 @app.route('/api/lessons')
 @login_required
 @admin_required
@@ -525,6 +528,15 @@ def get_lessons():
         start_datetime = datetime.combine(lesson.date, lesson.start_time)
         end_datetime = datetime.combine(lesson.date, lesson.end_time)
 
+        # Determine the color of the event based on whether the lesson has occurred and whether it's in the past or future
+        now = datetime.now()
+        if lesson.has_occured:
+            color = '#90EE90'  # Light green for lessons that have occurred
+        elif start_datetime > now:
+            color = '#ADD8E6'  # Light blue for lessons in the future that have not occurred
+        else:
+            color = 'red'  # Red for lessons in the past that have not occurred
+
         for student_lesson in lesson.students:
             student = Student.query.filter_by(StudentID=student_lesson.StudentID).first()
 
@@ -533,7 +545,8 @@ def get_lessons():
                 'title': f"{subject.subject_name} - {student.LastName} - {tutor.name}",
                 'start': start_datetime.isoformat(),
                 'end': end_datetime.isoformat(),
-                'description': f"Tutor: {tutor.name}, Student: {student.FirstName} {student.LastName}"
+                'description': f"Tutor: {tutor.name}, Student: {student.FirstName} {student.LastName}",
+                'color': color
             })
     return jsonify(lessons_data)
 
@@ -1014,6 +1027,51 @@ def find_tutors(subject_id, date_str, start_time_str, end_time_str):
 
     return jsonify(tutor_data)
 
+@app.route('/api/tutor_lessons', methods=['GET'])
+@login_required
+def api_tutor_lessons():
+    # Get the logged in tutor's ID
+    user_id = current_user.id
+    tutor = Tutor.query.filter_by(user_id=user_id).first()
+
+    # Get the lessons for this tutor
+    lessons = Lesson.query.filter_by(tutor_id=tutor.tutor_id).all()
+
+    # Convert the lessons to the format expected by FullCalendar
+    lesson_data = []
+    for lesson in lessons:
+        # Query the subject name separately
+        subject = Subject.query.filter_by(subject_id=lesson.subject_id).first()
+
+        # Combine date and time for start and end
+        start_datetime = datetime.combine(lesson.date, lesson.start_time)
+        end_datetime = datetime.combine(lesson.date, lesson.end_time)
+
+        # Determine the color of the event based on whether the lesson has occurred
+        now = datetime.now()
+        if lesson.has_occured:
+            color = '#90EE90'  # Light green for lessons that have occurred
+        elif start_datetime > now:
+            color = '#ADD8E6'  # Light blue for lessons in the future that have not occurred
+        else:
+            color = 'red'  # Red for lessons in the past that have not occurred
+
+        for student_lesson in lesson.students:
+            student = Student.query.filter_by(StudentID=student_lesson.StudentID).first()
+
+            lesson_data.append({
+                'id': lesson.lesson_id,
+                'title': f"{subject.subject_name} - {student.LastName} - {tutor.name}",
+                'start': start_datetime.isoformat(),
+                'end': end_datetime.isoformat(),
+                'description': f"Tutor: {tutor.name}, Student: {student.FirstName} {student.LastName}",
+                'color': color
+            })
+
+    # Return the data as JSON
+    return jsonify(lesson_data)
+
+
 @app.route('/tutor/edit_tutor', methods=['GET', 'POST'])
 @login_required
 @tutor_required
@@ -1154,7 +1212,9 @@ def lesson_detail(lesson_id):
     schooltypes = SchoolType.query.all()
     tutors = Tutor.query.all()
     notes = Note.query.filter_by(lesson_id=lesson_id).all()
-    return render_template('lesson_detail.html', lesson=lesson, is_admin=is_admin, schooltypes=schooltypes, subject=subject, tutor=tutor, tutoren=tutors, notes=notes)
+    students = lesson.students.all()
+    price_adjustment = PriceAdjustment.query.all()
+    return render_template('lesson_detail.html', lesson=lesson, is_admin=is_admin, schooltypes=schooltypes, subject=subject, tutor=tutor, tutoren=tutors, notes=notes, students=students, price_adjustments=price_adjustment)
 
 from datetime import datetime
 
@@ -1179,13 +1239,29 @@ def update_lesson(lesson_id):
         end_time += ':00'  # Add seconds
     lesson.end_time = datetime.strptime(end_time, '%H:%M:%S').time()
 
-    # Check if 'tutor_id' and 'price' fields are in the form data
+    # Check if 'tutor_id', 'price', 'price_adjustment_id', 'final_price' and 'has_occured' fields are in the form data
     if 'tutor_id' in request.form:
         tutor_id = request.form['tutor_id']
         lesson.tutor_id = tutor_id
     if 'price' in request.form:
         lesson.price = float(request.form['price'])
+    if 'price_adjustment' in request.form:
+        try:
+            # Try to get the PriceAdjustment record with the given ID
+            price_adjustment_id = int(request.form['price_adjustment'])
+            price_adjustment = PriceAdjustment.query.get(price_adjustment_id)
+            if price_adjustment is not None:
+                lesson.price_adjustment_id = price_adjustment.id
+            else:
+                print(f"No PriceAdjustment record found with ID {price_adjustment_id}")
+        except ValueError:
+            print(f"Invalid price_adjustment: {request.form['price_adjustment']}")
+    if 'final_price' in request.form:
         lesson.final_price = float(request.form['final_price'])
+    if request.form.get('has_occured') is not None:
+        lesson.has_occured = True
+    else:
+        lesson.has_occured = False
 
     db.session.commit()
 
