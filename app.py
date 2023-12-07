@@ -117,9 +117,15 @@ def get_detailed_statistics():
     detailed_statistics = 0
     return detailed_statistics
 
-def get_lessons_in_range(from_date, to_date):
-    lessons = Lesson.query.filter(Lesson.date >= from_date).filter(Lesson.date <= to_date).all()
-    return lessons
+def get_lessons_in_range(from_date, end_date, school_type_id=None, family_id=None, tutor_id=None):
+    lessons = Lesson.query.join(Student, Lesson.students).filter(Lesson.date.between(from_date, end_date))
+    if school_type_id:
+        lessons = lessons.filter(Student.schooltype_id == school_type_id)
+    if family_id:
+        lessons = lessons.filter(Student.family_id == family_id)
+    if tutor_id:
+        lessons = lessons.filter(Lesson.tutor_id == tutor_id)
+    return lessons.all()
 
 
 app = Flask(__name__)
@@ -779,7 +785,8 @@ def add_student_to_family(family_id):
         if not date_of_birth:
             flash('Date of birth is required', 'error')
             return redirect(request.url)
-        new_student = Student(FirstName=first_name, LastName=last_name, schooltype_id=schooltype_id, DateOfBirth=date_of_birth, family_id=family_id)
+        phone_num = request.form.get('phone_num')
+        new_student = Student(FirstName=first_name, LastName=last_name, schooltype_id=schooltype_id, DateOfBirth=date_of_birth, family_id=family_id, phone_num=phone_num)
         db.session.add(new_student)
         db.session.commit()
         return redirect(url_for('modify_family'))
@@ -1171,6 +1178,7 @@ def create_tutor_profile():
 
     return render_template('create_tutor_profile.html', schooltypes=schooltypes)
 
+from dateutil.relativedelta import relativedelta
 
 @app.route('/admin/finances', methods=['GET', 'POST'])
 @login_required
@@ -1178,16 +1186,29 @@ def create_tutor_profile():
 def admin_finances():
     today = datetime.now()
     from_date = datetime(today.year, today.month, 1)
-    end_date = datetime(today.year, today.month + 1, 1) - timedelta(days=1)
-    lessons = get_lessons_in_range(from_date, end_date)
-    tutors = Tutor.query.all()
+    end_date = datetime(today.year, today.month, 1) + relativedelta(months=1) - timedelta(days=1)
+    school_type = None
+    family_id = None
+    tutor_id = None
+    lessons = get_lessons_in_range(from_date, end_date, school_type, family_id, tutor_id)
+    tutors = {lesson.tutor_id: Tutor.query.get(lesson.tutor_id) for lesson in lessons}
     if request.method == 'POST':
         from_date_str = request.form.get('from_date')
         end_date_str = request.form.get('end_date')
         from_date = datetime.strptime(from_date_str, '%Y-%m-%d')
         end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
-        lessons = get_lessons_in_range(from_date, end_date)
-    return render_template('admin_finances.html', lessons=lessons, tutors=tutors)
+        school_type = request.form.get('school_type')
+        family_id = request.form.get('family_id')
+        tutor_id = request.form.get('tutor_id')
+        lessons = get_lessons_in_range(from_date, end_date, school_type, family_id, tutor_id)
+        tutors = {lesson.tutor_id: Tutor.query.get(lesson.tutor_id) for lesson in lessons}
+    users = {tutor.user_id: User.query.get(tutor.user_id) for tutor in tutors.values()}
+    paygrades = Paygrade.query.all()
+    schooltypes = SchoolType.query.all()
+    families = Family.query.all()
+    all_tutors = Tutor.query.all()
+      
+    return render_template('admin_finances.html', lessons=lessons, tutors=tutors, users=users, paygrades=paygrades, schooltypes=schooltypes, families=families, all_tutors=all_tutors, default_from_date=from_date.strftime('%Y-%m-%d'), default_end_date=end_date.strftime('%Y-%m-%d'), submitted_school_type_id=school_type, submitted_family_id=family_id, submitted_tutor_id=tutor_id)
 
 @app.route('/lesson/<int:lesson_id>')
 @login_required

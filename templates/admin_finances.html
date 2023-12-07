@@ -48,33 +48,74 @@
             </ul>
         </div>
     </nav>
-    <form method="POST">
-        <label for="from_date">From Date:</label>
-        <input type="date" id="from_date" name="from_date" required>
-        <label for="end_date">End Date:</label>
-        <input type="date" id="end_date" name="end_date" required>
-        <input type="submit" value="Submit">
-    </form>
-    
-    <!-- Lessons Table -->
-    <table>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Price</th>
-                <th>Price Adjustment</th>
-                <th>Final Price</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for lesson in lessons %}
-            <tr>
-                <td>{{ lesson.name }}</td>
-                <td>{{ lesson.price }}</td>
-                <td>{{ lesson.price_adjustment.name }}</td>
-                <td>{{ lesson.final_price }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="container">
+        <form method="POST">
+            <label for="from_date">Von Datum:</label>
+            <input type="date" id="from_date" name="from_date" value="{{ default_from_date }}" required>
+            <label for="end_date">Bis Datum:</label>
+            <input type="date" id="end_date" name="end_date" value="{{ default_end_date }}" required>
+            <label for="school_type">Schultyp:</label>
+            <!-- Schooltype dropdown -->
+            <select id="school_type" name="school_type">
+                <option value="">--Select--</option>
+                {% for schooltype in schooltypes %}
+                    <option value="{{ schooltype.schooltype_id }}" {% if schooltype.schooltype_id == submitted_school_type_id %}selected{% endif %}>{{ schooltype.schooltype_name }}</option>
+                {% endfor %}
+            </select>
+        
+            <!-- Family dropdown -->
+            <select id="family_id" name="family_id">
+                <option value="">--Select--</option>
+                {% for family in families %}
+                    <option value="{{ family.id }}" {% if family.id == submitted_family_id %}selected{% endif %}>{{ family.name }}</option>
+                {% endfor %}
+            </select>
+        
+            <!-- Tutor dropdown -->
+            <select id="tutor_id" name="tutor_id">
+                <option value="">--Select--</option>
+                {% for tutor in all_tutors %}
+                    <option value="{{ tutor.tutor_id }}" {% if tutor.tutor_id == submitted_tutor_id %}selected{% endif %}>{{ tutor.name }}</option>
+                {% endfor %}
+            </select>
+            <input type="submit" value="Absenden">
+        </form>
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Tutor Name</th>
+                    <th>Final Price</th>
+                    <th>Tutor Payment</th>
+                    <th>Profit</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lesson in lessons %}
+                    {% set tutor = tutors[lesson.tutor_id] %}
+                    {% set user_paygrade_id = users[tutor.user_id].paygrade_id %}
+                    {% if user_paygrade_id is not none %}
+                        {% set tutor_payment = paygrades[user_paygrade_id].value %}
+                        {% set profit = lesson.final_price - tutor_payment %}
+                    {% else %}
+                        {% set tutor_payment = 0 %}
+                        {% set profit = lesson.final_price %}
+                    {% endif %}
+                    
+                    {% for student in lesson.students %}
+                        <tr>
+                            <td>{{ student.FirstName }} {{ student.LastName }}</td>
+                            <td>{{ tutor.name }}</td>
+                            <td>{{ lesson.final_price }}</td>
+                            <td>{{ tutor_payment }}</td>
+                            <td>{{ profit }}</td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+
 </body>

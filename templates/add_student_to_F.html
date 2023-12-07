@@ -46,6 +46,10 @@
                 <input type="text" class="form-control" id="last_name" name="last_name" value="{{ family.name }}" required>
             </div>
             <div class="form-group">
+                <label for="phone_num">Phone Number</label>
+                <input type="text" class="form-control" id="phone_num" name="phone_num" required>
+            </div>
+            <div class="form-group">
                 <label for="schooltype">Schultyp</label>
                 <select class="form-control" id="schooltype" name="schooltype_id" required>
                     {% for schooltype in schooltypes %}

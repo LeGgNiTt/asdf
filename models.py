@@ -68,6 +68,7 @@ class Student(db.Model):
     schooltype_id = db.Column(db.Integer, db.ForeignKey('schooltype.schooltype_id'), nullable=False)
     schooltype = db.relationship('SchoolType', backref='student', lazy=True)
     enrolled_lessons = db.relationship('Lesson', secondary=lesson_students, lazy='subquery', backref=db.backref('students', lazy='dynamic'))
+    phone_num = db.Column(db.String(20), nullable=True)
 
 
 class Family(db.Model):
