@@ -95,7 +95,9 @@ def create_user_with_role(username, password, role_name, paygrade=1):
         print(f"Role '{role_name}' does not exist.")
         return f"Role '{role_name}' does not exist.", False
 
-
+def get_schooltype_id_of_subject(subject_id):
+    subject = Subject.query.get(subject_id)
+    return subject.schooltype_id if subject else None
 
 def add_weekdays():
     days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
@@ -118,9 +120,10 @@ def get_detailed_statistics():
     return detailed_statistics
 
 def get_lessons_in_range(from_date, end_date, school_type_id=None, family_id=None, tutor_id=None):
-    lessons = Lesson.query.join(Student, Lesson.students).filter(Lesson.date.between(from_date, end_date))
+    lessons = Lesson.query.filter(Lesson.date.between(from_date, end_date))
     if school_type_id:
-        lessons = lessons.filter(Student.schooltype_id == school_type_id)
+        subject_ids = [subject.subject_id for subject in Subject.query.filter_by(schooltype_id=school_type_id)]
+        lessons = lessons.filter(Lesson.subject_id.in_(subject_ids))
     if family_id:
         lessons = lessons.filter(Student.family_id == family_id)
     if tutor_id:
@@ -353,7 +356,7 @@ def login():
             if user.role.name == 'tutor':
                 tutor = Tutor.query.filter_by(user_id=user.id).first()
                 if tutor:
-                    return redirect(url_for('tutor_profile', tutor_id=tutor.tutor_id))
+                    return redirect(url_for('tutor_profile'))
                 else:
                     # If the tutor profile does not exist, redirect to create tutor profile
                     return redirect(url_for('create_tutor_profile'))
@@ -454,7 +457,7 @@ def change_poassword():
         else:
             flash('Incorrect old password', 'danger')
         
-        return redirect(url_for('tutor_dashboard'))
+        return redirect(url_for('tutor_profile'))
     
     return render_template('change_password.html', user=user)
     
@@ -1148,6 +1151,7 @@ def create_tutor_profile():
         if not tutor:
             tutor = Tutor(name = tutor_name, user_id = current_user.id)
             db.session.add(tutor)
+            db.session.commit()
         
         # Process the availability data
         for day, times in availability_data.items():
@@ -1174,7 +1178,7 @@ def create_tutor_profile():
         db.session.commit()
 
         flash('Tutor profile created successfully!', 'success')
-        return redirect(url_for('tutor_profile', tutor_id=tutor.tutor_id))
+        return redirect(url_for('tutor_profile'))
 
     return render_template('create_tutor_profile.html', schooltypes=schooltypes)
 
@@ -1200,15 +1204,21 @@ def admin_finances():
         school_type = request.form.get('school_type')
         family_id = request.form.get('family_id')
         tutor_id = request.form.get('tutor_id')
+
+        # Convert the IDs to integers if they are not None or an empty string
+        school_type = int(school_type) if school_type else None
+        family_id = int(family_id) if family_id else None
+        tutor_id = int(tutor_id) if tutor_id else None
+
         lessons = get_lessons_in_range(from_date, end_date, school_type, family_id, tutor_id)
         tutors = {lesson.tutor_id: Tutor.query.get(lesson.tutor_id) for lesson in lessons}
     users = {tutor.user_id: User.query.get(tutor.user_id) for tutor in tutors.values()}
     paygrades = Paygrade.query.all()
     schooltypes = SchoolType.query.all()
     families = Family.query.all()
-    all_tutors = Tutor.query.all()
-      
-    return render_template('admin_finances.html', lessons=lessons, tutors=tutors, users=users, paygrades=paygrades, schooltypes=schooltypes, families=families, all_tutors=all_tutors, default_from_date=from_date.strftime('%Y-%m-%d'), default_end_date=end_date.strftime('%Y-%m-%d'), submitted_school_type_id=school_type, submitted_family_id=family_id, submitted_tutor_id=tutor_id)
+    all_tutors = Tutor.query.all()    
+    lesson_schooltypes = {lesson.lesson_id: SchoolType.query.get(Subject.query.get(lesson.subject_id).schooltype_id) for lesson in lessons}
+    return render_template('admin_finances.html', lessons=lessons, tutors=tutors, users=users, paygrades=paygrades, schooltypes=schooltypes, families=families, all_tutors=all_tutors, default_from_date=from_date.strftime('%Y-%m-%d'), default_end_date=end_date.strftime('%Y-%m-%d'), submitted_school_type_id=school_type, submitted_family_id=family_id, submitted_tutor_id=tutor_id, lesson_schooltypes=lesson_schooltypes)
 
 @app.route('/lesson/<int:lesson_id>')
 @login_required

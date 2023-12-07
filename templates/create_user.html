@@ -69,6 +69,13 @@
                 document.getElementById('paygradeGroup').style.display = 'none';
             }
         });
+    
+        // Add this script to check the value of the "Rolle" field when the page loads
+        window.onload = function() {
+            if (document.getElementById('role').value == 'tutor') {
+                document.getElementById('paygradeGroup').style.display = 'block';
+            }
+        };
     </script>
 </body>
 </html>

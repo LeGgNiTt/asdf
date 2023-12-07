@@ -8,17 +8,38 @@
         .container {
             margin-bottom: 50px;
         }
+
         .form-group {
             margin-bottom: 20px;
         }
+
         #selected-subjects-display {
             margin-top: 20px;
         }
+
         #selected-subjects-tbody {
             margin-top: 10px;
         }
+
         .btn-primary {
             margin-top: 20px;
+        }
+
+        .day-container {
+            margin-bottom: 20px;
+        }
+
+        .subject-container {
+            margin-bottom: 20px;
+        }
+
+        .day-group {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .day-column {
+            width: 48%;
         }
     </style>
 </head>
@@ -34,20 +55,36 @@
 
             <!-- Verfügbarkeitszeiten -->
             {% for day in ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"] %}
-                <div>
-                    <h3>{{ day }}</h3>
-                    <label for="{{ day.lower() }}_start_1">{{ day }} Startzeit 1:</label>
-                    <input type="time" id="{{ day.lower() }}_start_1" name="{{ day.lower() }}_start_1">
-        
-                    <label for="{{ day.lower() }}_end_1">{{ day }} Endzeit 1:</label>
-                    <input type="time" id="{{ day.lower() }}_end_1" name="{{ day.lower() }}_end_1">
-        
-                    <label for="{{ day.lower() }}_start_2">{{ day }} Startzeit 2:</label>
-                    <input type="time" id="{{ day.lower() }}_start_2" name="{{ day.lower() }}_start_2">
-        
-                    <label for="{{ day.lower() }}_end_2">{{ day }} Endzeit 2:</label>
-                    <input type="time" id="{{ day.lower() }}_end_2" name="{{ day.lower() }}_end_2">
+                {% if loop.index % 2 == 1 %}
+                    <div class="day-group">
+                {% endif %}
+                <div class="day-column">
+                    <div class="day-container">
+                        <h3>{{ day }}</h3>
+                        <div class="subject-container">
+                            <label for="{{ day.lower() }}_start_1">{{ day }} Startzeit 1:</label>
+                            <input type="time" id="{{ day.lower() }}_start_1" name="{{ day.lower() }}_start_1">
+                        </div>
+
+                        <div class="subject-container">
+                            <label for="{{ day.lower() }}_end_1">{{ day }} Endzeit 1:</label>
+                            <input type="time" id="{{ day.lower() }}_end_1" name="{{ day.lower() }}_end_1">
+                        </div>
+
+                        <div class="subject-container">
+                            <label for="{{ day.lower() }}_start_2">{{ day }} Startzeit 2:</label>
+                            <input type="time" id="{{ day.lower() }}_start_2" name="{{ day.lower() }}_start_2">
+                        </div>
+
+                        <div class="subject-container">
+                            <label for="{{ day.lower() }}_end_2">{{ day }} Endzeit 2:</label>
+                            <input type="time" id="{{ day.lower() }}_end_2" name="{{ day.lower() }}_end_2">
+                        </div>
+                    </div>
                 </div>
+                {% if loop.index % 2 == 0 or loop.last %}
+                    </div>
+                {% endif %}
             {% endfor %}
 
             <!-- Schultyp und Fachauswahl -->
@@ -72,7 +109,7 @@
 
             <!-- Ausgewählte Fächer Liste -->
             <ul id="selected-subjects-list"></ul>
-            
+
             <!-- Verstecktes Feld zur Speicherung der ausgewählten Fach-IDs -->
             <input type="hidden" name="selected_subject_ids" id="selected-subjects-input">
 
@@ -91,7 +128,6 @@
                     </tbody>
                 </table>
             </div>
-
 
             <button type="submit" class="btn btn-primary">Profil erstellen</button>
         </form>
@@ -153,7 +189,6 @@
             }
             document.getElementById('selected-subjects-input').value = selectedSubjects.join(',');
         }
-
     </script>
 </body>
 </html>
