@@ -4,11 +4,6 @@
     <meta charset="UTF-8">
     <title>Benutzer erstellen</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <style>
-        #lessons-table tr.selected {
-            background-color: #add8e6;
-        }
-    </style>
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -35,210 +30,68 @@
                         </ul>
                     </div>
                 </nav>
-                <!-- Am Anfang der Seite hinzufügen -->
-                <div class="container mt-4">
-                    <h2>Lektionen filtern</h2>
-                    <form id="filter-form" method="post" action="/modify_lessons">
-                        <div class="form-group">
-                            <label for="from_date">Von Datum</label>
-                            <input type="date" class="form-control" id="from_date" name="from_date" value="{{ today }}">
-                        </div>
-                        <div class="form-group">
-                            <label for="to_date">Bis Datum</label>
-                            <input type="date" class="form-control" id="to_date" name="to_date" value="{{ today }}">
-                        </div>
-                        <div class="form-group">
-                            <label for="schooltype">Schultyp</label>
-                            <select class="form-control" id="schooltype" name="schooltype_id">
-                                <!-- Options will be filled by JavaScript -->
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="subject">Fach</label>
-                            <select class="form-control" id="subject" name="subject_id">
-                                <!-- Options will be filled by JavaScript -->
-                            </select>
-                        </div>
-                        <button type="submit">Filter anwenden</button>
-                    </form>
+    <!-- Filter Form -->
+    <div class="container mt-4">
+        <h2>Lektionen filtern</h2>
+        <form id="filter-form" method="post" action="/modify_lessons">
+            <!-- Date fields -->
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="from_date">Von Datum</label>
+                    <input type="date" class="form-control" id="from_date" name="from_date" value="{{ from_date }}">
                 </div>
-                <div class="container mt-4">
-                    <h2>Lektionen bearbeiten</h2>
-                    <a href="{{ url_for('add_lesson') }}" class="btn btn-primary mb-3">Lektion hinzufügen</a>
-                    <table class="table" id="lessons-table">
-                        <thead>
-                            <tr>
-                                <th>Datum</th>
-                                <th>Startzeit</th>
-                                <th>Endzeit</th>
-                                <th>Tutor</th>
-                                <th>Schüler</th>
-                                <th>Fach</th>
-                                <th>Aktionen</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for lesson in lessons %}
-                            <tr data-toggle="collapse" data-target="#details{{ loop.index }}">
-                                <td>{{ lesson.date }}</td>
-                                <td>{{ lesson.start_time }}</td>
-                                <td>{{ lesson.end_time }}</td>
-                                <td>{{ lesson.tutor_name }}</td>
-                                <td>{{ lesson.student_name }}</td>
-                                <td>{{ lesson.subject_name }}</td>
-                                <td>
-                                    <a href="{{ url_for('lesson_detail', lesson_id=lesson.lesson_id) }}" class="btn btn-primary btn-sm">Bearbeiten</a>
-                                    <a href="/delete_lesson/{{ lesson.lesson_id }}" class="btn btn-danger btn-sm">Löschen</a>
-                                </td>
-                            </tr>
-                            <tr id="details{{ loop.index }}" class="collapse">
-                                <td colspan="7">
-                                    <strong>Notizen:</strong> {{ lesson.notes }}
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="" id="hasOccurredCheck{{ loop.index }}" {% if lesson.has_occurred %}checked{% endif %}>
-                                        <label class="form-check-label" for="hasOccurredCheck{{ loop.index }}">
-                                            Hat stattgefunden
-                                        </label>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div class="form-group col-md-6">
+                    <label for="to_date">Bis Datum</label>
+                    <input type="date" class="form-control" id="to_date" name="to_date" value="{{ to_date }}">
                 </div>
+            </div>
+           <!-- Tutors field -->
+            <div class="form-group">
+                <label for="tutor_id">Tutor</label>
+                <select class="form-control" id="tutor_id" name="tutor_id">
+                    <option value="">All Tutors</option>
+                    {% for tutor in tutors %}
+                        <option value="{{ tutor.id }}" {% if selected_tutor == tutor.id %} selected {% endif %}>{{ tutor.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-                <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-                <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-                <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-                <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                        const today = new Date().toISOString().split('T')[0];
-                        document.getElementById('from_date').value = today;
-                        document.getElementById('to_date').value = today;
-                        // Schultypen abrufen und Dropdown-Menü für Schultypen befüllen
-                        fetch('/api/schooltypes')
-                        .then(response => response.json())
-                        .then(schooltypes => {
-                            const schooltypeSelect = document.getElementById('schooltype');
-                            schooltypes.forEach((schooltype, index) => {
-                                const option = document.createElement('option');
-                                option.value = schooltype.id;
-                                option.text = schooltype.name;
-                                if (index === 0) {
-                                    option.selected = true;
-                                }
-                                schooltypeSelect.add(option);
-                            });
-                        });
-                            // Event Listener für das Schultyp-Dropdown-Menü hinzufügen, um das Fach-Dropdown-Menü zu befüllen, wenn der ausgewählte Schultyp geändert wird
-                            document.getElementById('schooltype').addEventListener('change', function() {
-                                fetch('/api/subjects/' + this.value)
-                                    .then(response => response.json())
-                                    .then(subjects => {
-                                        const subjectSelect = document.getElementById('subject');
-                                        subjectSelect.innerHTML = subjects.map(subject => 
-                                            `<option value="${subject.id}">${subject.name}</option>`
-                                        ).join('');
-                                    });
-                            });
-                            // Event Listener für das Filter-Formular hinzufügen, um die Filter anzuwenden, wenn das Formular abgeschickt wird
-                            document.getElementById('filter-form').addEventListener('submit', function(event) {
-                                event.preventDefault();
-
-                                const date = document.getElementById('date').value;
-                                const schooltypeId = document.getElementById('schooltype').value;
-                                const subjectId = document.getElementById('subject').value;
-
-                                fetch('/modify_lessons', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/x-www-form-urlencoded',
-                                    },
-                                    body: new URLSearchParams({
-                                        'date': date,
-                                        'schooltype_id': schooltypeId,
-                                        'subject_id': subjectId
-                                    })
-                                })
-                                .then(response => response.json())
-                                .then(lessons => {
-                                    // Tabelle mit den gefilterten Lektionen aktualisieren
-                                    // Dies hängt von der Struktur Ihrer Tabelle ab
-                                    // Hier ist ein einfaches Beispiel:
-                                    const lessonsTable = document.getElementById('lessons-table');
-                                    lessonsTable.innerHTML = lessons.map(lesson => 
-                                        `<tr>
-                                            <td>${lesson.date}</td>
-                                            <td>${lesson.start_time} - ${lesson.end_time}</td>
-                                            <td>${lesson.tutor_name}</td>
-                                            <td>${lesson.student_name}</td>
-                                            <td>${lesson.subject_name}</td>
-                                            <td>${lesson.has_occurred ? 'Ja' : 'Nein'}</td>
-                                            <td>${lesson.notes}</td>
-                                        </tr>`
-                                    ).join('');
-                                });
-                            });
-                        // Event Delegation für Klicks auf Zeilen
-                        document.querySelector('#lessons-table tbody').addEventListener('click', function(event) {
-                            // Überprüfen, ob das angeklickte Element eine Zeile ist
-                            let row = event.target;
-                            while (row !== this && row.tagName !== 'TR') {
-                                row = row.parentNode;
-                            }
-                            if (row.tagName === 'TR') {
-                                const lessonId = row.getAttribute('data-lesson-id');
-                                if (lessonId) {
-                                    selectLesson(lessonId, row);
-                                }
-                            }
-                        });
-
-                        // Logik für den Bearbeiten-Button
-                        document.getElementById('edit-btn').addEventListener('click', function() {
-                            if (selectedLessonId) {
-                                window.location.href = '/edit_lesson/' + selectedLessonId; // URL zur Bearbeiten-Lektion-Route
-                            }
-                        });
-
-                        // Logik für den Löschen-Button
-                        document.getElementById('delete-btn').addEventListener('click', function() {
-                            if (selectedLessonId && confirm('Sind Sie sicher, dass Sie diese Lektion löschen möchten?')) {
-                                // Löschungsanfrage durchführen
-                                window.location.href = '/delete_lesson/' + selectedLessonId; // URL zur Löschen-Lektion-Route
-                            }
-                        });
-
-                        // Logik für den Hinzufügen-Button
-                        document.getElementById('add-btn').addEventListener('click', function() {
-                            window.location.href = '/add_lesson'; // URL zur Hinzufügen-Lektion-Route
-                        });
-                    });
-
-                    let selectedLessonId = null;
-
-                    function selectLesson(lessonId, row) {
-                        if (selectedLessonId === lessonId) {
-                            // Auswahl aufheben, wenn dieselbe Zeile erneut angeklickt wird
-                            selectedLessonId = null;
-                            document.getElementById('delete-btn').disabled = true;
-                            document.getElementById('edit-btn').disabled = true;
-                            row.classList.remove('selected');
-                        } else {
-                            // Vorher ausgewählte Zeile abwählen, falls vorhanden
-                            const previouslySelectedRow = document.querySelector('#lessons-table tr.selected');
-                            if (previouslySelectedRow) {
-                                previouslySelectedRow.classList.remove('selected');
-                            }
-                            
-                            // Zeile auswählen und Buttons aktivieren
-                            selectedLessonId = lessonId;
-                            document.getElementById('delete-btn').disabled = false;
-                            document.getElementById('edit-btn').disabled = false;
-                            row.classList.add('selected');
-                        }
-                    }
-
-                </script>
-            </body>
-            </html>
+            <!-- Students field -->
+            <div class="form-group">
+                <label for="student_id">Student</label>
+                <select class="form-control" id="student_id" name="student_id">
+                    <option value="">All Students</option>
+                    {% for student in students %}
+                        <option value="{{ student.id }}" {% if selected_student == student.id %} selected {% endif %}>{{ student.FirstName }} {{ student.LastName }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit">Filter anwenden</button>
+        </form>
+    </div>
+    <!-- Lessons Table -->
+    <div class="container mt-4">
+        <h2>Lektionen bearbeiten</h2>
+        <a href="{{ url_for('add_lesson') }}" class="btn btn-primary mb-3">Lektion hinzufügen</a>
+        <table class="table" id="lessons-table">
+            <!-- Table headers -->
+            <tbody>
+                {% for lesson in lessons %}
+                <tr>
+                    <td>{{ lesson.date }}</td>
+                    <td>{{ lesson.start_time }}</td>
+                    <td>{{ lesson.end_time }}</td>
+                    <td>{{ lesson.tutor_name }}</td>
+                    <td>{{ lesson.student_name }}</td>
+                    <td>{{ lesson.subject_name }}</td>
+                    <td>
+                        <a href="{{ url_for('lesson_detail', lesson_id=lesson.lesson_id) }}" class="btn btn-primary btn-sm">Bearbeiten</a>
+                        <a href="/delete_lesson/{{ lesson.lesson_id }}" class="btn btn-danger btn-sm">Löschen</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

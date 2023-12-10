@@ -5,6 +5,25 @@
     <title>Tutor Profil</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+    <style>
+    .container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+    }
+
+    .day-pair {
+        display: flex;
+        flex-direction: column;
+        width: 45%;
+        margin-bottom: 20px;
+    }
+
+    .day-column {
+        margin-bottom: 40px;
+        flex: 1 0 30%;
+    }
+    </style>
 </head>
 <body>
     <!-- Navbar -->
@@ -31,7 +50,7 @@
         </div>
     </nav>
     <div class="container mt-4">
-        <h2>Fächer</h2>
+        <h2>Fächer und Arbeitszeiten</h2>
         <table class="table">
             <thead>
                 <tr>
@@ -52,6 +71,41 @@
         </table>
         <button class="btn btn-primary" onclick="window.location.href='/add_subject'">Add Subject</button>
     </div>
+    <hr>
+    <form action="/tutor/edit_tutor" method="post">
+        <div class="container">
+            <!-- Verfügbarkeitszeiten -->
+            {% set times = times if times else [] %}
+            {% for day in ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"] %}
+                {% set time = times[loop.index0] if loop.index0 < times|length else None %}
+                <div class="day-column">
+                    <div class="day-container">
+                        <h3>{{ day }}</h3>
+                        <div class="subject-container">
+                            <label for="{{ day.lower() }}_start_1">{{ day }} Startzeit 1:</label>
+                            <input type="time" id="{{ day.lower() }}_start_1" name="{{ day.lower() }}_start_1" value="{{ time.start_time.strftime('%H:%M') if time else '' }}">
+                        </div>
+                        <div class="subject-container">
+                            <label for="{{ day.lower() }}_end_1">{{ day }} Endzeit 1:</label>
+                            <input type="time" id="{{ day.lower() }}_end_1" name="{{ day.lower() }}_end_1" value="{{ time.end_time.strftime('%H:%M') if time else '' }}">
+                        </div>
+                        <div class="subject-container">
+                            <label for="{{ day.lower() }}_start_2">{{ day }} Startzeit 2:</label>
+                            <input type="time" id="{{ day.lower() }}_start_2" name="{{ day.lower() }}_start_2" value="{{ time.start_time.strftime('%H:%M') if time else '' }}">
+                        </div>
+                        <div class="subject-container">
+                            <label for="{{ day.lower() }}_end_2">{{ day }} Endzeit 2:</label>
+                            <input type="time" id="{{ day.lower() }}_end_2" name="{{ day.lower() }}_end_2" value="{{ time.end_time.strftime('%H:%M') if time else '' }}">
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+            <input type="submit" value="Update Times" class="btn btn-primary">
+        </div>
+    </form>
+    <div class="mb-5"></div>
 
 
 </body>

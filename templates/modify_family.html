@@ -47,7 +47,11 @@
     </nav>
 
     <!-- Hauptinhalt -->
-    <div class="container mt-4">
+    <div class="container mt-4 d-flex">
+        <div>
+            <a href="{{ url_for('register_family') }}" class="btn btn-success btn-sm mb-4">Neue Familie registrieren</a>
+        </div>
+        <div class="flex-grow-1 ml-4">
         <h2>Familien</h2>
         <ul class="list-group">
             {% for family in families %}
@@ -76,9 +80,7 @@
             {% endfor %}
         </ul>
     </div>
-    <div>
-        <a href="{{ url_for('register_family') }}" class="btn btn-primary btn-sm">Neue Familie registrieren</a>
-    </div>
+    
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
     <script>

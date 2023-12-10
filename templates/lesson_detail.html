@@ -84,10 +84,36 @@
                 <label for="final_price">Endpreis</label>
                 <input type="number" step="1" class="form-control" id="final_price" name="final_price" value="{{ lesson.final_price }}" required>
             </div>
-            
+            <button class="btn btn-danger" onclick="deleteLesson(event, {{ lesson.lesson_id }})">Delete Lesson</button>
             {% endif %}
             <button type="submit" class="btn btn-primary">Lektion aktualisieren</button>
+            <script>
+                function deleteLesson(event, lessonId) {
+                    event.preventDefault();
+
+                    fetch('/delete_lesson/' + lessonId, {
+                        method: 'POST'
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.message) {
+                            alert(data.message);
+                        }
+                        // Redirect to the lessons list page
+                        window.location.href = "/modify_lessons";
+                    })
+                    .catch(error => {
+                        console.error('There has been a problem with your fetch operation:', error);
+                    });
+                }
+                </script>
         </form>
+        
     </div>
 </body>
 <script>

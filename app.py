@@ -690,7 +690,23 @@ def admin_lesson():
 def edit_lesson():
     pass
 def delete_lesson():
+
+
     pass
+
+@app.route('/delete_user/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_user(user_id):
+    # Fetch the user by ID
+    user = User.query.get(user_id)
+    if user:
+        # Delete the user
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify(message='User deleted successfully'), 200
+    else:
+        return jsonify(message='User not found'), 404
 
 @app.route('/add_schooltype', methods=['GET', 'POST'])
 @login_required
@@ -814,78 +830,86 @@ def edit_student(student_id):
 
 from datetime import datetime, timedelta
 
+
+def filter_lessons_in_range(from_date, end_date, school_type_id=None, subject_id=None, tutor_id=None):
+    lessons = Lesson.query.filter(Lesson.date.between(from_date, end_date))
+    if school_type_id:
+        subject_ids = [subject.subject_id for subject in Subject.query.filter_by(schooltype_id=school_type_id)]
+        lessons = lessons.filter(Lesson.subject_id.in_(subject_ids))
+    if subject_id:
+        lessons = lessons.filter(Lesson.subject_id == subject_id)
+    if tutor_id:
+        lessons = lessons.filter(Lesson.tutor_id == tutor_id)
+    return lessons.all()
+
 @app.route('/modify_lessons', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def modify_lessons():
-    # Fetch all lessons
-    lessons = Lesson.query.all()
+    today = datetime.now()
+    from_date = datetime(today.year, today.month, 1)
+    to_date = datetime(today.year, today.month, 1) + relativedelta(months=1) - timedelta(days=1)
+    schooltype_id = None
+    subject_id = None
+    tutor_id = None
+    lessons = filter_lessons_in_range(from_date, to_date, schooltype_id, subject_id, tutor_id)
+    from_date = from_date.strftime('%Y-%m-%d')
+    to_date = to_date.strftime('%Y-%m-%d')
 
-    # Format lessons for display
+    if request.method == 'POST':
+        from_date = datetime.strptime(request.form.get('from_date'), '%Y-%m-%d')
+        to_date = datetime.strptime(request.form.get('to_date'), '%Y-%m-%d')
+        schooltype_id = request.form.get('schooltype_id')
+        student_id = request.form.get('student_id')
+        tutor_id = request.form.get('tutor_id')
+        subject_id = request.form.get('subject_id')
+
+        # Convert the IDs to integers if they are not None or an empty string
+        schooltype_id = int(schooltype_id) if schooltype_id else None
+        student_id = int(student_id) if student_id else None
+        tutor_id = int(tutor_id) if tutor_id else None
+        subject_id = int(subject_id) if subject_id else None
+
+        lessons = filter_lessons_in_range(from_date, to_date, schooltype_id, subject_id, tutor_id)
+
     formatted_lessons = []
     for lesson in lessons:
-        today = datetime.today().strftime('%Y-%m-%d')
-        # Fetch tutor, student, and subject names using separate queries
-        tutor_name = Tutor.query.filter_by(tutor_id=lesson.tutor_id).first().name
-        students = lesson.students
+        tutor = Tutor.query.get(lesson.tutor_id)
+        students = lesson.students.all()
+        subject = Subject.query.get(lesson.subject_id)
         student_names = [f"{student.FirstName} {student.LastName}" for student in students]
-        subject_name = Subject.query.filter_by(subject_id=lesson.subject_id).first().subject_name
-
         formatted_lessons.append({
             'lesson_id': lesson.lesson_id,
             'date': lesson.date.strftime('%Y-%m-%d'),
             'start_time': lesson.start_time.strftime('%H:%M'),
             'end_time': lesson.end_time.strftime('%H:%M'),
-            'tutor_name': tutor_name,
+            'tutor_name': tutor.name,
             'student_name': student_names,
-            'subject_name': subject_name,
+            'subject_name': subject.subject_name,
             'has_occurred': lesson.has_occured,
-            'notes': ', '.join(note.content for note in lesson.notes) if lesson.notes else ''
-
+            'notes': lesson.notes
         })
-        if request.method == 'POST':
-            from_date_str = request.form.get('from_date')
-            to_date_str = request.form.get('to_date')
-            schooltype_id = request.form.get('schooltype_id')
-            subject_id = request.form.get('subject_id')
 
-            from_date = datetime.strptime(from_date_str, '%Y-%m-%d').date() if from_date_str else None
-            to_date = datetime.strptime(to_date_str, '%Y-%m-%d').date() if to_date_str else None
+    all_tutors = Tutor.query.all()
+    all_students = Student.query.all()
 
-            lessons_query = Lesson.query
+    return render_template('modify_lessons.html', lessons=formatted_lessons, from_date=from_date, to_date=to_date, tutors=all_tutors, students=all_students)
 
-            if from_date and to_date:
-                lessons_query = lessons_query.filter(Lesson.date.between(from_date, to_date))
-            elif from_date:
-                lessons_query = lessons_query.filter(Lesson.date >= from_date)
-            elif to_date:
-                lessons_query = lessons_query.filter(Lesson.date <= to_date)
 
-            if schooltype_id:
-                lessons_query = lessons_query.filter(Lesson.schooltype_id == schooltype_id)
+@app.route('/delete_lesson/<int:lesson_id>', methods=['POST'])
+def delete_lesson(lesson_id):
+    # Fetch the lesson from the database
+    lesson = Lesson.query.get(lesson_id)
+    if lesson is None:
+        return jsonify({'message': 'Lesson not found'}), 404
 
-            if subject_id:
-                lessons_query = lessons_query.filter(Lesson.subject_id == subject_id)
+    # Delete the lesson
+    db.session.delete(lesson)
+    db.session.commit()
 
-            lessons = lessons_query.all()
+    # Return a success message
+    return jsonify({'message': 'Lesson deleted successfully'}), 200
 
-            formatted_lessons = []
-            for lesson in lessons:
-                formatted_lessons.append({
-                    'lesson_id': lesson.id,
-                    'date': lesson.date.strftime('%Y-%m-%d'),
-                    'start_time': lesson.start_time.strftime('%H:%M'),
-                    'end_time': lesson.end_time.strftime('%H:%M'),
-                    'tutor_name': lesson.tutor.user.full_name,
-                    'student_name': lesson.student.user.full_name,
-                    'subject_name': lesson.subject.subject_name,
-                    'has_occurred': lesson.has_occurred,
-                    'notes': lesson.notes
-                })
-
-            return render_template('modify_lessons.html', lessons=formatted_lessons)
-
-    return render_template('modify_lessons.html', lessons=formatted_lessons)
 
 @app.route('/modify_users')
 @login_required
@@ -1088,10 +1112,48 @@ def api_tutor_lessons():
 def edit_tutor():
     tutor = Tutor.query.filter_by(user_id=current_user.id).first()
     subjects = Subject.query.join(TutorSubject).filter(TutorSubject.tutor_id == tutor.tutor_id).all()
-    if request.method == 'POST':
-        return False
 
-    return render_template('edit_tutor.html', tutor=tutor, subjects=subjects)
+    if request.method == 'POST':
+        # Delete all existing availability times for the tutor
+        TutorAvailability.query.filter_by(tutor_id=tutor.tutor_id).delete()
+
+        for day_id in range(1, 8):  # Monday is 1, Sunday is 7
+            for slot in ["1", "2"]:
+                start_time_key = f'day{day_id}_start_{slot}'
+                end_time_key = f'day{day_id}_end_{slot}'
+                print(f"Form data keys: {request.form.keys()}")
+
+                if start_time_key in request.form and end_time_key in request.form:
+                    start_time = request.form[start_time_key].strip()
+                    end_time = request.form[end_time_key].strip()
+
+                    print(f"Start time before conversion: {start_time}")
+                    print(f"End time before conversion: {end_time}")
+
+                    if start_time and end_time:
+                        start_time = datetime.strptime(start_time, '%H:%M').time()
+                        end_time = datetime.strptime(end_time, '%H:%M').time()
+
+                        print(f"Start time after conversion: {start_time}")
+                        print(f"End time after conversion: {end_time}")
+
+                        weekday = Weekday.query.get(day_id)
+                        print(f"Weekday: {weekday}")
+
+                        if weekday:
+                            availability = TutorAvailability(
+                                tutor_id=tutor.tutor_id,
+                                weekday_id=weekday.weekday_id,
+                                start_time=start_time,
+                                end_time=end_time
+                            )
+                            print(f"TutorAvailability: {availability}")
+                            db.session.add(availability)
+        db.session.commit()
+        return redirect(url_for('edit_tutor'))
+
+    times = TutorAvailability.query.filter_by(tutor_id=tutor.tutor_id).all()
+    return render_template('edit_tutor.html', tutor=tutor, subjects=subjects, times=times)
 
 
 def query_lessons(date, tutor_id):
@@ -1302,5 +1364,4 @@ def update_lesson(lesson_id):
 
 
 if __name__ == '__main__':
-    create_admin_user('hansueli', 'V4-guns5')
     app.run(debug=True)

@@ -55,13 +55,31 @@
                     <td>{{ user.username }}</td>
                     <td>{{ user.role }}</td>
                     <td>{{ user.is_tutor }}</td>
-                    <td><a href="/edit_user/{{ user.user_id }}">Bearbeiten</a></td> <!-- Bearbeiten-Button mit dynamischer Benutzer-ID hinzufügen -->
+                    <td>
+                        <button class="btn btn-danger" onclick="deleteUser(event, {{ user.user_id }})">Nutzer löschen</button>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    <script>
+    
+    function deleteUser(event, userId) {
+    event.preventDefault();
 
+    fetch('/delete_user/' + userId, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            alert(data.message);
+        }
+        location.reload();
+    });
+    }
+    </script>
 
 </body>
 <script>

@@ -53,8 +53,6 @@ class TutorAvailability(db.Model):
     weekday_id = db.Column(db.Integer, db.ForeignKey('weekday.weekday_id'), primary_key=True)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
-
-    # Assuming no need to explicitly declare 'tutor' here as it's covered by backref in Tutor
     weekday = db.relationship('Weekday', backref='tutor_availabilities')
 
 
