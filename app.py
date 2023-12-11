@@ -546,17 +546,27 @@ def get_lessons():
         else:
             color = 'red'  # Red for lessons in the past that have not occurred
 
+        # Initialize an empty list to store student names
+        student_names = []
+
+        # Loop over each student in the lesson
         for student_lesson in lesson.students:
             student = Student.query.filter_by(StudentID=student_lesson.StudentID).first()
+            # Add the student's name to the list
+            student_names.append(f"{student.FirstName} {student.LastName}")
 
-            lessons_data.append({
-                'id': lesson.lesson_id,
-                'title': f"{subject.subject_name} - {student.LastName} - {tutor.name}",
-                'start': start_datetime.isoformat(),
-                'end': end_datetime.isoformat(),
-                'description': f"Tutor: {tutor.name}, Student: {student.FirstName} {student.LastName}",
-                'color': color
-            })
+        # Create a string with all student names separated by commas
+        student_names_str = ', '.join(student_names)
+
+        # Create the calendar object with the student names in the title
+        lessons_data.append({
+            'id': lesson.lesson_id,
+            'title': f"{subject.subject_name} - {student_names_str} - {tutor.name}",
+            'start': start_datetime.isoformat(),
+            'end': end_datetime.isoformat(),
+            'description': f"Tutor: {tutor.name}, Students: {student_names_str}",
+            'color': color
+        })
     return jsonify(lessons_data)
 
 
@@ -859,17 +869,14 @@ def modify_lessons():
     if request.method == 'POST':
         from_date = datetime.strptime(request.form.get('from_date'), '%Y-%m-%d')
         to_date = datetime.strptime(request.form.get('to_date'), '%Y-%m-%d')
-        schooltype_id = request.form.get('schooltype_id')
         student_id = request.form.get('student_id')
         tutor_id = request.form.get('tutor_id')
-        subject_id = request.form.get('subject_id')
 
         # Convert the IDs to integers if they are not None or an empty string
-        schooltype_id = int(schooltype_id) if schooltype_id else None
+
         student_id = int(student_id) if student_id else None
         tutor_id = int(tutor_id) if tutor_id else None
-        subject_id = int(subject_id) if subject_id else None
-
+        
         lessons = filter_lessons_in_range(from_date, to_date, schooltype_id, subject_id, tutor_id)
 
     formatted_lessons = []
@@ -877,7 +884,7 @@ def modify_lessons():
         tutor = Tutor.query.get(lesson.tutor_id)
         students = lesson.students.all()
         subject = Subject.query.get(lesson.subject_id)
-        student_names = [f"{student.FirstName} {student.LastName}" for student in students]
+        student_names = ', '.join([f"{student.FirstName} {student.LastName}" for student in students])
         formatted_lessons.append({
             'lesson_id': lesson.lesson_id,
             'date': lesson.date.strftime('%Y-%m-%d'),
@@ -1106,6 +1113,12 @@ def api_tutor_lessons():
     return jsonify(lesson_data)
 
 
+@app.template_filter('formatdate')
+def format_date(value, format='%d-%m-%Y'):
+    return datetime.strptime(value, '%Y-%m-%d').strftime(format)
+
+
+
 @app.route('/tutor/edit_tutor', methods=['GET', 'POST'])
 @login_required
 @tutor_required
@@ -1319,7 +1332,7 @@ def update_lesson(lesson_id):
         return redirect(url_for('modify_lessons'))
 
     # Update the lesson details
-    subject = Subject.query.filter_by(subject_name=request.form['subject']).one()
+    subject = Subject.query.filter_by(subject_id=request.form['subject']).one()
     lesson.subject_id = subject.subject_id
     lesson.date = datetime.strptime(request.form['date'], '%Y-%m-%d').date()
     start_time = request.form['start_time']

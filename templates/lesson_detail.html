@@ -31,7 +31,10 @@
             </div>
             <div class="form-group">
                 <label for="subject">Fach</label>
-                <input type="text" class="form-control" id="subject" name="subject" value="{{ subject.subject_name }}" required>
+                <select class="form-control" id="subject" name="subject" required>
+                    <!-- Options will be populated by JavaScript -->
+                    <option value="{{ subject.subject_id }}" selected>{{ subject.subject_name }}</option>
+                </select>
             </div>
             
             <div class="form-row">
@@ -196,7 +199,7 @@
     schooltypeSelect.addEventListener('change', handleSchooltypeSelection);
 </script>
 <script>
-function goBack() {
-    window.history.back();
-}
+    function goBack() {
+        window.history.back();
+    }
 </script>
