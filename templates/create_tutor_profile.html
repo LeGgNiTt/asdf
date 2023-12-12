@@ -53,40 +53,6 @@
                 <input type="text" class="form-control" id="name" name="name" required>
             </div>
 
-            <!-- Verfügbarkeitszeiten -->
-            {% for day in ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"] %}
-                {% if loop.index % 2 == 1 %}
-                    <div class="day-group">
-                {% endif %}
-                <div class="day-column">
-                    <div class="day-container">
-                        <h3>{{ day }}</h3>
-                        <div class="subject-container">
-                            <label for="{{ day.lower() }}_start_1">{{ day }} Startzeit 1:</label>
-                            <input type="time" id="{{ day.lower() }}_start_1" name="{{ day.lower() }}_start_1">
-                        </div>
-
-                        <div class="subject-container">
-                            <label for="{{ day.lower() }}_end_1">{{ day }} Endzeit 1:</label>
-                            <input type="time" id="{{ day.lower() }}_end_1" name="{{ day.lower() }}_end_1">
-                        </div>
-
-                        <div class="subject-container">
-                            <label for="{{ day.lower() }}_start_2">{{ day }} Startzeit 2:</label>
-                            <input type="time" id="{{ day.lower() }}_start_2" name="{{ day.lower() }}_start_2">
-                        </div>
-
-                        <div class="subject-container">
-                            <label for="{{ day.lower() }}_end_2">{{ day }} Endzeit 2:</label>
-                            <input type="time" id="{{ day.lower() }}_end_2" name="{{ day.lower() }}_end_2">
-                        </div>
-                    </div>
-                </div>
-                {% if loop.index % 2 == 0 or loop.last %}
-                    </div>
-                {% endif %}
-            {% endfor %}
-
             <!-- Schultyp und Fachauswahl -->
             <div class="form-group">
                 <label for="schooltype-select">Schultyp auswählen:</label>

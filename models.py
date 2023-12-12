@@ -153,3 +153,11 @@ class Note(db.Model):
             'date': self.date,
             'content': self.content
         }
+
+
+class Finance(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
+    amount = db.Column(db.Float)
+    description = db.Column(db.String(255))
+    family_id = db.Column(db.Integer, db.ForeignKey('family.id'))

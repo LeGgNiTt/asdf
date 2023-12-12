@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Modify Lessons</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        /* Additional styles can go here */
+        #lessons-table tr.selected {
+            background-color: #add8e6;
+        }
+        html, body {
+            text-align: center;
+            margin: 0;
+        }
+        form {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .footer {
+            background-color: #343a40;
+            color: white;
+            text-align: left;
+                        border-top: 5px solid #343a40;
+                        height: 30px;   
+                    }
+
+                    
+                </style>
+                </head>
+                <body>
+                    <!-- Navigationsleiste -->
+                    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+                        <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
+                        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                        <div class="collapse navbar-collapse" id="navbarNav">
+                            <ul class="navbar-nav">
+                                <li class="nav-item ">
+                                    <a class="nav-link active" href="/modify_lessons">Lektion bearbeiten</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/modify_users">Benutzer bearbeiten</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/modify_subjects">Fächer bearbeiten</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/modify_family">Familie bearbeiten</a>
+                                </li>
+                                <!-- Weitere Links hinzufügen, falls erforderlich -->
+                            </ul>
+                        </div>
+                    </nav>
+                    <!-- Inhalt -->
+                    <div class="container mt-4">
+                        <h2>Lektion hinzufügen</h2>
+                        <form method="post">
+
+                            <!-- Ferienkurs Checkbox -->
+                            <div class="form-group">
+                                <label for="ferienkurs">Ferienkurs</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="ferienkurs" name="ferienkurs">
+                                    <label class="form-check-label" for="ferienkurs">
+                                        Ferienkurs
+                                    </label>
+                                </div>
+                            </div>
+                            <!-- Schüler Checkboxen -->
+                            <div class="form-group">
+                                <label for="students">Schüler</label>
+                                <div style="height: 200px; overflow-y: scroll; border: 1px solid #ced4da; padding: .375rem .75rem; border-radius: .25rem;">
+                                    {% for student in students %}
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="{{ student.StudentID }}" id="student{{ student.StudentID }}" name="student_ids">
+                                            <label class="form-check-label" for="student{{ student.StudentID }}">
+                                                {{ student.FirstName }} {{ student.LastName }}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Schulart Dropdown -->
+                            <div class="form-group">
+                                <label for="schooltype">Schulart</label>
+                                <select class="form-control" id="schooltype" name="schooltype_id">
+                                    <option value="">Wählen Sie eine Schulart aus</option>
+                                    {% for schooltype in schooltypes %}
+                                    <option value="{{ schooltype.schooltype_id}}">{{ schooltype.schooltype_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <!-- Fach Dropdown (Anfangs leer) -->
+                            <div class="form-group">
+                                <label for="subject">Fach</label>
+                                <select class="form-control" id="subject" name="subject_id">
+                                    <!-- Optionen werden dynamisch befüllt -->
+                                </select>
+                            </div>
+
+                            <!-- Datum und Uhrzeit Felder -->
+                            <div class="form-group">
+                                <label for="date">Datum</label>
+                                <input type="date" class="form-control" id="date" name="date" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="start_time">Startzeit</label>
+                                <input type="time" class="form-control" id="start_time" name="start_time" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="end_time">Endzeit</label>
+                                <input type="time" class="form-control" id="end_time" name="end_time" required>
+                            </div>
+
+                            <!-- Tutor Dropdown (Anfangs leer) -->
+                            <div class="form-group">
+                                <label for="tutor">Tutor</label>
+                                <select class="form-control" id="tutor" name="tutor_id">
+                                    <!-- Optionen werden dynamisch befüllt -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="price">Preis</label>
+                                <input type="number" class="form-control" id="price" name="price" value="90" required>
+                            </div>
+                            <!-- Preisanpassung Dropdown -->
+                            <div class="form-group">
+                                <label for="price_adjustment">Preisanpassung</label>
+                                <select class="form-control" id="price_adjustment" name="price_adjustment_id">
+                                    <option value="">Wählen Sie eine Preisanpassung aus</option>
+                                    {% for price_adjustment in price_adjustments %}
+                                    <option value="{{ price_adjustment.id }}">{{ price_adjustment.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <!-- Regelmäßig Checkbox -->
+                            <div class="form-group">
+                                <label for="regelmaessig">Regelmäßig</label>
+                                <input type="checkbox" class="form-control" id="regelmaessig" name="regelmaessig">
+                            </div>
+
+                            <!-- Senden Button -->
+                            <button type="submit" class="btn btn-primary">Lektion hinzufügen</button>
+                            
+                        </form>
+                    </div>
+
+
+                    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+                    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+                    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const schooltypeSelect = document.getElementById('schooltype');
+                            const subjectSelect = document.getElementById('subject');
+                            const dateInput = document.getElementById('date');
+                            const startTimeInput = document.getElementById('start_time');
+                            const endTimeInput = document.getElementById('end_time');
+                            const tutorSelect = document.getElementById('tutor');
+                        
+                            // Funktion zur Behandlung der Auswahl der Schulart
+                            function handleSchooltypeSelection() {
+                                console.log('Schulartauswahl geändert');
+                                const schooltypeId = this.value;
+                                console.log(`schooltypeId: ${schooltypeId}`);  // Diese Zeile hinzufügen
+                                if (schooltypeId) {
+                                    fetchSubjects(schooltypeId);
+                                } else {
+                                    clearDropdowns();
+                                }
+                            }
+                        
+                            // Funktion zum Abrufen und Befüllen der Fächer
+                            function fetchSubjects(schooltypeId) {
+                                console.log('Fächer für Schulart abrufen', schooltypeId);
+                                fetch(`/api/subjects/${schooltypeId}`)
+                                .then(response => response.json())
+                                .then(subjects => {
+                                    populateDropdown(subjectSelect, subjects, 'Wählen Sie ein Fach aus');
+                                })
+                                .catch(error => console.error('Fehler:', error));
+                            }
+                            schooltypeSelect.addEventListener('change', handleSchooltypeSelection);
+                        
+                            // Funktion zum Abrufen und Befüllen der Tutoren
+                            function fetchTutorsForSubjectAndTime(subjectId, date, startTime, endTime) {
+                                fetch(`/api/tutors/${subjectId}/${date}/${startTime}/${endTime}`)
+                                .then(response => response.json())
+                                .then(tutors => {
+                                    populateDropdown(tutorSelect, tutors, 'Wählen Sie einen Tutor aus');
+                                })
+                                .catch(error => console.error('Fehler:', error));
+                            }
+                        
+                            // Hilfsfunktion zum Befüllen der Dropdown-Optionen
+                            function populateDropdown(dropdown, items, defaultOptionText) {
+                                let options = `<option value="">${defaultOptionText}</option>`;
+                                items.forEach(item => {
+                                    options += `<option value="${item.id}">${item.name}</option>`;
+                                });
+                                dropdown.innerHTML = options;
+                            }
+                        
+                            // Hilfsfunktion zum Leeren der Dropdowns
+                            function clearDropdowns() {
+                                subjectSelect.innerHTML = '';
+                                tutorSelect.innerHTML = '';
+                            }
+                        
+                            // Event-Listener
+                            
+                            subjectSelect.addEventListener('change', function() {
+                                const subjectId = this.value;
+                                const date = dateInput.value;
+                                const startTime = startTimeInput.value;
+                                const endTime = endTimeInput.value;
+                        
+                                if (subjectId && date && startTime && endTime) {
+                                    fetchTutorsForSubjectAndTime(subjectId, date, startTime, endTime);
+                                }
+                            });
+                            dateInput.addEventListener('change', updateTutorList);
+                            startTimeInput.addEventListener('change', updateTutorList);
+                            endTimeInput.addEventListener('change', updateTutorList);
+                        
+                            function updateTutorList() {
+                                const subjectId = subjectSelect.value;
+                                const date = dateInput.value;
+                                const startTime = startTimeInput.value;
+                                const endTime = endTimeInput.value;
+                        
+                                if (subjectId && date && startTime && endTime) {
+                                    fetchTutorsForSubjectAndTime(subjectId, date, startTime, endTime);
+                                }
+                            }
+                        });
+                        </script>
+                    <footer class="footer">
+                        <p>Software von: Aleksandrs Unterkirhers</p>
+                    </footer>
+                </body>
+
+            </html>

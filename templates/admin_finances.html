@@ -5,6 +5,10 @@
     <title>Admin Panel</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.5.3/jspdf.debug.js"></script>
+    <script src="https://unpkg.com/jspdf-autotable@3.5.23"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.5.0-beta4/html2canvas.min.js"></script>
 </head>
 <body>
     <div class="modal fade" id="lessonDetailsModal" tabindex="-1" aria-hidden="true">
@@ -82,12 +86,13 @@
             <input type="submit" value="Absenden">
         </form>
 
-        <table class="table table-bordered">
+        <!-- Table 1 -->
+        <table class="table table-bordered" id="table1">
             <thead>
                 <tr>
                     <th>Schülername</th>
                     <th>Tutorname</th>
-                    <th>Schultyp</th> <!-- New column for subject -->
+                    <th>Schultyp</th>
                     <th>Endpreis</th>
                     <th>Tutorzahlung</th>
                     <th>Rest</th>
@@ -118,13 +123,77 @@
                         </tr>
                     {% endfor %}
                 {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Table 2 -->
+        <table class="table table-bordered" id="table2">
+            <thead>
                 <tr>
-                    <td colspan="5">Total</td>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th></th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for finance in finances %}
+                    <tr>
+                        <td>{{ finance.description }}</td>
+                        <td>{{ finance.amount }}</td>
+                        <td></td>
+                        <td>{{ finance.amount }}</td>
+                    </tr>
+                    {% set ns.total_profit = ns.total_profit + finance.amount %}
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Table 3 -->
+        <table class="table table-bordered" id="table3">
+            <thead>
+                <tr>
+                    <th colspan="5">Total</th>
+                    <th>Total Profit</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="5"></td>
                     <td>{{ ns.total_profit }}</td>
                 </tr>
             </tbody>
         </table>
     </div>
-</body>
+    <button onclick="generatePDF()">Generate PDF</button>
+    <script>
+        function generatePDF() {
+            // Add the 'pdf-hide' class to the elements you want to hide
+            var filters = document.querySelectorAll('.filter');
+            filters.forEach(function(filter) {
+                filter.classList.add('pdf-hide');
+            });
 
+            var element = document.querySelector('.container');
+            var originalWidth = element.style.width;
+
+            // Adjust the width of the content
+            element.style.width = '200px';
+
+            var opt = {
+                margin: 1,
+                filename: 'myfile.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 1.5 }, // Reduce the scale
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().from(element).set(opt).save().then(function() {
+                // Restore the original width and remove the 'pdf-hide' class after generating the PDF
+                element.style.width = originalWidth;
+                filters.forEach(function(filter) {
+                    filter.classList.remove('pdf-hide');
+                });
+            });
+        }
+    </script>
 </body>

@@ -712,7 +712,8 @@ def delete_user(user_id):
     user = User.query.get(user_id)
     if user:
         # Delete the user
-        db.session.delete(user)
+        user.username = 'geloecht'
+        user.password = 'geloecht'
         db.session.commit()
         return jsonify(message='User deleted successfully'), 200
     else:
@@ -1045,6 +1046,18 @@ def add_lesson():
     schooltypes = SchoolType.query.all()
     return render_template('add_lesson.html', students=students, price_adjustments=price_adjustments, schooltypes=schooltypes)
 
+@app.route('/add_lesson/<int:student_id>', methods=['GET', 'POST'])
+@login_required
+@tutor_required  # Assuming you have a similar decorator for tutors
+def add_lesson_for_student(student_id):
+    student = Student.query.get(student_id)
+
+    # Render the template with the student
+    return render_template('add_lesson_for_student.html', student=student)
+
+
+
+
 from datetime import datetime
 
 @app.route('/api/find_tutors/<int:subject_id>/<date_str>/<start_time_str>/<end_time_str>', methods=['GET'])
@@ -1185,22 +1198,6 @@ def create_tutor_profile():
     schooltypes = SchoolType.query.all()
     weekdays = Weekday.query.order_by(Weekday.weekday_id).all()  # Get all weekdays from the database in order
     if request.method == 'POST':
-        # Dictionary to hold availability data
-        availability_data = {}
-
-        for weekday in weekdays:  # Loop through weekdays using their IDs
-            for slot in range(1, 5):  # Adjust this range according to the number of slots you have
-                start_time = request.form.get(f'{weekday.weekday_id}_start_{slot}')
-                end_time = request.form.get(f'{weekday.weekday_id}_end_{slot}')
-                
-                if start_time and end_time:
-                    start_time = datetime.strptime(start_time, '%H:%M').time()
-                    end_time = datetime.strptime(end_time, '%H:%M').time()
-                    # Save these times in the availability_data dictionary
-                    if weekday.weekday_id not in availability_data:
-                        availability_data[weekday.weekday_id] = []
-                    availability_data[weekday.weekday_id].append((start_time, end_time))
-        
         # Get the current user's tutor profile or create a new one
         tutor_name = request.form.get('name')
         tutor = Tutor.query.filter_by(user_id=current_user.id).first()
@@ -1209,21 +1206,6 @@ def create_tutor_profile():
             db.session.add(tutor)
             db.session.commit()
         
-        # Process the availability data
-        for weekday_id, times in availability_data.items():
-            weekday = Weekday.query.get(weekday_id)  # Get the weekday by its ID
-            if not weekday:
-                continue  # Skip if the weekday is not found
-
-            for start_time, end_time in times:
-                availability = TutorAvailability(
-                    tutor_id=tutor.tutor_id,
-                    weekday_id=weekday.weekday_id,
-                    start_time=start_time,
-                    end_time=end_time
-                )
-                db.session.add(availability)
-
         selected_subject_ids = request.form.get('selected_subject_ids', '')
         if selected_subject_ids:
             subject_ids = selected_subject_ids.split(',')
@@ -1273,8 +1255,33 @@ def admin_finances():
     schooltypes = SchoolType.query.all()
     families = Family.query.all()
     all_tutors = Tutor.query.all()    
+    finances = Finance.query.filter(Finance.date.between(from_date, end_date)).all()
     lesson_schooltypes = {lesson.lesson_id: SchoolType.query.get(Subject.query.get(lesson.subject_id).schooltype_id) for lesson in lessons}
-    return render_template('admin_finances.html', lessons=lessons, tutors=tutors, users=users, paygrades=paygrades, schooltypes=schooltypes, families=families, all_tutors=all_tutors, default_from_date=from_date.strftime('%Y-%m-%d'), default_end_date=end_date.strftime('%Y-%m-%d'), submitted_school_type_id=school_type, submitted_family_id=family_id, submitted_tutor_id=tutor_id, lesson_schooltypes=lesson_schooltypes)
+    return render_template('admin_finances.html', lessons=lessons, tutors=tutors, users=users, paygrades=paygrades, schooltypes=schooltypes, families=families, all_tutors=all_tutors, default_from_date=from_date.strftime('%Y-%m-%d'), default_end_date=end_date.strftime('%Y-%m-%d'), submitted_school_type_id=school_type, submitted_family_id=family_id, submitted_tutor_id=tutor_id, lesson_schooltypes=lesson_schooltypes, finances=finances)
+
+
+
+
+
+
+@app.route('/update_entrance_fee', methods=['POST'])
+def update_entrance_fee():
+    ENTRANCE_FEE_AMOUNT = 50
+    family_id = request.form.get('family_id')
+    has_paid = request.form.get('has_paid') == 'true'
+    family = Family.query.get(family_id)
+
+    # If the family has already paid the entrance fee, return early
+    if family.entrance_fee and has_paid:
+        return jsonify(success=True)
+
+    family.entrance_fee = has_paid
+    if has_paid:
+        finance = Finance(amount=ENTRANCE_FEE_AMOUNT, description=f'{family.name} entrance fee', family_id=family_id)
+        db.session.add(finance)
+    db.session.commit()
+    return jsonify(success=True)
+
 
 @app.route('/lesson/<int:lesson_id>')
 @login_required
