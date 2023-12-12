@@ -1129,43 +1129,23 @@ def edit_tutor():
     if request.method == 'POST':
         # Delete all existing availability times for the tutor
         TutorAvailability.query.filter_by(tutor_id=tutor.tutor_id).delete()
-
-        for day_id in range(1, 8):  # Monday is 1, Sunday is 7
-            for slot in ["1", "2"]:
-                start_time_key = f'day{day_id}_start_{slot}'
-                end_time_key = f'day{day_id}_end_{slot}'
-                print(f"Form data keys: {request.form.keys()}")
-
-                if start_time_key in request.form and end_time_key in request.form:
-                    start_time = request.form[start_time_key].strip()
-                    end_time = request.form[end_time_key].strip()
-
-                    print(f"Start time before conversion: {start_time}")
-                    print(f"End time before conversion: {end_time}")
-
-                    if start_time and end_time:
-                        start_time = datetime.strptime(start_time, '%H:%M').time()
-                        end_time = datetime.strptime(end_time, '%H:%M').time()
-
-                        print(f"Start time after conversion: {start_time}")
-                        print(f"End time after conversion: {end_time}")
-
-                        weekday = Weekday.query.get(day_id)
-                        print(f"Weekday: {weekday}")
-
-                        if weekday:
-                            availability = TutorAvailability(
-                                tutor_id=tutor.tutor_id,
-                                weekday_id=weekday.weekday_id,
-                                start_time=start_time,
-                                end_time=end_time
-                            )
-                            print(f"TutorAvailability: {availability}")
-                            db.session.add(availability)
+        
+        for day_id in range(1,7):
+            start_time_1 = request.form.get(f'day{day_id}_start_1')
+            end_time_1 = request.form.get(f'day{day_id}_end_1')
+            availability1 = TutorAvailability(tutor_id=tutor.tutor_id, weekday_id=day_id, start_time=start_time_1, end_time=end_time_1)
+            db.session.add(availability1)
+            
+            start_time_2 = request.form.get(f'day{day_id}_start_2')
+            end_time_2 = request.form.get(f'day{day_id}_end_2')
+            availability2 = TutorAvailability(tutor_id=tutor.tutor_id, weekday_id=day_id, start_time=start_time_2, end_time=end_time_2)
+            db.session.add(availability2)
+        
         db.session.commit()
         return redirect(url_for('edit_tutor'))
 
     times = TutorAvailability.query.filter_by(tutor_id=tutor.tutor_id).all()
+
     return render_template('edit_tutor.html', tutor=tutor, subjects=subjects, times=times)
 
 
@@ -1203,22 +1183,23 @@ from datetime import datetime, timedelta
 @login_required
 def create_tutor_profile():
     schooltypes = SchoolType.query.all()
+    weekdays = Weekday.query.order_by(Weekday.weekday_id).all()  # Get all weekdays from the database in order
     if request.method == 'POST':
         # Dictionary to hold availability data
         availability_data = {}
 
-        for day in ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]:
-            for slot in ["1", "2"]:
-                start_time = request.form.get(f'{day}_start_{slot}')
-                end_time = request.form.get(f'{day}_end_{slot}')
+        for weekday in weekdays:  # Loop through weekdays using their IDs
+            for slot in range(1, 5):  # Adjust this range according to the number of slots you have
+                start_time = request.form.get(f'{weekday.weekday_id}_start_{slot}')
+                end_time = request.form.get(f'{weekday.weekday_id}_end_{slot}')
                 
                 if start_time and end_time:
                     start_time = datetime.strptime(start_time, '%H:%M').time()
                     end_time = datetime.strptime(end_time, '%H:%M').time()
                     # Save these times in the availability_data dictionary
-                    if day not in availability_data:
-                        availability_data[day] = []
-                    availability_data[day].append((start_time, end_time))
+                    if weekday.weekday_id not in availability_data:
+                        availability_data[weekday.weekday_id] = []
+                    availability_data[weekday.weekday_id].append((start_time, end_time))
         
         # Get the current user's tutor profile or create a new one
         tutor_name = request.form.get('name')
@@ -1229,8 +1210,8 @@ def create_tutor_profile():
             db.session.commit()
         
         # Process the availability data
-        for day, times in availability_data.items():
-            weekday = Weekday.query.filter_by(weekday_name=day.capitalize()).first()
+        for weekday_id, times in availability_data.items():
+            weekday = Weekday.query.get(weekday_id)  # Get the weekday by its ID
             if not weekday:
                 continue  # Skip if the weekday is not found
 
@@ -1255,7 +1236,7 @@ def create_tutor_profile():
         flash('Tutor profile created successfully!', 'success')
         return redirect(url_for('tutor_profile'))
 
-    return render_template('create_tutor_profile.html', schooltypes=schooltypes)
+    return render_template('create_tutor_profile.html', schooltypes=schooltypes, weekdays=weekdays)
 
 from dateutil.relativedelta import relativedelta
 
