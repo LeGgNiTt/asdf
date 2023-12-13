@@ -119,16 +119,65 @@ def get_detailed_statistics():
     detailed_statistics = 0
     return detailed_statistics
 
-def get_lessons_in_range(from_date, end_date, school_type_id=None, family_id=None, tutor_id=None):
-    lessons = Lesson.query.filter(Lesson.date.between(from_date, end_date))
-    if school_type_id:
-        subject_ids = [subject.subject_id for subject in Subject.query.filter_by(schooltype_id=school_type_id)]
-        lessons = lessons.filter(Lesson.subject_id.in_(subject_ids))
-    if family_id:
-        lessons = lessons.filter(Student.family_id == family_id)
+from sqlalchemy import or_
+
+def get_lessons_in_range(from_date, end_date, subject_id=None, family_id=None, tutor_id=None):
+    lessons = Lesson.query.filter(Lesson.date.between(from_date, end_date))    
+    print(f"Input parameters: {from_date}, {end_date}, {subject_id}, {family_id} , {tutor_id}")
+      
+    if subject_id:
+        lessons = lessons.filter(Lesson.subject_id == subject_id)
+    
     if tutor_id:
         lessons = lessons.filter(Lesson.tutor_id == tutor_id)
-    return lessons.all()
+    
+    if family_id:
+        # Find all students with the given family_id
+        student_ids = [student.StudentID for student in Student.query.filter(Student.family_id == family_id).all()]
+        print(f"Student IDs: {student_ids}")  # Debugging line
+        # Find all lessons with those student IDs
+        lessons = lessons.filter(Lesson.students.any(Student.StudentID.in_(student_ids)))
+    
+    lessons = lessons.all()
+    print(lessons)
+    lesson_details = []
+    for lesson in lessons:
+        tutor_id = lesson.tutor_id
+        tutor = Tutor.query.filter_by(tutor_id=tutor_id).first()
+        user_id = tutor.user_id
+        user = User.query.filter_by(id=user_id).first()
+        user_paygrade_id = user.paygrade_id
+        paygrade = Paygrade.query.filter_by(id=user_paygrade_id).first()
+        if paygrade:
+            user_paygrade = paygrade.value
+            tutor_payment = int(user_paygrade)
+        else:
+            tutor_payment = int('0')
+        if lesson.final_price is None:
+            gross_wage = -tutor_payment
+        else:
+            gross_wage = lesson.final_price - tutor_payment
+
+        discount_id = lesson.price_adjustment_id
+        discount = PriceAdjustment.query.filter_by(id=discount_id).first()
+        discount = discount.name if discount else None
+        subject_id = lesson.subject_id
+        subject = Subject.query.filter_by(subject_id=subject_id).first()
+        subject_name = subject.subject_name
+        students = lesson.students
+        student_names = [f"{student.FirstName} {student.LastName}" for student in students]  # Get the students' names
+        lesson_details.append({
+            'lesson' : lesson,
+            'tutor_payment' : tutor_payment,
+            'discount' : discount,
+            'gross_wage': gross_wage,
+            'tutor_name': tutor.name,
+            'subject_name': subject_name,
+            'student_names': student_names
+        })
+
+
+    return lesson_details
 
 
 app = Flask(__name__)
@@ -992,7 +1041,7 @@ def add_lesson():
                     subject_id=subject_id,
                     price=price,
                     price_adjustment_id=price_adjustment_id,
-                    final_price=(float(price) - adjustment_value),
+                    final_price=(float(price) * (1 - adjustment_value)),
                     lesson_type_id=1
                 )
                 for student_id in student_ids:
@@ -1010,7 +1059,7 @@ def add_lesson():
                 tutor_id=tutor_id,
                 subject_id=subject_id,
                 price=price,
-                final_price= price,
+                final_price=(float(price) * (1 - adjustment_value)) ,
                 lesson_type_id = 2 
             )
             for student_id in student_ids:
@@ -1230,37 +1279,75 @@ def admin_finances():
     from_date = datetime(today.year, today.month, 1)
     end_date = datetime(today.year, today.month, 1) + relativedelta(months=1) - timedelta(days=1)
     school_type = None
+    subject_id = None
     family_id = None
     tutor_id = None
-    lessons = get_lessons_in_range(from_date, end_date, school_type, family_id, tutor_id)
-    tutors = {lesson.tutor_id: Tutor.query.get(lesson.tutor_id) for lesson in lessons}
+    lessons = get_lessons_in_range(from_date, end_date, subject_id, family_id, tutor_id)
+    tutors = {lesson['lesson'].tutor_id: Tutor.query.get(lesson['lesson'].tutor_id) for lesson in lessons}
     if request.method == 'POST':
         from_date_str = request.form.get('from_date')
         end_date_str = request.form.get('end_date')
         from_date = datetime.strptime(from_date_str, '%Y-%m-%d')
         end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
         school_type = request.form.get('school_type')
+        subject_id = request.form.get('subject_id')
         family_id = request.form.get('family_id')
         tutor_id = request.form.get('tutor_id')
 
         # Convert the IDs to integers if they are not None or an empty string
+        subject_id = int(subject_id) if subject_id else None
         school_type = int(school_type) if school_type else None
         family_id = int(family_id) if family_id else None
         tutor_id = int(tutor_id) if tutor_id else None
 
-        lessons = get_lessons_in_range(from_date, end_date, school_type, family_id, tutor_id)
-        tutors = {lesson.tutor_id: Tutor.query.get(lesson.tutor_id) for lesson in lessons}
+        lessons = get_lessons_in_range(from_date, end_date, subject_id, family_id, tutor_id)
+        tutors = {lesson['lesson'].tutor_id: Tutor.query.get(lesson['lesson'].tutor_id) for lesson in lessons}
     users = {tutor.user_id: User.query.get(tutor.user_id) for tutor in tutors.values()}
     paygrades = Paygrade.query.all()
     schooltypes = SchoolType.query.all()
     families = Family.query.all()
     all_tutors = Tutor.query.all()    
     finances = Finance.query.filter(Finance.date.between(from_date, end_date)).all()
-    lesson_schooltypes = {lesson.lesson_id: SchoolType.query.get(Subject.query.get(lesson.subject_id).schooltype_id) for lesson in lessons}
+    lesson_schooltypes = {lesson['lesson'].lesson_id: SchoolType.query.get(Subject.query.get(lesson['lesson'].subject_id).schooltype_id) for lesson in lessons}
     return render_template('admin_finances.html', lessons=lessons, tutors=tutors, users=users, paygrades=paygrades, schooltypes=schooltypes, families=families, all_tutors=all_tutors, default_from_date=from_date.strftime('%Y-%m-%d'), default_end_date=end_date.strftime('%Y-%m-%d'), submitted_school_type_id=school_type, submitted_family_id=family_id, submitted_tutor_id=tutor_id, lesson_schooltypes=lesson_schooltypes, finances=finances)
 
 
 
+from flask import request, send_file
+from pdfdocument.document import PDFDocument
+
+@app.route('/admin/finances/create_pdf', methods=['POST'])
+@login_required
+@admin_required
+def create_pdf():
+    data = request.get_json()
+    lessons = data['lessons']
+    finances = data['finances']
+    total_profit = data['total_profit']
+
+    pdf = PDFDocument('finances.pdf')
+    pdf.init_report()
+
+    pdf.h2('Finances Report')
+    pdf.p('This is a report of the finances.')
+
+    # Lessons table
+    pdf.h3('Lessons')
+    pdf.table([['Date', 'Subject', 'Tutor Name', 'Student Name', 'Price', 'Discount', 'Final Price', 'Tutor Payment', 'Gross Wage']] +
+              [[lesson['date'], lesson['subject'], lesson['tutor_name'], lesson['student_name'], lesson['price'], lesson['discount'], lesson['final_price'], lesson['tutor_payment'], lesson['gross_wage']] for lesson in lessons])
+
+    # Finances table
+    pdf.h3('Finances')
+    pdf.table([['Description', 'Amount']] +
+              [[finance['description'], finance['amount']] for finance in finances])
+
+    # Total profit
+    pdf.h3('Total Profit')
+    pdf.p(total_profit)
+
+    pdf.generate()
+
+    return send_file('finances.pdf', as_attachment=True)
 
 
 
@@ -1277,7 +1364,7 @@ def update_entrance_fee():
 
     family.entrance_fee = has_paid
     if has_paid:
-        finance = Finance(amount=ENTRANCE_FEE_AMOUNT, description=f'{family.name} entrance fee', family_id=family_id)
+        finance = Finance(amount=ENTRANCE_FEE_AMOUNT, description=f'{family.name} Einschreibegebühr', family_id=family_id)
         db.session.add(finance)
     db.session.commit()
     return jsonify(success=True)

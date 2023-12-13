@@ -58,12 +58,21 @@
             <input type="date" id="from_date" name="from_date" value="{{ default_from_date }}" required>
             <label for="end_date">Bis Datum:</label>
             <input type="date" id="end_date" name="end_date" value="{{ default_end_date }}" required>
+
+            <!-- School Type Dropdown -->
             <label for="school_type">Schultyp:</label>
-            <select id="school_type" name="school_type">
+            <select id="school_type" name="school_type" onchange="fetchSubjects(this.value)">
                 <option value="">--Auswählen--</option>
                 {% for schooltype in schooltypes %}
                     <option value="{{ schooltype.schooltype_id }}" {% if schooltype.schooltype_id == submitted_school_type_id|int %}selected{% endif %}>{{ schooltype.schooltype_name }}</option>
                 {% endfor %}
+            </select>
+
+            <!-- Subject Dropdown -->
+            <label for="subject_id">Subject:</label>
+            <select id="subject_id" name="subject_id">
+                <option value="">--Select--</option>
+                <!-- This will be filled dynamically based on the selected school type -->
             </select>
         
             <!-- Familie Dropdown -->
@@ -87,41 +96,36 @@
         </form>
 
         <!-- Table 1 -->
+        <!-- Table 1 -->
+        {% set ns = namespace(total_profit=0) %}
         <table class="table table-bordered" id="table1">
             <thead>
                 <tr>
-                    <th>Schülername</th>
+                    <th>Datum</th>
+                    <th>Fach</th>
                     <th>Tutorname</th>
-                    <th>Schultyp</th>
+                    <th>Schülername</th>
+                    <th>Price</th>
+                    <th>Rabatt</th>
                     <th>Endpreis</th>
                     <th>Tutorzahlung</th>
-                    <th>Rest</th>
+                    <th>Bruttolohn</th>
                 </tr>
             </thead>
             <tbody>
-                {% set ns = namespace(total_profit=0) %}
                 {% for lesson in lessons %}
-                    {% set tutor = tutors[lesson.tutor_id] %}
-                    {% set user_paygrade_id = users[tutor.user_id].paygrade_id %}
-                    {% if user_paygrade_id is not none %}
-                        {% set tutor_payment = paygrades[user_paygrade_id].value %}
-                        {% set profit = lesson.final_price - tutor_payment %}
-                    {% else %}
-                        {% set tutor_payment = 0 %}
-                        {% set profit = lesson.final_price %}
-                    {% endif %}
-                    {% set ns.total_profit = ns.total_profit + profit if profit else ns.total_profit %}
-                    
-                    {% for student in lesson.students %}
-                        <tr>
-                            <td>{{ student.FirstName }} {{ student.LastName }}</td>
-                            <td>{{ tutor.name }}</td>
-                            <td>{{ lesson_schooltypes[lesson.lesson_id].schooltype_name }}</td>
-                            <td>{{ lesson.final_price }}</td>
-                            <td>{{ tutor_payment }}</td>
-                            <td>{{ profit }}</td>
-                        </tr>
-                    {% endfor %}
+                    <tr>
+                        <td>{{ lesson['lesson'].date }}</td>
+                        <td>{{ lesson['subject_name'] }}</td>
+                        <td>{{ lesson['tutor_name'] }}</td>
+                        <td>{{ lesson['student_names'] | join(', ') }}</td>
+                        <td>{{ lesson['lesson'].price }}</td>
+                        <td>{{ lesson['discount'] }}</td>
+                        <td>{{ lesson['lesson'].final_price }}</td>
+                        <td>{{ lesson['tutor_payment'] }}</td>
+                        <td>{{ lesson['gross_wage'] }}</td>
+                    </tr>
+                    {% set ns.total_profit = ns.total_profit + lesson['gross_wage'] %}
                 {% endfor %}
             </tbody>
         </table>
@@ -168,32 +172,68 @@
     <button onclick="generatePDF()">Generate PDF</button>
     <script>
         function generatePDF() {
-            // Add the 'pdf-hide' class to the elements you want to hide
-            var filters = document.querySelectorAll('.filter');
-            filters.forEach(function(filter) {
-                filter.classList.add('pdf-hide');
-            });
+            var table1 = document.getElementById('table1');
+            var table2 = document.getElementById('table2');
+            var table3 = document.getElementById('table3');
 
-            var element = document.querySelector('.container');
-            var originalWidth = element.style.width;
+            // Convert the tables to arrays of objects
+            var lessons = Array.from(table1.rows).slice(1).map(row => ({
+                date: row.cells[0].innerText,
+                subject: row.cells[1].innerText,
+                tutor_name: row.cells[2].innerText,
+                student_name: row.cells[3].innerText,
+                price: row.cells[4].innerText,
+                discount: row.cells[5].innerText,
+                final_price: row.cells[6].innerText,
+                tutor_payment: row.cells[7].innerText,
+                gross_wage: row.cells[8].innerText
+            }));
 
-            // Adjust the width of the content
-            element.style.width = '200px';
+            var finances = Array.from(table2.rows).slice(1).map(row => ({
+                description: row.cells[0].innerText,
+                amount: row.cells[1].innerText
+            }));
 
-            var opt = {
-                margin: 1,
-                filename: 'myfile.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 1.5 }, // Reduce the scale
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-            };
-            html2pdf().from(element).set(opt).save().then(function() {
-                // Restore the original width and remove the 'pdf-hide' class after generating the PDF
-                element.style.width = originalWidth;
-                filters.forEach(function(filter) {
-                    filter.classList.remove('pdf-hide');
-                });
+            var total_profit = table3.rows[1].cells[1].innerText;
+
+            // Make an AJAX request to the server
+            fetch('/admin/finances/create_pdf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ lessons, finances, total_profit })
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                // Create a link element and simulate a click to download the PDF
+                var url = window.URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = 'finances.pdf';
+                a.click();
             });
         }
     </script>
+    <script>
+        function fetchSubjects(schooltypeId) {
+            // Clear the subjects dropdown
+            const subjectSelect = document.getElementById('subject_id');
+            subjectSelect.innerHTML = '<option value="">--Select--</option>';
+        
+            // Fetch the subjects for the selected school type
+            fetch(`/api/subjects/${schooltypeId}`)
+                .then(response => response.json())
+                .then(subjects => {
+                    // Populate the subjects dropdown
+                    for (let subject of subjects) {
+                        const option = document.createElement('option');
+                        option.value = subject.id;
+                        option.text = subject.name;
+                        subjectSelect.appendChild(option);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+        </script>
 </body>

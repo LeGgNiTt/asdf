@@ -141,7 +141,7 @@
         const priceAdjustment = parseFloat(priceAdjustmentOption.getAttribute('data-value'));
 
         // Calculate the final price
-        const finalPrice = price - priceAdjustment;
+        const finalPrice = price * (1 - priceAdjustment);
 
         // Set the value of the final price field
         finalPriceField.value = finalPrice.toFixed(2);
