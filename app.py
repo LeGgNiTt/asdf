@@ -1313,43 +1313,121 @@ def admin_finances():
 
 
 
-from flask import request, send_file
-from pdfdocument.document import PDFDocument
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+from flask import send_file
+from reportlab.lib import colors
+
 
 @app.route('/admin/finances/create_pdf', methods=['POST'])
 @login_required
 @admin_required
 def create_pdf():
     data = request.get_json()
+
     lessons = data['lessons']
     finances = data['finances']
     total_profit = data['total_profit']
+    others = data.get('others', [])
 
-    pdf = PDFDocument('finances.pdf')
-    pdf.init_report()
+    doc = SimpleDocTemplate("finances.pdf", pagesize=letter)
+    elements = []
+    styles = getSampleStyleSheet()
 
-    pdf.h2('Finances Report')
-    pdf.p('This is a report of the finances.')
+    # Title
+    elements.append(Paragraph('Finanz-Bericht', styles['Title']))
 
     # Lessons table
-    pdf.h3('Lessons')
-    pdf.table([['Date', 'Subject', 'Tutor Name', 'Student Name', 'Price', 'Discount', 'Final Price', 'Tutor Payment', 'Gross Wage']] +
-              [[lesson['date'], lesson['subject'], lesson['tutor_name'], lesson['student_name'], lesson['price'], lesson['discount'], lesson['final_price'], lesson['tutor_payment'], lesson['gross_wage']] for lesson in lessons])
+    elements.append(Paragraph('Nachhilfestunden', styles['Heading2']))
+    lessons_data = [['Datum', 'Fach', 'Tutor (T.)', 'Schüler', 'Preis', 'Rabatt (%)', 'P. inkl. %', 'T. Lohn', 'Brutto']] + \
+            [[Paragraph(datetime.strptime(lesson['date'], '%Y-%m-%d').strftime('%d/%m/%Y'), styles['BodyText']),  # Convert date to dd/mm/yyyy format
+              Paragraph(lesson['subject'], styles['BodyText']), 
+              Paragraph(lesson['tutor_name'], styles['BodyText']), 
+              Paragraph(lesson['student_name'], styles['BodyText']), 
+              Paragraph(lesson['price'], styles['BodyText']), 
+              Paragraph(lesson['discount'], styles['BodyText']), 
+              Paragraph(lesson['final_price'], styles['BodyText']), 
+              Paragraph(lesson['tutor_payment'], styles['BodyText']), 
+              Paragraph(lesson['gross_wage'], styles['BodyText'])] for lesson in lessons]
+    lessons_table = Table(lessons_data, rowHeights=30, colWidths=[70, 70, 70, 120, 40, 80, 50, 50, 45])  # Increase row height
+    lessons_table.setStyle(TableStyle([
+    ('GRID', (0,0), (-1,-1), 1, colors.black),
+    ('BACKGROUND', (0, 0), (-1, 0), colors.grey)
+    ]))
+    elements.append(lessons_table)
 
     # Finances table
-    pdf.h3('Finances')
-    pdf.table([['Description', 'Amount']] +
-              [[finance['description'], finance['amount']] for finance in finances])
+    elements.append(Paragraph('Einschreibegebühr', styles['Heading2']))
+    finances_data = [['Beschreibung', 'Preis']] + \
+                    [[finance['description'], finance['amount']] for finance in finances]
+    finances_table = Table(finances_data)
+    finances_table.setStyle(TableStyle([
+    ('GRID', (0,0), (-1,-1), 1, colors.black),
+    ('BACKGROUND', (0, 0), (-1, 0), colors.grey)
+    ]))
+    elements.append(finances_table)
+
+    # Others table
+    if others:
+        elements.append(Paragraph('Others', styles['Heading2']))
+        others_data = [['Description', 'Amount']] + \
+                    [[other['description'], other['amount']] for other in others]
+        others_table = Table(others_data)
+        others_table.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 1, colors.black),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey)
+        ]))
+        elements.append(others_table)
 
     # Total profit
-    pdf.h3('Total Profit')
-    pdf.p(total_profit)
+    elements.append(Paragraph('Saldo', styles['Heading2']))
+    elements.append(Paragraph(str(total_profit), styles['BodyText']))
 
-    pdf.generate()
+    # Generate PDF
+    doc.build(elements)
 
     return send_file('finances.pdf', as_attachment=True)
 
+@app.route('/admin/tutors/create_pdf', methods=['POST'])
+@login_required
+@admin_required
+def create_tutor_pdf():
+    data = request.get_json()
 
+    lessons = data['lessons']
+
+    doc = SimpleDocTemplate("tutors.pdf", pagesize=letter)
+    elements = []
+    styles = getSampleStyleSheet()
+
+    # Title
+    elements.append(Paragraph('Tutor-Bericht', styles['Title']))
+
+    # Lessons table
+    elements.append(Paragraph('Nachhilfestunden', styles['Heading2']))
+    lessons_data = [['Datum', 'Fach', 'Tutor', 'Schüler', 'Tutorzahlung']] + \
+            [[Paragraph(datetime.strptime(lesson['date'], '%Y-%m-%d').strftime('%d/%m/%Y'), styles['BodyText']),  # Convert date to dd/mm/yyyy format
+              Paragraph(lesson['subject'], styles['BodyText']), 
+              Paragraph(lesson['tutor_name'], styles['BodyText']), 
+              Paragraph(lesson['student_name'], styles['BodyText']), 
+              Paragraph(lesson['tutor_payment'], styles['BodyText'])] for lesson in lessons]
+    lessons_table = Table(lessons_data, rowHeights=30, colWidths=[70, 70, 70, 120, 70])  # Increase row height
+    lessons_table.setStyle(TableStyle([
+    ('GRID', (0,0), (-1,-1), 1, colors.black),
+    ('BACKGROUND', (0, 0), (-1, 0), colors.grey)
+    ]))
+    elements.append(lessons_table)
+
+    # Total tutor payment
+    total_tutor_payment = sum(float(lesson['tutor_payment']) for lesson in lessons)
+    elements.append(Paragraph('Gesamt Tutorzahlung', styles['Heading2']))
+    elements.append(Paragraph(str(total_tutor_payment), styles['BodyText']))
+
+    # Generate PDF
+    doc.build(elements)
+
+    return send_file('tutors.pdf', as_attachment=True)
 
 @app.route('/update_entrance_fee', methods=['POST'])
 def update_entrance_fee():
