@@ -64,12 +64,17 @@
                 <tr>
                     <td>{{ subject.schooltype.schooltype_name }}</td>
                     <td>{{ subject.subject_name }}</td>
-                    <td><a href="/delete_subject/{{ subject.subject_id }}">Löschen</a></td>
+                    <td>
+                        <form action="/tutor/delete_subject/{{ subject.subject_id }}" method="post">
+                            <input type="hidden" name="subject_id" value="{{ subject.subject_id }}">
+                            <button type="submit">Löschen</button>
+                        </form>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        <button class="btn btn-primary" onclick="window.location.href='/add_subject'">Add Subject</button>
+        <button class="btn btn-primary" onclick="window.location.href='/tutor/add_subject'">Add Subject</button>
     </div>
     <hr>
     <form action="/tutor/edit_tutor" method="post">
@@ -110,6 +115,7 @@
     </form>
     <div class="mb-5"></div>
     <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/0ouHWeg6AZtp5Gevot8B4m?utm_source=generator" width="50%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+    
 
 
 </body>

@@ -85,7 +85,7 @@
             </div>
             <div class="form-group">
                 <label for="final_price">Endpreis</label>
-                <input type="number" step="1" class="form-control" id="final_price" name="final_price" value="{{ lesson.final_price }}" required>
+                <input type="number" step="0.01" class="form-control" id="final_price" name="final_price" value="{{ lesson.final_price }}" required>
             </div>
             <button class="btn btn-danger" onclick="deleteLesson(event, {{ lesson.lesson_id }})">Delete Lesson</button>
             {% endif %}

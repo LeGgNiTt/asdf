@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Tutor Profil</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+    <style>
+
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Tutoren Kabinett</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/tutor/change_password">Passwort zurücksetzen</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/tutor/view_students">Schüler anzeigen</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/tutor/lessons">Stunden-Übersicht</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/tutor/edit_tutor">Fächer anzeigen</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+                <form action="/tutor/add_subject" method="post">
+                    <!-- Schultyp und Fachauswahl -->
+                    <div class="form-group">
+                        <label for="schooltype-select">Schultyp auswählen:</label>
+                        <select class="form-control" id="schooltype-select" onchange="loadSubjects(this.value)">
+                            <option value="">Schultyp auswählen</option>
+                            {% for schooltype in schooltypes %}
+                            <option value="{{ schooltype.schooltype_id }}">{{ schooltype.schooltype_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="subject-select">Fach auswählen:</label>
+                        <select class="form-control" id="subject-select" name="selected_subject_input" multiple>
+                            {% for subject in all_subjects %}
+                            <option value="{{ subject.subject_id }}">{{ subject.subject_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-secondary" onclick="addSubject()">Fach hinzufügen</button>
+    
+                    <!-- Verstecktes Feld zur Speicherung der ausgewählten Fach-IDs -->
+                    <input type="hidden" name="selected_subject_ids" id="selected-subjects-input">
+    
+                    <!-- Hier wird die ausgewählten Fächer angezeigt -->
+                    <div id="selected-subjects-display" class="mt-3">
+                        <h4>Ausgewählte Fächer:</h4>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Schultyp</th>
+                                    <th>Fach</th>
+                                </tr>
+                            </thead>
+                            <tbody id="selected-subjects-tbody">
+                                <!-- Fächer werden hier hinzugefügt -->
+                            </tbody>
+                        </table>
+                    </div>
+    
+                    <button type="submit" class="btn btn-primary mt-3">Fächer speichern</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+
+    <!-- JavaScript -->
+    <script>
+        function loadSubjects(schooltypeId) {
+            const subjectSelect = document.getElementById('subject-select');
+            subjectSelect.innerHTML = ''; // Vorherige Optionen löschen
+            if (!schooltypeId) {
+                subjectSelect.disabled = true; // Deaktivieren, wenn kein Schultyp ausgewählt ist
+                return;
+            }
+
+            fetch('/api/subjects/' + schooltypeId)
+                .then(response => response.json())
+                .then(subjects => {
+                    subjects.forEach(subject => {
+                        const option = document.createElement('option');
+                        option.value = subject.id;
+                        option.textContent = subject.name;
+                        subjectSelect.appendChild(option);
+                    });
+                    subjectSelect.disabled = false; // Fachauswahl aktivieren
+                })
+                .catch(error => {
+                    console.error('Fehler beim Laden der Fächer:', error);
+                    subjectSelect.innerHTML = '<option>Fehler beim Laden der Fächer</option>';
+                });
+        }
+
+        function addSubject() {
+        var subjectSelect = document.getElementById('subject-select');
+        var selectedOption = subjectSelect.options[subjectSelect.selectedIndex];
+        var schooltypeSelect = document.getElementById('schooltype-select');
+        var selectedSchooltype = schooltypeSelect.options[schooltypeSelect.selectedIndex].text;
+        var subjectsTableBody = document.getElementById('selected-subjects-tbody');
+        var selectedSubjectsInput = document.getElementById('selected-subjects-input');
+
+        if (subjectSelect.value) {
+            // Fach zur Anzeigetabelle hinzufügen
+            var row = document.createElement('tr');
+            row.innerHTML = `<td>${selectedSchooltype}</td><td>${selectedOption.text}</td>`;
+            subjectsTableBody.appendChild(row);
+
+            // Verstecktes Eingabefeld aktualisieren
+            var currentSubjects = selectedSubjectsInput.value ? selectedSubjectsInput.value.split(',') : [];
+            if (!currentSubjects.includes(subjectSelect.value)) {
+                currentSubjects.push(subjectSelect.value);
+                selectedSubjectsInput.value = currentSubjects.join(',');
+            }
+        }
+    }
+
+        function updateSelectedSubjectsInput() {
+            var selectedSubjects = [];
+            var listItems = document.getElementById('selected-subjects-list').getElementsByTagName('li');
+            for (var i = 0; i < listItems.length; i++) {
+                selectedSubjects.push(listItems[i].getAttribute('data-subject-id'));
+            }
+            document.getElementById('selected-subjects-input').value = selectedSubjects.join(',');
+        }
+    </script>
+</body>
+</html>

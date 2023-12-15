@@ -255,23 +255,33 @@ def get_tutors_for_subject(subject_id):
 from sqlalchemy import func
 
 def is_tutor_available(tutor, date, start_time, end_time):
-    # Convert date to weekday (assuming 'date' is a datetime object)
-    weekday_name = date.strftime("%A")
+    # Convert date to weekday ID (0=Monday, 6=Sunday) and adjust to your system (1=Monday)
+    weekday_id = date.weekday() + 1
 
-    # Check availability on the given weekday
+    # Check availability on the given weekday ID
     availabilities = TutorAvailability.query.filter(
         TutorAvailability.tutor_id == tutor.tutor_id,
-        TutorAvailability.weekday.has(Weekday.weekday_name == weekday_name)
+        TutorAvailability.weekday_id == weekday_id
     ).all()
 
-    for availability in availabilities:
-        # Convert start_time and end_time to time objects if they are not already
-        if isinstance(start_time, str):
-            start_time = datetime.strptime(start_time, '%H:%M').time()
-        if isinstance(end_time, str):
-            end_time = datetime.strptime(end_time, '%H:%M').time()
+    if not availabilities:
+        return "unavailable"  # Tutor has no availability on this day
 
-        if availability.start_time <= start_time and availability.end_time >= end_time:
+    # Convert start_time and end_time to time objects if they are not already
+    if isinstance(start_time, str):
+        start_time = datetime.strptime(start_time, '%H:%M').time()
+    if isinstance(end_time, str):
+        end_time = datetime.strptime(end_time, '%H:%M').time()
+
+    for availability in availabilities:
+        # Handle cases where availability times are not set or are default (00:00)
+        if availability.start_time == time(0, 0) and availability.end_time == time(0, 0):
+            # Assuming this means the tutor is available all day
+            is_available_all_day = True
+        else:
+            is_available_all_day = availability.start_time <= start_time and availability.end_time >= end_time
+
+        if is_available_all_day:
             # Check for conflicting lessons
             conflicting_lesson = Lesson.query.filter(
                 Lesson.tutor_id == tutor.tutor_id,
@@ -280,10 +290,15 @@ def is_tutor_available(tutor, date, start_time, end_time):
                 Lesson.end_time > start_time
             ).first()
 
-            if not conflicting_lesson:
-                return True  # Tutor is available
+            if conflicting_lesson:
+                print("Tutor is available but has a conflicting lesson")
+                return "has_conflicting_lesson"  # Tutor is available but has a conflicting lesson
+            print("Tutor is available")
+            return "available"  # Tutor is available
+    print("Tutor is not available due to no matching availabilities")
+    return "unavailable"  # Tutor is not available due to no matching availabilities
 
-    return False  # Tutor is not available
+
 
 
 
@@ -298,11 +313,18 @@ def get_tutors_for_subject_and_time(subject_id, date, start_time, end_time):
 
     tutor_data = []
     for tutor in tutors:
-        availability = is_tutor_available(tutor, date, start_time, end_time)
-        status = "available" if availability else "unavailable"
+        availability_status = is_tutor_available(tutor, date, start_time, end_time)
+        if availability_status == "available":
+            status = "frei"
+        elif availability_status == "unavailable":
+            status = "nicht verfügbar"
+        else:  # has_conflicting_lesson
+            status = "unterrichtet um diese Zeit"
+
         tutor_data.append({'id': tutor.tutor_id, 'name': tutor.name, 'status': status})
 
     return jsonify(tutor_data)
+
 
 
 @app.route('/api/schooltypes')
@@ -748,10 +770,7 @@ def admin_lesson():
 
 def edit_lesson():
     pass
-def delete_lesson():
 
-
-    pass
 
 @app.route('/delete_user/<int:user_id>', methods=['POST'])
 @login_required
@@ -917,15 +936,18 @@ def modify_lessons():
     to_date = to_date.strftime('%Y-%m-%d')
 
     if request.method == 'POST':
-        from_date = datetime.strptime(request.form.get('from_date'), '%Y-%m-%d')
-        to_date = datetime.strptime(request.form.get('to_date'), '%Y-%m-%d')
+        from_date = datetime(today.year, today.month, 1)
+        to_date = datetime(today.year, today.month, 1) + relativedelta(months=1) - timedelta(days=1)
+        if request.form.get('from_date') and request.form.get('to_date') is not None: 
+            from_date = datetime.strptime(request.form.get('from_date'), '%Y-%m-%d')
+            to_date = datetime.strptime(request.form.get('to_date'), '%Y-%m-%d')
         student_id = request.form.get('student_id')
         tutor_id = request.form.get('tutor_id')
 
         # Convert the IDs to integers if they are not None or an empty string
 
-        student_id = int(student_id) if student_id else None
-        tutor_id = int(tutor_id) if tutor_id else None
+        student_id = None
+        tutor_id =  None
         
         lessons = filter_lessons_in_range(from_date, to_date, schooltype_id, subject_id, tutor_id)
 
@@ -966,6 +988,18 @@ def delete_lesson(lesson_id):
 
     # Return a success message
     return jsonify({'message': 'Lesson deleted successfully'}), 200
+
+@app.route('/tutor/delete_subject/<int:subject_id>', methods=['POST'])
+@tutor_required
+@login_required
+def delete_subject(subject_id):
+    user_id = current_user.id
+    tutor = Tutor.query.filter_by(user_id=user_id).first()
+    tutor_subject = TutorSubject.query.filter_by(tutor_id=tutor.tutor_id, subject_id=subject_id).first()
+    if tutor_subject:
+        db.session.delete(tutor_subject)
+        db.session.commit()
+    return redirect(url_for('edit_tutor'))
 
 
 @app.route('/modify_users')
@@ -1041,7 +1075,7 @@ def add_lesson():
                     subject_id=subject_id,
                     price=price,
                     price_adjustment_id=price_adjustment_id,
-                    final_price=(float(price) * (1 - adjustment_value)),
+                    final_price = round(float(price) * (1 - adjustment_value), 2),
                     lesson_type_id=1
                 )
                 for student_id in student_ids:
@@ -1059,7 +1093,7 @@ def add_lesson():
                 tutor_id=tutor_id,
                 subject_id=subject_id,
                 price=price,
-                final_price=(float(price) * (1 - adjustment_value)) ,
+                final_price = round(float(price) * (1 - adjustment_value), 2),
                 lesson_type_id = 2 
             )
             for student_id in student_ids:
@@ -1079,7 +1113,7 @@ def add_lesson():
                 subject_id=subject_id,
                 price=price,
                 price_adjustment_id=price_adjustment_id,
-                final_price= (float(price) - adjustment_value),
+                final_price = round(float(price) * (1 - adjustment_value), 2),
                 lesson_type_id = 1
             )
             for student_id in student_ids:
@@ -1234,8 +1268,16 @@ def tutor_profile():
 @login_required
 @admin_required
 def tutor_profil_id(tutor_id):
-    tutor = Tutor.query.get(tutor_id)
-    return render_template('admin_tutor_profile.html', tutor=tutor)
+    user_id = tutor_id
+    tutor = Tutor.query.filter_by(user_id=user_id).first()
+    availabilities = TutorAvailability.query.filter_by(tutor_id=tutor.tutor_id).all()
+    print(tutor.tutor_id, availabilities)
+    subjects = TutorSubject.query.filter_by(tutor_id=tutor.tutor_id).all()
+    subject_names =  Subject.query.all()
+    subject_names_dict = {subject.subject_id: subject.subject_name for subject in subject_names}
+    lessons = Lesson.query.filter_by(tutor_id=tutor.tutor_id).all()
+    weekdays = Weekday.query.order_by(Weekday.weekday_id).all()  # Get all
+    return render_template('admin_tutor_profile.html', tutor=tutor, availabilities=availabilities, subjects=subjects, lessons=lessons, weekdays=weekdays, subject_names_dict=subject_names_dict)
 
 from datetime import datetime
 from flask import request, redirect, url_for, flash, render_template
@@ -1269,7 +1311,50 @@ def create_tutor_profile():
 
     return render_template('create_tutor_profile.html', schooltypes=schooltypes, weekdays=weekdays)
 
+
+@app.route('/tutor/create_report', methods=['GET', 'POST'])
+@login_required
+@tutor_required
+
+def create_report(student_id):
+    student = Student.query.filter_by(studentID = student_id).first()
+    user_id = current_user.id
+    tutor = Tutor.query.filter_by(user_id=user_id).first()
+    if request.method == 'POST':
+        content = request.form.get('content')
+        date = request.form.get('date')
+        tutor_id = tutor.tutor_id
+        student_id = student.studentID
+
+
+@app.route('/tutor/add_subject', methods=['GET', 'POST'])
+@login_required
+@tutor_required
+def tutor_add_subject():
+    tutor = Tutor.query.filter_by(user_id=current_user.id).first()
+    schooltypes = SchoolType.query.all()
+    if request.method == 'POST':
+        selected_subject_ids = request.form.get('selected_subject_ids', '')
+        if selected_subject_ids:
+            subject_ids = selected_subject_ids.split(',')
+            for subject_id in subject_ids:
+                if subject_id:
+                    tutor_subject = TutorSubject(tutor_id=tutor.tutor_id, subject_id=int(subject_id))
+                    db.session.add(tutor_subject)
+        db.session.commit()
+        flash('Subject added successfully!', 'info')
+        return redirect(url_for('edit_tutor'))
+    return render_template('tutor_add_subject.html', tutor=tutor, schooltypes=schooltypes)
+
+
+
+
+
 from dateutil.relativedelta import relativedelta
+
+
+
+
 
 @app.route('/admin/finances', methods=['GET', 'POST'])
 @login_required
@@ -1525,6 +1610,12 @@ def update_lesson(lesson_id):
     db.session.commit()
 
     return redirect(url_for('lesson_detail', lesson_id=lesson.lesson_id))
+
+@app.route('/admin/find_tutors', methods=['GET'])
+@login_required
+@admin_required
+def query_tutors():
+    return 200
 
 
 

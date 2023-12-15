@@ -50,26 +50,6 @@
                 </div>
             </div>
            <!-- Tutors field -->
-            <div class="form-group">
-                <label for="tutor_id">Tutor</label>
-                <select class="form-control" id="tutor_id" name="tutor_id">
-                    <option value="">Alle Tutoren</option>
-                    {% for tutor in tutors %}
-                        <option value="{{ tutor.tutor_id }}" {% if selected_tutor == tutor.tutor_id %} selected {% endif %}>{{ tutor.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Students field -->
-            <div class="form-group">
-                <label for="student_id">Student</label>
-                <select class="form-control" id="student_id" name="student_id">
-                    <option value="">Alle Lernenden</option>
-                    {% for student in students %}
-                        <option value="{{ student.StudentID }}" {% if selected_student == student.StudentID %} selected {% endif %}>{{ student.FirstName }} {{ student.LastName }}</option>
-                    {% endfor %}
-                </select>
-            </div>
             <br>
             <button type="submit">Filter anwenden</button>
         </form>
@@ -115,6 +95,7 @@
     $(document).ready( function () {
         $('#lessons-table').DataTable({
             "order": [[ 0, "asc" ]], // Sort by the first column (0-indexed) in descending order
+            "pageLength": 50,
             "columnDefs": [
                 { "orderable": false, "targets": 6 } // Disable sorting on the 7th column (0-indexed)
             ],

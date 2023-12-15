@@ -60,13 +60,20 @@
                     <td>{{ user.user_id }}</td>
                     <td>{{ user.username }}</td>
                     <td>{{ user.role }}</td>
-                    <td>{{ user.is_tutor }}</td>
+                    <td>
+                        {% if user.is_tutor %}
+                            <a href="/tutor/{{ user.user_id }}" class="btn btn-primary">Profil ansehen</a>
+                        {% else %}
+                            Nicht Tutor
+                        {% endif %}
+                    </td>
                     <td>
                         <button class="btn btn-danger" onclick="deleteUser(event, {{ user.user_id }})">Nutzer löschen</button>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
+            
         </table>
     </div>
     <script>

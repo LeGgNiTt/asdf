@@ -36,42 +36,87 @@
             </ul>
         </div>
     </nav>
+    <div class="container mt-4">
+        <!-- Display Name -->
+        <div>
+            <h1>Name: {{ tutor.name }}</h1>
+        </div>
+        
 
-    <!-- Display Name -->
-    <div>
-        <h1>Name: [Insert Name Here]</h1>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Fächer</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tutor_subject in subjects %}
+                <tr>
+                    <td>{{ subject_names_dict[tutor_subject.subject_id] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        
+        <div>
+            <h2>Verfügbarkeit</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Wochentag</th>
+                        <th>Verfügbarkeit 1</th>
+                        <th>Verfügbarkeit 2</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set german_weekdays = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"] %}
+                    {% for i in range(german_weekdays|length) %}
+                    <tr>
+                        <td>{{ german_weekdays[i] }}</td>
+                        <td>
+                            {% set availability1 = availabilities[2*i] if availabilities|length > 2*i else None %}
+                            {% if availability1 and (availability1.start_time != '00:00:00' or availability1.end_time != '00:00:00') %}
+                                {{ availability1.start_time }} - {{ availability1.end_time }}
+                            {% else %}
+                                Nicht verfügbar
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set availability2 = availabilities[2*i+1] if availabilities|length > 2*i+1 else None %}
+                            {% if availability2 and (availability2.start_time != '00:00:00' or availability2.end_time != '00:00:00') %}
+                                {{ availability2.start_time }} - {{ availability2.end_time }}
+                            {% else %}
+                                Nicht verfügbar
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        <!-- Scrollable Menu for Lessons -->
+        <div>
+            <h2>Stunden</h2>
+            <select size="5">
+                {% for lesson in lessons %}
+                <option>{{ lesson.date }}</option> <!-- Replace 'lesson.info' with actual lesson details -->
+                {% endfor %}
+            </select>
+        </div>
     </div>
-
-    <!-- School Types and Subjects Table -->
-    <table>
-        <thead>
-            <tr>
-                <th>School Type</th>
-                <th>Subjects</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>[Insert School Type 1]</td>
-                <td>[Insert Subjects for School Type 1]</td>
-            </tr>
-            <tr>
-                <td>[Insert School Type 2]</td>
-                <td>[Insert Subjects for School Type 2]</td>
-            </tr>
-            <!-- Add more rows for additional school types and subjects -->
-        </tbody>
-    </table>
-
-    <!-- Scrollable Menu for Lessons -->
-    <div>
-        <h2>Lessons</h2>
-        <select size="5">
-            <option>[Insert Lesson 1 Info]</option>
-            <option>[Insert Lesson 2 Info]</option>
-            <!-- Add more options for additional lessons -->
-        </select>
-    </div>
+    
 
 
     

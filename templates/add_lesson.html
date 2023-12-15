@@ -113,11 +113,23 @@
                             </div>
 
                             <!-- Tutor Dropdown (Anfangs leer) -->
+                            <!-- Tutor Table with Radio Buttons -->
                             <div class="form-group">
-                                <label for="tutor">Tutor</label>
-                                <select class="form-control" id="tutor" name="tutor_id">
-                                    <!-- Optionen werden dynamisch befüllt -->
-                                </select>
+                                <label for="tutor-table">Tutor</label>
+                                <div style="height: 200px; overflow-y: scroll; border: 1px solid #ced4da; padding: .375rem .75rem; border-radius: .25rem;">
+                                    <table class="table" id="tutor-table">
+                                        <thead>
+                                            <tr>
+                                                <th></th>
+                                                <th>Name</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Tutor rows with radio buttons will be added here dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="price">Preis</label>
@@ -187,10 +199,55 @@
                                 fetch(`/api/tutors/${subjectId}/${date}/${startTime}/${endTime}`)
                                 .then(response => response.json())
                                 .then(tutors => {
-                                    populateDropdown(tutorSelect, tutors, 'Wählen Sie einen Tutor aus');
+                                    // Sort tutors by availability status
+                                    tutors.sort((a, b) => {
+                                        if (a.status === 'available' && b.status !== 'available') {
+                                            return -1;
+                                        }
+                                        if (a.status !== 'available' && b.status === 'available') {
+                                            return 1;
+                                        }
+                                        return 0;
+                                    });
+
+                                    const tutorTableBody = document.getElementById('tutor-table').querySelector('tbody');
+                                    tutorTableBody.innerHTML = ''; // Clear existing rows
+                                    tutors.forEach(tutor => {
+                                        const row = document.createElement('tr');
+                                        
+                                        // Determine the color and availability of the radio button based on the tutor's status
+                                        let color, isDisabled;
+                                        switch (tutor.status) {
+                                            case 'frei':
+                                                color = 'green';
+                                                isDisabled = false;
+                                                break;
+                                            case 'nicht verfügbar':
+                                                color = 'red';
+                                                isDisabled = true;
+                                                break;
+                                            case 'unterrichtet um diese Zeit':
+                                                color = 'orange';
+                                                isDisabled = true;
+                                                break;
+                                            default:
+                                                color = 'black'; // Default color for unexpected status
+                                                isDisabled = true;
+                                        }
+
+                                        row.style.color = color;
+                                        row.innerHTML = `
+                                            <td><input type="radio" name="tutor_id" value="${tutor.id}" ${isDisabled ? 'disabled' : ''}></td>
+                                            <td>${tutor.name}</td>
+                                            <td>${tutor.status}</td>
+                                        `;
+                                        tutorTableBody.appendChild(row);
+                                    });
+
                                 })
                                 .catch(error => console.error('Fehler:', error));
                             }
+
                         
                             // Hilfsfunktion zum Befüllen der Dropdown-Optionen
                             function populateDropdown(dropdown, items, defaultOptionText) {

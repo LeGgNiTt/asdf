@@ -159,7 +159,7 @@
                                         <td>{{ lesson['discount'] }}</td>
                                         <td>{{ lesson['lesson'].final_price }}</td>
                                         <td>{{ lesson['tutor_payment'] }}</td>
-                                        <td>{{ lesson['gross_wage'] }}</td>
+                                        <td>{{ "{:.2f}".format(lesson['gross_wage']) }}</td>
                                     </tr>
                                     {% set ns.total_profit = ns.total_profit + lesson['gross_wage'] %}
                                 {% endfor %}
