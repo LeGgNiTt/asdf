@@ -60,40 +60,29 @@
         
         
         <div>
-            <h2>Verfügbarkeit</h2>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Wochentag</th>
-                        <th>Verfügbarkeit 1</th>
-                        <th>Verfügbarkeit 2</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% set german_weekdays = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"] %}
-                    {% for i in range(german_weekdays|length) %}
-                    <tr>
-                        <td>{{ german_weekdays[i] }}</td>
-                        <td>
-                            {% set availability1 = availabilities[2*i] if availabilities|length > 2*i else None %}
-                            {% if availability1 and (availability1.start_time != '00:00:00' or availability1.end_time != '00:00:00') %}
-                                {{ availability1.start_time }} - {{ availability1.end_time }}
-                            {% else %}
-                                Nicht verfügbar
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% set availability2 = availabilities[2*i+1] if availabilities|length > 2*i+1 else None %}
-                            {% if availability2 and (availability2.start_time != '00:00:00' or availability2.end_time != '00:00:00') %}
-                                {{ availability2.start_time }} - {{ availability2.end_time }}
-                            {% else %}
-                                Nicht verfügbar
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div>
+                <h2>Verfügbarkeit</h2>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Wochentag</th>
+                            <th>Verfügbarkeit 1</th>
+                            <th>Verfügbarkeit 2</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set german_weekdays = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"] %}
+                        {% for i in range(1, 7) %}
+                        <tr>
+                            <td>{{ german_weekdays[i-1] }}</td>
+                            <td>{{ sorted_availabilities[i][0] }}</td>
+                            <td>{{ sorted_availabilities[i][1] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
         </div>
         
         

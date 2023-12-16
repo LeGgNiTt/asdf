@@ -1213,7 +1213,7 @@ def api_tutor_lessons():
 def format_date(value, format='%d-%m-%Y'):
     return datetime.strptime(value, '%Y-%m-%d').strftime(format)
 
-
+from collections import defaultdict
 
 @app.route('/tutor/edit_tutor', methods=['GET', 'POST'])
 @login_required
@@ -1226,23 +1226,50 @@ def edit_tutor():
         # Delete all existing availability times for the tutor
         TutorAvailability.query.filter_by(tutor_id=tutor.tutor_id).delete()
         
-        for day_id in range(1,7):
+        for day_id in range(1, 7):
+            # Retrieve time inputs for the first slot
             start_time_1 = request.form.get(f'day{day_id}_start_1')
             end_time_1 = request.form.get(f'day{day_id}_end_1')
-            availability1 = TutorAvailability(tutor_id=tutor.tutor_id, weekday_id=day_id, start_time=start_time_1, end_time=end_time_1)
-            db.session.add(availability1)
-            
+
+            # Check if both start and end times are provided
+            if start_time_1 and end_time_1:
+                availability1 = TutorAvailability(tutor_id=tutor.tutor_id, weekday_id=day_id, start_time=start_time_1, end_time=end_time_1)
+                print(availability1)
+                db.session.add(availability1)
+
+            # Repeat for the second slot
             start_time_2 = request.form.get(f'day{day_id}_start_2')
             end_time_2 = request.form.get(f'day{day_id}_end_2')
-            availability2 = TutorAvailability(tutor_id=tutor.tutor_id, weekday_id=day_id, start_time=start_time_2, end_time=end_time_2)
-            db.session.add(availability2)
+
+            if start_time_2 and end_time_2:
+                availability2 = TutorAvailability(tutor_id=tutor.tutor_id, weekday_id=day_id, start_time=start_time_2, end_time=end_time_2)
+                print(availability2)
+                db.session.add(availability2)
         
         db.session.commit()
         return redirect(url_for('edit_tutor'))
 
-    times = TutorAvailability.query.filter_by(tutor_id=tutor.tutor_id).all()
 
-    return render_template('edit_tutor.html', tutor=tutor, subjects=subjects, times=times)
+    times_raw = TutorAvailability.query.filter_by(tutor_id=tutor.tutor_id).all()
+    print(times_raw)
+    times_by_day = defaultdict(list)
+    for time in times_raw:
+        times_by_day[time.weekday_id].append(time)
+
+    # Prepare structured times for the template
+    structured_times = {}
+    for day_id in range(1, 7):  # For 6 weekdays
+        day_times = times_by_day.get(day_id, [])
+        time1 = day_times[0] if len(day_times) > 0 and day_times[0].start_time != '00:00:00' else None
+        time2 = day_times[1] if len(day_times) > 1 and day_times[1].start_time != '00:00:00' else None
+        structured_times[day_id] = (time1, time2)
+
+
+    # Debug print
+    for day_id, times in structured_times.items():
+        print(f"Day {day_id}: {times}")
+    return render_template('edit_tutor.html', tutor=tutor, subjects=subjects, times=structured_times)
+
 
 
 def query_lessons(date, tutor_id):
@@ -1271,13 +1298,20 @@ def tutor_profil_id(tutor_id):
     user_id = tutor_id
     tutor = Tutor.query.filter_by(user_id=user_id).first()
     availabilities = TutorAvailability.query.filter_by(tutor_id=tutor.tutor_id).all()
+    sorted_availabilities = {i: ['00:00 - 00:00', '00:00 - 00:00'] for i in range(1, 7)}
+    for availability in availabilities:
+        time_slot = f"{availability.start_time} - {availability.end_time}"
+        if sorted_availabilities[availability.weekday_id][0] == '00:00 - 00:00':
+            sorted_availabilities[availability.weekday_id][0] = time_slot
+        else:
+            sorted_availabilities[availability.weekday_id][1] = time_slot
     print(tutor.tutor_id, availabilities)
     subjects = TutorSubject.query.filter_by(tutor_id=tutor.tutor_id).all()
     subject_names =  Subject.query.all()
     subject_names_dict = {subject.subject_id: subject.subject_name for subject in subject_names}
     lessons = Lesson.query.filter_by(tutor_id=tutor.tutor_id).all()
     weekdays = Weekday.query.order_by(Weekday.weekday_id).all()  # Get all
-    return render_template('admin_tutor_profile.html', tutor=tutor, availabilities=availabilities, subjects=subjects, lessons=lessons, weekdays=weekdays, subject_names_dict=subject_names_dict)
+    return render_template('admin_tutor_profile.html', tutor=tutor, sorted_availabilities=sorted_availabilities, subjects=subjects, lessons=lessons, weekdays=weekdays, subject_names_dict=subject_names_dict)
 
 from datetime import datetime
 from flask import request, redirect, url_for, flash, render_template
