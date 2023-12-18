@@ -161,3 +161,19 @@ class Finance(db.Model):
     amount = db.Column(db.Float)
     description = db.Column(db.String(255))
     family_id = db.Column(db.Integer, db.ForeignKey('family.id'))
+
+
+
+class ReportCard(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('student.StudentID'), nullable=False)
+    tutor_id = db.Column(db.Integer, db.ForeignKey('tutor.tutor_id'), nullable=False)
+    comments = db.Column(db.Text, nullable=True)
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships
+    student = db.relationship('Student', backref='report_cards')
+    tutor = db.relationship('Tutor', backref='report_cards')
+
+    def __repr__(self):
+        return f'<ReportCard {self.id}>'

@@ -81,35 +81,26 @@
         <table>
             <tr>
                 <th>Day</th>
-                <th>Time Slot 1 (Start - End)</th>
-                <th>Time Slot 2 (Start - End)</th>
+                <th>Time Slot (Start - End)</th>
             </tr>
-            {% for day_id, times in times.items() %}
+            {% for day_id, time in times.items() %}
             <tr>
                 <td>Day {{ day_id }}</td>
                 <td>
-                    <input type="time" name="start_time_{{ day_id }}_1" value="{{ times[0].start_time }}" class="time-input">
+                    <input type="time" name="start_time_{{ day_id }}" value="{{ time.start_time if time else '' }}" class="time-input">
                     -
-                    <input type="time" name="end_time_{{ day_id }}_1" value="{{ times[0].end_time }}" class="time-input">
-                </td>
-                <td>
-                    <input type="time" name="start_time_{{ day_id }}_2" value="{{ times[1].start_time if times[1] else '' }}" class="time-input">
-                    -
-                    <input type="time" name="end_time_{{ day_id }}_2" value="{{ times[1].end_time if times[1] else '' }}" class="time-input">
+                    <input type="time" name="end_time_{{ day_id }}" value="{{ time.end_time if time else '' }}" class="time-input">
                 </td>
             </tr>
             {% endfor %}
         </table>
-        
-        
-        
-        
-        
-        
         <div class="text-center mt-4">
             <input type="submit" value="Update Times" class="btn btn-primary">
         </div>
     </form>
+   
+    
+    
     <div class="mb-5"></div>
     <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/0ouHWeg6AZtp5Gevot8B4m?utm_source=generator" width="50%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
     

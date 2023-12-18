@@ -501,51 +501,110 @@ def create_user():
     paygrades = Paygrade.query.all()  # get all paygrades
     return render_template('create_user.html', paygrades=paygrades)
 
+from flask import jsonify
+
+from flask import render_template, request
+
 @app.route('/tutor/change_password', methods=['GET', 'POST'])
 @login_required
 @tutor_required
-def change_poassword():
+def change_password():
     user_id = current_user.id
     user = User.query.get(user_id)
+
     if request.method == 'POST':
         old_password = request.form['old_password']
         new_password = request.form['new_password']
         repeat_password = request.form['repeat_password']
-        
-        
-        # Check if the old password matches the user's current password
+
+        response_data = {}
+
         if user.check_password(old_password):
-            # Check if the new password and repeat password match
             if new_password == repeat_password:
                 password = bcrypt.generate_password_hash(new_password).decode('utf-8')
                 user.password_hash = password
-
-
                 db.session.commit()
-                flash('Password updated successfully', 'success')
+                response_data['success'] = True
+                response_data['message'] = 'Password updated successfully.'
             else:
-                flash('New password and repeat password do not match', 'danger')
+                response_data['success'] = False
+                response_data['message'] = 'New password and repeat password do not match.'
         else:
-            flash('Incorrect old password', 'danger')
-        
-        return redirect(url_for('tutor_profile'))
-    
+            response_data['success'] = False
+            response_data['message'] = 'Incorrect old password.'
+
+        return render_template('change_password.html', user=user, response_data=response_data)
+
     return render_template('change_password.html', user=user)
+
+
     
 
-@app.route('/tutor/view_students', methods=['GET', 'POST'])
+@app.route('/tutor/view_students', methods=['GET'])
 @login_required
 @tutor_required
 def view_students():
     user_id = current_user.id
     tutor_id = Tutor.query.filter_by(user_id=user_id).first().tutor_id
+
+    # Retrieve all students associated with the tutor's lessons
     lessons = Lesson.query.filter_by(tutor_id=tutor_id).all()
-    students = []
-    for lesson in lessons:
-        for student_lesson in lesson.students:
-            student = Student.query.filter_by(StudentID=student_lesson.StudentID).first()
-            students.append(student)
-    return render_template('view_students.html', students=students)
+    student_ids = {student.StudentID for lesson in lessons for student in lesson.students}
+    student_details = {}
+
+    for student_id in student_ids:
+        student = Student.query.get(student_id)
+        student_lessons = Lesson.query.join(Lesson.students).filter_by(StudentID=student_id).all()
+
+        lessons_info = []
+        for lesson in student_lessons:
+            subject = Subject.query.filter_by(subject_id=lesson.subject_id).first()
+            is_current_tutor = lesson.tutor_id == tutor_id
+            lesson_info = {
+                'subject_name': subject.subject_name if subject else 'No Subject',
+                'date': lesson.date,
+                'start_time': lesson.start_time,
+                'end_time': lesson.end_time,
+                'lesson_id': lesson.lesson_id,
+                'is_current_tutor': is_current_tutor
+            }
+            lessons_info.append(lesson_info)
+
+        student_details[student_id] = {
+            'info': student,
+            'lessons': lessons_info
+        }
+
+    return render_template('view_students.html', student_details=student_details)
+
+@app.route('/tutor/create_report_card/<int:student_id>', methods=['GET', 'POST'])
+@login_required
+@tutor_required
+def create_report_card(student_id):
+    student = Student.query.get_or_404(student_id)
+    tutor_id = Tutor.query.filter_by(user_id=current_user.id).first().tutor_id
+
+    if request.method == 'POST':
+        comments = request.form['comments']
+
+        # Create a new ReportCard instance
+        new_report_card = ReportCard(
+            student_id=student_id,
+            tutor_id=tutor_id,
+            comments=comments
+        )
+
+        # Add to the database
+        db.session.add(new_report_card)
+        db.session.commit()
+
+        # Redirect to a confirmation page or back to the student list
+        flash('Report card created successfully!', 'success')
+        return redirect(url_for('view_students'))
+
+    return render_template('create_report_card.html', student=student)
+
+
 
 
 
@@ -680,22 +739,36 @@ def tutor_lessons():
     tutor = Tutor.query.filter_by(user_id=current_user.id).first()
 
     # Fetch all lessons associated with this tutor
-    lessons = (db.session.query(Lesson, Subject.subject_name)
-               .join(Subject, Lesson.subject_id == Subject.subject_id)
-               .filter(Lesson.tutor_id == tutor.tutor_id)
-               .all())
+    lessons = Lesson.query.filter_by(tutor_id=tutor.tutor_id).all()
 
     # Create a list of lesson dictionaries
-    lesson_info = [{
-        'date': lesson_obj.date,
-        'subject': subject_name,
-        'notes': [{'date': note.date, 'content': note.content} for note in lesson_obj.notes],
-        'has_occured': lesson_obj.has_occured,
-        'id': lesson_obj.lesson_id
-    } for lesson_obj, subject_name in lessons]
+    lesson_info = []
+    current_date = datetime.now().date()  # Get the current date
+
+    for lesson in lessons:
+        subject = Subject.query.filter_by(subject_id=lesson.subject_id).first()
+        lesson_date = lesson.date
+        has_occurred = lesson.has_occured
+
+        # Check if the lesson is in the past but hasn't occurred yet
+        if lesson_date < current_date and not has_occurred:
+            lesson_color = 'text-danger'  # Mark lessons in red
+        else:
+            lesson_color = ''  # No special formatting
+
+        lesson_info.append({
+            'date': lesson_date,
+            'subject_name': subject.subject_name if subject else 'No Subject',
+            'start_time': lesson.start_time,
+            'end_time': lesson.end_time,
+            'has_occured': has_occurred,
+            'id': lesson.lesson_id,
+            'lesson_color': lesson_color  # CSS class for formatting
+        })
 
     # Render the template with the lesson info
     return render_template('tutor_lessons.html', lesson_info=lesson_info)
+
 
 
 @app.route('/api/lessons/<int:lesson_id>/note', methods=['GET'])
@@ -741,6 +814,15 @@ def update_lesson_status(lesson_id):
     db.session.commit()
 
     return jsonify({'message': 'Lesson status and note updated successfully'}), 200
+
+@app.route('/api/lesson_notes/<int:lesson_id>')
+def get_lesson_notes(lesson_id):
+    notes = Note.query.filter_by(lesson_id=lesson_id).first()
+    return jsonify({'notes': notes.content if notes else 'No notes available'})
+
+
+
+
 
 @app.route('/edit_note/<int:note_id>', methods=['GET', 'POST'])
 @login_required
@@ -907,6 +989,56 @@ def edit_student(student_id):
         return redirect(url_for('modify_family'))
     return render_template('edit_student.html', student=student, schooltypes=schooltypes)
 
+
+@app.route('/admin/report_cards')
+@login_required
+@admin_required
+def admin_report_cards():
+    report_cards = ReportCard.query.all()
+    return render_template('admin_report_cards.html', report_cards=report_cards)
+
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from io import BytesIO
+from reportlab.lib.styles import ParagraphStyle
+
+@app.route('/admin/download_report_card/<int:report_card_id>')
+def download_report_card(report_card_id):
+    report_card = ReportCard.query.get_or_404(report_card_id)
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    styles = getSampleStyleSheet()
+    Story = []
+
+    # Create custom styles
+    header_style = ParagraphStyle('HeaderStyle', parent=styles['Normal'], fontSize=12, leading=15, spaceAfter=6, bold=True)
+
+    # Use the custom style for headers
+    Story.append(Paragraph(f"Datum: {report_card.date_created.strftime('%Y-%m-%d')}", header_style))
+    Story.append(Paragraph(f"Tutor: {report_card.tutor.name}", header_style))
+    Story.append(Paragraph(f"Schüler*in: {report_card.student.FirstName} {report_card.student.LastName}", header_style))
+    Story.append(Spacer(1, 12))
+
+    # Handling multiline comments
+    comment_style = styles['Normal']
+    comment_style.wordWrap = 'CJK'  # This helps with word wrapping
+    Story.append(Paragraph(f"Inhalt: {report_card.comments}", comment_style))
+
+    doc.build(Story)
+
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=True, download_name=f'Berciht_{report_card_id}.pdf', mimetype='application/pdf')
+
+
+
+
+
+
+
+
 from datetime import datetime, timedelta
 
 
@@ -1039,8 +1171,10 @@ def add_lesson():
         
         price_adjustment_id = request.form.get('price_adjustment_id')
         price_adjustment = PriceAdjustment.query.get(price_adjustment_id)
-
-        adjustment_value = price_adjustment.value
+        if price_adjustment is None:
+            adjustment_value = 0
+        else:
+            adjustment_value = price_adjustment.value
         ferienkurs = request.form.get('ferienkurs') is not None
 
         student_ids = request.form.getlist('student_ids')
@@ -1131,12 +1265,51 @@ def add_lesson():
 
 @app.route('/add_lesson/<int:student_id>', methods=['GET', 'POST'])
 @login_required
-@tutor_required  # Assuming you have a similar decorator for tutors
+@tutor_required
 def add_lesson_for_student(student_id):
-    student = Student.query.get(student_id)
+    student = Student.query.get_or_404(student_id)
+    tutor_id = Tutor.query.filter_by(user_id=current_user.id).first().tutor_id
+    schooltypes = SchoolType.query.all()
 
-    # Render the template with the student
-    return render_template('add_lesson_for_student.html', student=student)
+    if request.method == 'POST':
+        date = request.form.get('date')
+        start_time = request.form.get('start_time')
+        end_time = request.form.get('end_time')
+        subject_id = request.form.get('subject_id')
+
+        # Fetch the last lesson's pricing details
+        last_lesson = Lesson.query.filter(Lesson.students.any(StudentID=student_id)).order_by(Lesson.date.desc()).first()
+        if last_lesson:
+            price = last_lesson.price
+            price_adjustment_id = last_lesson.price_adjustment_id
+            final_price = last_lesson.final_price
+        else:
+            # Default pricing if no last lesson exists
+            price = 0
+            price_adjustment_id = None
+            final_price = 0
+
+        new_lesson = Lesson(
+            date=date,
+            start_time=start_time,
+            end_time=end_time,
+            tutor_id=tutor_id,
+            subject_id=subject_id,
+            price=price,
+            price_adjustment_id=price_adjustment_id,
+            final_price=final_price
+        )
+
+        # Associate the student with the lesson
+        new_lesson.students.append(student)
+
+        db.session.add(new_lesson)
+        db.session.commit()
+
+        return redirect(url_for('view_students'))  # Redirect to an appropriate page
+
+    subjects = Subject.query.all()  # Assuming you have a Subject model
+    return render_template('tutor_add_lesson_for_student.html', student=student, subjects=subjects, schooltypes=schooltypes)
 
 
 
@@ -1227,31 +1400,19 @@ def edit_tutor():
         TutorAvailability.query.filter_by(tutor_id=tutor.tutor_id).delete()
         
         for day_id in range(1, 7):
-            # Retrieve time inputs for the first slot
-            start_time_1 = request.form.get(f'day{day_id}_start_1')
-            end_time_1 = request.form.get(f'day{day_id}_end_1')
-
+            # Retrieve time inputs for the single slot
+            start_time = request.form.get(f'start_time_{day_id}')
+            end_time = request.form.get(f'end_time_{day_id}')
             # Check if both start and end times are provided
-            if start_time_1 and end_time_1:
-                availability1 = TutorAvailability(tutor_id=tutor.tutor_id, weekday_id=day_id, start_time=start_time_1, end_time=end_time_1)
-                print(availability1)
-                db.session.add(availability1)
+            if start_time and end_time:
+                availability = TutorAvailability(tutor_id=tutor.tutor_id, weekday_id=day_id, start_time=start_time, end_time=end_time)
+                db.session.add(availability)
 
-            # Repeat for the second slot
-            start_time_2 = request.form.get(f'day{day_id}_start_2')
-            end_time_2 = request.form.get(f'day{day_id}_end_2')
-
-            if start_time_2 and end_time_2:
-                availability2 = TutorAvailability(tutor_id=tutor.tutor_id, weekday_id=day_id, start_time=start_time_2, end_time=end_time_2)
-                print(availability2)
-                db.session.add(availability2)
-        
         db.session.commit()
         return redirect(url_for('edit_tutor'))
 
-
     times_raw = TutorAvailability.query.filter_by(tutor_id=tutor.tutor_id).all()
-    print(times_raw)
+    
     times_by_day = defaultdict(list)
     for time in times_raw:
         times_by_day[time.weekday_id].append(time)
@@ -1260,14 +1421,13 @@ def edit_tutor():
     structured_times = {}
     for day_id in range(1, 7):  # For 6 weekdays
         day_times = times_by_day.get(day_id, [])
-        time1 = day_times[0] if len(day_times) > 0 and day_times[0].start_time != '00:00:00' else None
-        time2 = day_times[1] if len(day_times) > 1 and day_times[1].start_time != '00:00:00' else None
-        structured_times[day_id] = (time1, time2)
-
+        time = day_times[0] if len(day_times) > 0 and day_times[0].start_time != '00:00:00' else None
+        structured_times[day_id] = time
 
     # Debug print
-    for day_id, times in structured_times.items():
-        print(f"Day {day_id}: {times}")
+    for day_id, time in structured_times.items():
+        print(f"Day {day_id}: {time}")
+
     return render_template('edit_tutor.html', tutor=tutor, subjects=subjects, times=structured_times)
 
 
@@ -1298,14 +1458,13 @@ def tutor_profil_id(tutor_id):
     user_id = tutor_id
     tutor = Tutor.query.filter_by(user_id=user_id).first()
     availabilities = TutorAvailability.query.filter_by(tutor_id=tutor.tutor_id).all()
-    sorted_availabilities = {i: ['00:00 - 00:00', '00:00 - 00:00'] for i in range(1, 7)}
+    sorted_availabilities = {i: '00:00 - 00:00' for i in range(1, 7)}  # Initialize with default values
+
+    # Populate the sorted_availabilities dictionary with actual availability
     for availability in availabilities:
         time_slot = f"{availability.start_time} - {availability.end_time}"
-        if sorted_availabilities[availability.weekday_id][0] == '00:00 - 00:00':
-            sorted_availabilities[availability.weekday_id][0] = time_slot
-        else:
-            sorted_availabilities[availability.weekday_id][1] = time_slot
-    print(tutor.tutor_id, availabilities)
+        sorted_availabilities[availability.weekday_id] = time_slot
+
     subjects = TutorSubject.query.filter_by(tutor_id=tutor.tutor_id).all()
     subject_names =  Subject.query.all()
     subject_names_dict = {subject.subject_id: subject.subject_name for subject in subject_names}
@@ -1403,6 +1562,23 @@ def admin_finances():
     tutor_id = None
     lessons = get_lessons_in_range(from_date, end_date, subject_id, family_id, tutor_id)
     tutors = {lesson['lesson'].tutor_id: Tutor.query.get(lesson['lesson'].tutor_id) for lesson in lessons}
+    for lesson in lessons:
+            if lesson['lesson'].has_occured == True:
+                # Calculate tutor_payment based on your logic (e.g., lesson['lesson'].price - lesson['discount'])
+                tutor_id = lesson['lesson'].tutor_id
+                tutor = tutors[tutor_id]
+                user_id = tutor.user_id
+                user = User.query.filter_by(id=user_id).first()
+                paygrade = Paygrade.query.filter_by(id=user.paygrade_id).first()
+
+                if paygrade:
+                    lesson['tutor_payment'] = paygrade.value
+                else:
+                    lesson['tutor_payment'] = 0  # Handle the case where the paygrade is not found
+               
+            else:
+                lesson['tutor_payment'] = 0  # Set tutor_payment to 0 if lesson didn't occur
+                lesson['gross_wage'] = lesson['lesson'].final_price
     if request.method == 'POST':
         from_date_str = request.form.get('from_date')
         end_date_str = request.form.get('end_date')
@@ -1420,6 +1596,20 @@ def admin_finances():
         tutor_id = int(tutor_id) if tutor_id else None
 
         lessons = get_lessons_in_range(from_date, end_date, subject_id, family_id, tutor_id)
+        for lesson in lessons:
+            if lesson['lesson'].has_occured == True:
+                # Calculate tutor_payment based on your logic (e.g., lesson['lesson'].price - lesson['discount'])
+                tutor_id = lesson['lesson'].tutor_id
+                tutor = tutors[tutor_id]
+                user_id = tutor.user_id
+                user = User.query.filter_by(id=user_id).first()
+                paygrade = Paygrade.query.filter_by(id=user.paygrade_id).first()
+
+                lesson['tutor_payment'] = paygrade.value
+                
+            else:
+                lesson['tutor_payment'] = 0  # Set tutor_payment to 0 if lesson didn't occur
+                lesson['gross_wage'] = lesson['lesson'].final_price
         tutors = {lesson['lesson'].tutor_id: Tutor.query.get(lesson['lesson'].tutor_id) for lesson in lessons}
     users = {tutor.user_id: User.query.get(tutor.user_id) for tutor in tutors.values()}
     paygrades = Paygrade.query.all()

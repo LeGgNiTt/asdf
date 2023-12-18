@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bercihte</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <!-- Include DataTables -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.css">
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.js"></script>
+
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <!-- Navigationsleiste -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Navigation umschalten">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_lessons">Lektion bearbeiten</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_users">Benutzer bearbeiten</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_subjects">Fächer bearbeiten</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/modify_family">Familie bearbeiten</a>
+                </li>
+                <!-- Weitere Links hinzufügen, falls erforderlich -->
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2>Bercihte</h2>
+        <table class="table table-bordered" id="financesTable">
+            <thead>
+                <tr>
+                    <th>Schüler</th>
+                    <th>Tutor</th>
+                    <th>Erstellungsdatum</th>
+                    <th>Kommentare</th>
+                    <th>PDF herunterladen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report_card in report_cards %}
+                <tr class="{{ 'new-report' if report_card.is_new else '' }}">
+                    <td>{{ report_card.student.FirstName }} {{ report_card.student.LastName }}</td>
+                    <td>{{ report_card.tutor.name }}</td>
+                    <td>{{ report_card.date_created }}</td>
+                    <td>{{ report_card.comments | truncate }}</td>
+                    <td>
+                        <a href="{{ url_for('download_report_card', report_card_id=report_card.id) }}">PDF herunterladen</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            
+        </table>
+    </div>
+    <script>
+        $(document).ready(function() {
+            $('#financesTable').DataTable({
+                "order": [[0, "asc"]], // Default sorting column and order (you can change this)
+                "pageLength": 50, // Number of rows per page
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.10.22/i18n/German.json" // Adjust the language file as needed
+                }
+            });
+        });
+        </script>
+        
+
+    <!-- Footer -->
+</body>
+</html>

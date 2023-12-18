@@ -5,11 +5,69 @@
     <title>Tutor Profil</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+
+    <!-- jQuery Library -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <style>
+        .card-body .d-flex {
+            display: flex;
+            overflow-x: auto;
+        }
+
+        .card-body .d-flex .card {
+            flex: 0 0 auto; /* Prevent cards from stretching */
+            width: 18rem; /* Fixed width for cards */
+            margin-right: 15px; /* Space between cards */
+        }
+        /* The Modal (background) */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        /* Modal Content */
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Could be more or less, depending on screen size */
+        }
+
+        /* The Close Button */
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+
+    </style>
 </head>
+    
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="#">Tutoren Kabinett</a>
+        <a class="navbar-brand" href="/tutor_profile">Tutoren Kabinett</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -19,7 +77,7 @@
                     <a class="nav-link" href="/tutor/change_password">Passwort zurücksetzen</a>
                 </li>
                 <li class="nav-item active">
-                    <a class="nav-link" href="/tutor/view_students">Schüler Übersicht</a>
+                    <a class="nav-link " href="/tutor/view_students">Schüler anzeigen</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/tutor/lessons">Stunden-Übersicht</a>
@@ -34,27 +92,74 @@
         <!-- Student names will be populated here by the backend -->
     </div>
 
+    <div class="container mt-4">
+        {% for student_id, details in student_details.items() %}
+        <div class="card mb-3">
+            <div class="card-header" style="cursor: pointer;" data-toggle="collapse" data-target="#collapse-student-{{ student_id }}">
+                {{ details.info.FirstName }} {{ details.info.LastName }}
+            </div>
+            <div id="collapse-student-{{ student_id }}" class="collapse">
+                <!-- ... inside the loop in the view_students.html template ... -->
+                <div class="card-body">
+                    <div class="d-flex flex-row overflow-auto">
+                        {% for lesson in details.lessons %}
+                        <div class="card m-2" style="width: 18rem; background-color: {{ '#ADD8E6' if not lesson.is_current_tutor else '#FFFFFF' }}">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ lesson.subject_name }}</h5>
+                                <p class="card-text">
+                                    Datum: {{ lesson.date }}<br>
+                                    Start: {{ lesson.start_time }}<br>
+                                    Ende: {{ lesson.end_time }}
+                                </p>
+                                {% if lesson.is_current_tutor %}
+                                    <a href="/lesson/{{ lesson.lesson_id }}" class="btn btn-primary">Info</a>
+                                {% else %}
+                                    <button onclick="showNotesModal('{{ lesson.lesson_id }}')" class="btn btn-secondary">Notitzen</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <a href="/add_lesson/{{ student_id }}" class="btn btn-primary">Stunde erstellen</a>
+                    <a href="/tutor/create_report_card/{{ student_id }}" class="btn btn-secondary">Bericht erstellen</a>
+                </div>
+                <!-- Modal for viewing notes -->
+                <div id="notesModal" class="modal">
+                    <!-- Modal content -->
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <p id="notesContent">Some text in the Modal..</p>
+                    </div>
+                </div>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Vorname</th>
-                <th>Nachname</th>
-                <th>Geburtstag</th>
-                <th>Niveau</th>
-                <th>Lesson</th> <!-- Added column for lesson -->
-            </tr>
-        </thead>
-        <tbody>
-            {% for student in students %}
-            <tr>
-                <td><a href="/student/{{student.StudentID}}">{{student.FirstName}}</a></td>
-                <td>{{student.LastName}}</td>
-                <td>{{student.DateOfBirth}}</td>
-                <td>{{student.schooltype}}</td>
-                <td><a href="/add_lesson/{{student.StudentID}}">Add Lesson</a></td> <!-- Added lesson link -->
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <script>
+        function showNotesModal(lessonId) {
+            // Fetch notes for the lesson
+            fetch('/api/lesson_notes/' + lessonId)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('notesContent').innerHTML = data.notes;
+                    document.getElementById('notesModal').style.display = "block";
+                });
+        }
+        
+        // Get the modal
+        var modal = document.getElementById('notesModal');
+        
+        // Get the <span> element that closes the modal
+        var span = document.getElementsByClassName("close")[0];
+        
+        // When the user clicks on <span> (x), close the modal
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+        </script>
+    
+    
 </body>
+</html>

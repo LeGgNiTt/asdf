@@ -1,17 +1,16 @@
-<!-- FILEPATH: /c:/Users/aleks/Documents/Projects/EduProj/templates/tutor_lessons.html -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Tutor Profil</title>
+    <title>Tutor Lessons</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.10/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.10/js/jquery.dataTables.min.js"></script>
+
 </head>
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-<!-- Navbar -->
 <body>
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <a class="navbar-brand" href="/tutor_profile">Tutoren Kabinett</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,74 +33,58 @@
             </ul>
         </div>
     </nav>
+
     <!-- Main Content -->
-<div class="container mt-4">
-    <h2>Lessons</h2>
-    <div class="accordion" id="lessonAccordion">
-        {% for lesson in lesson_info %}
-        <div class="card">
-            <div class="card-header" id="heading-{{ loop.index }}">
-                <h2 class="mb-0">
-                    <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse-{{ loop.index }}" aria-expanded="true" aria-controls="collapse-{{ loop.index }}">
-                        {{ lesson.date }} - {{ lesson.subject }}
-                        <a href="/lesson/{{ lesson.id }}" class="btn btn-info btn-sm float-right">Details</a>
-                    </button>
-                </h2>
-            </div>
-            <div id="collapse-{{ loop.index }}" class="collapse" aria-labelledby="heading-{{ loop.index }}" data-parent="#lessonAccordion">
-                <div class="card-body">
-                    <!-- Lesson details go here -->
-                    <p>Lesson content: {{ lesson.content }}</p>
-                    <!-- Add more details as needed -->
-                    
-                    <!-- Quality Control Checkbox and Note -->
-                    <form id="lessonForm-{{ loop.index }}" method="POST" action="/api/lesson_status/{{ lesson.id }}">
-                        <input type="checkbox" name="has_occurred" {% if lesson.has_occured == 1 %} checked {% endif %}> Stunde hat stattgefunden
-                        <textarea name="note" id="noteTextBox-{{ loop.index }}" class="form-control" rows="3">{{ lesson.notes[0].content if lesson.notes else '' }}</textarea>
-                        <button class="btn btn-primary mt-2" id="saveNoteButton-{{ loop.index }}">Save Note and Update Status</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
+    <div class="container mt-4">
+        <h2>Lessons</h2>
+        <table id="lessonsTable" class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Subject</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lesson in lesson_info %}
+                <tr class="{{ lesson.lesson_color }}">
+                    <td>{{ lesson.date }}</td>
+                    <td>{{ lesson.subject_name }}</td>
+                    <td>{{ lesson.start_time }}</td>
+                    <td>{{ lesson.end_time }}</td>
+                    <td>
+                        {% if lesson.has_occured %}
+                            Stattgefunden
+                        {% else %}
+                            Nicht Stattgefunden
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="/lesson/{{ lesson.id }}" class="btn btn-info btn-sm">Details</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-</div>
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<script>
-$(document).ready(function() {
-    {% for lesson in lesson_info %}
-    $("#lessonForm-{{ loop.index }}").submit(function(event) {
-        event.preventDefault();  // Prevent the form from submitting normally
 
-        var url = $(this).attr('action');  // Get the form action URL
-        // Get the checkbox value ('true' if checked, 'false' if not checked)
-        var has_occurred = $(this).find('input[type="checkbox"]').prop('checked') ? '1' : '0';
-
-        // Get the note content
-        var note_content = $(this).find('textarea').val();
-
-        // Create the data object to send in the POST request
-        var data = {
-            'note': note_content,
-            'has_occurred': has_occurred
-        };
-
-        $.ajax({
-            url: url,
-            type: 'POST',
-            data: JSON.stringify(data),
-            contentType: 'application/json'
-        })
-        .done(function(response) {
-            alert("Lesson status and note updated successfully");
-        })
-        .fail(function() {
-            alert("Error updating lesson status");
+    <!-- Bootstrap and jQuery scripts -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#lessonsTable').DataTable({
+                "order": [[0, "asc"]],
+                "pageLength": 50,
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.10.22/i18n/German.json"
+                }
+            });
         });
-    });
-    {% endfor %}
-});
-</script>
+    </script>
+    
 </body>
-
 </html>

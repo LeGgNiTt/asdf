@@ -12,27 +12,27 @@
     </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
+    <!-- Navigationsleiste -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Navigation umschalten">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="/modify_lessons">Modify Lesson</a>
+                    <a class="nav-link" href="/modify_lessons">Lektion bearbeiten</a>
                 </li>
                 <li class="nav-item active">
-                    <a class="nav-link" href="#">Modify Users</a>
+                    <a class="nav-link" href="/modify_users">Nutzer bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/modify_subjects">Modify Subjects</a>
+                    <a class="nav-link" href="/modify_subjects">Fächer bearbeiten</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/modify_family">Modify Family</a>
+                    <a class="nav-link" href="/modify_family">Familie bearbeiten</a>
                 </li>
-                <!-- Add more links as needed -->
+                <!-- Weitere Links hinzufügen, falls erforderlich -->
             </ul>
         </div>
     </nav>
@@ -60,52 +60,58 @@
         
         
         <div>
-            <div>
-                <h2>Verfügbarkeit</h2>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Wochentag</th>
-                            <th>Verfügbarkeit 1</th>
-                            <th>Verfügbarkeit 2</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% set german_weekdays = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"] %}
-                        {% for i in range(1, 7) %}
-                        <tr>
-                            <td>{{ german_weekdays[i-1] }}</td>
-                            <td>{{ sorted_availabilities[i][0] }}</td>
-                            <td>{{ sorted_availabilities[i][1] }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            
+            <h2>Verfügbarkeit</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Wochentag</th>
+                        <th>Verfügbarkeit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set german_weekdays = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"] %}
+                    {% for i in range(1, 7) %}
+                    <tr>
+                        <td>{{ german_weekdays[i-1] }}</td>
+                        <td>{{ sorted_availabilities[i] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+            
+    </div>      
 
-        <!-- Scrollable Menu for Lessons -->
-        <div>
-            <h2>Stunden</h2>
-            <select size="5">
-                {% for lesson in lessons %}
-                <option>{{ lesson.date }}</option> <!-- Replace 'lesson.info' with actual lesson details -->
-                {% endfor %}
-            </select>
+   <!-- Scrollable Menu for Tutor's Lessons -->
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header">
+                <h2>Stunden</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for lesson in lessons %}
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <a href="/lesson/{{ lesson.lesson_id }}" class="card-link">
+                            <div class="card" style="background-color: {{ '#ADD8E6' if not lesson.is_current_tutor else '#FFFFFF' }}">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ lesson.subject_name }}</h5>
+                                    <p class="card-text">
+                                        Datum: {{ lesson.date }}<br>
+                                        Start: {{ lesson.start_time }}<br>
+                                        Ende: {{ lesson.end_time }}
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
-    
+
+
 
 
     
