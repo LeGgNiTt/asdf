@@ -2,12 +2,16 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Tutor Lessons</title>
+    <title>Tutor Profil</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.10/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <style>
+        /* Your existing styles here */
+    </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.10/js/jquery.dataTables.min.js"></script>
-
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    
 </head>
 <body>
     <!-- Navbar -->
@@ -36,16 +40,16 @@
 
     <!-- Main Content -->
     <div class="container mt-4">
-        <h2>Lessons</h2>
-        <table id="lessonsTable" class="table">
+        <h2>Stunden</h2>
+        <table id="table1" class="table">
             <thead>
                 <tr>
-                    <th>Date</th>
-                    <th>Subject</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
+                    <th>Datum</th>
+                    <th>Fach</th>
+                    <th>Start</th>
+                    <th>Ende</th>
                     <th>Status</th>
-                    <th>Details</th>
+                    <th>Info</th>
                 </tr>
             </thead>
             <tbody>
@@ -72,12 +76,11 @@
     </div>
 
     <!-- Bootstrap and jQuery scripts -->
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script>
         $(document).ready(function() {
-            $('#lessonsTable').DataTable({
-                "order": [[0, "asc"]],
+            $('#table1').DataTable({
+                "order": [[ 0, "asc" ]],
                 "pageLength": 50,
                 "language": {
                     "url": "//cdn.datatables.net/plug-ins/1.10.22/i18n/German.json"

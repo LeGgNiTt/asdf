@@ -28,7 +28,7 @@
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="#">Tutoren Kabinett</a>
+        <a class="navbar-brand" href="/tutor_profile">Tutoren Kabinett</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -43,7 +43,7 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/tutor/lessons">Stunden-Übersicht</a>
                 </li>
-                <li class="nav-item active">
+                <li class="nav-item avtive">
                     <a class="nav-link" href="/tutor/edit_tutor">Fächer anzeigen</a>
                 </li>
             </ul>
@@ -77,27 +77,29 @@
         <button class="btn btn-primary" onclick="window.location.href='/tutor/add_subject'">Add Subject</button>
     </div>
     <hr>
-    <form action="/tutor/edit_tutor" method="post">
-        <table>
-            <tr>
-                <th>Day</th>
-                <th>Time Slot (Start - End)</th>
-            </tr>
-            {% for day_id, time in times.items() %}
-            <tr>
-                <td>Day {{ day_id }}</td>
-                <td>
-                    <input type="time" name="start_time_{{ day_id }}" value="{{ time.start_time if time else '' }}" class="time-input">
-                    -
-                    <input type="time" name="end_time_{{ day_id }}" value="{{ time.end_time if time else '' }}" class="time-input">
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
-        <div class="text-center mt-4">
-            <input type="submit" value="Update Times" class="btn btn-primary">
-        </div>
-    </form>
+    <div class="container mt-4">
+        <form action="/tutor/edit_tutor" method="post">
+            <table>
+                <tr>
+                    <th>Day</th>
+                    <th>Time Slot (Start - End)</th>
+                </tr>
+                {% for day_id, time in times.items() %}
+                <tr>
+                    <td>Day {{ day_id }}</td>
+                    <td class="text-center align-middle">
+                        <input type="time" name="start_time_{{ day_id }}" value="{{ time.start_time if time else '' }}" class="time-input">
+                        -
+                        <input type="time" name="end_time_{{ day_id }}" value="{{ time.end_time if time else '' }}" class="time-input">
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+            <div class="text-center mt-4">
+                <input type="submit" value="Update Times" class="btn btn-primary">
+            </div>
+        </form>
+    </div>
    
     
     
