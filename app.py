@@ -73,7 +73,7 @@ def create_role(role_name):
         else:
             print(f"Role '{role_name}' already exists.")
 
-def create_user_with_role(username, password, role_name, paygrade=1):
+def create_user_with_role(username, password, role_name, paygrade=2):
     role = Role.query.filter_by(name=role_name).first()
     if role and role.name == 'admin':
         new_user = User(username=username, password_hash=bcrypt.generate_password_hash(password).decode('utf-8'), role_id=role.id, paygrade_id=1)
