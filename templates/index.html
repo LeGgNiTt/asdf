@@ -1,53 +1,101 @@
 <!DOCTYPE html>
 <html lang="de">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Landing Page</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <style>
+        .fullscreen, .white, .semitrans, .dark {
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .fullscreen {
+            background-color: #f4f4f4;
+        }
+
+        .white {
+            background-color: #ffffff;
+        }
+
+        .semitrans {
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .dark {
+            background-color: #045494;
+            color: white;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        h2, h3 {
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+
+        p {
+            font-size: 1.2em;
+            line-height: 1.6;
+        }
+
+        .navbar a {
+            font-size: 1.2em;
+        }
+
+        .footer {
+            padding: 30px 0;
+        }
+
     </style>
 </head>
 <body>
     <!-- Navigationsleiste -->
     <div class="navbar">
-        <div>
-            <a href="/about">Über uns</a>
-            <a href="/login">Anmelden</a>
-        </div>
+        <a href="/login">Anmelden</a>
     </div>
 
     <!-- Hauptinhalt -->
-    <div style="padding: 60px 40px;">
-        <h1 style="color: #045494;">Willkommen in unserem Nachhilfesystem</h1>
-        <p style="text-align: center;">Unsere Plattform bietet das beste Nachhilfeerlebnis, indem sie Schüler mit erstklassigen Tutoren verbindet und eine nahtlose Lernreise ermöglicht.</p>
-    
-        <!-- Anwendungsvorschau -->
-        <h2 style="color: #045494; margin-top: 60px;">Warum unser System wählen?</h2>
-        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin: 0 10%;">
-            <div style="background-color: #dcdcdc; padding: 20px; width: 45%; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); margin: 10px;">
-                <h3 style="color: #045494;">Umfassende Lösung</h3>
-                <p style="color: #333;">Unsere Anwendung ist eine umfassende, maßgeschneiderte Full-Stack-Lösung, die darauf abzielt, die Verwaltung von Bildungseinrichtungen zu optimieren.</p>
-            </div>
-            <div style="background-color: #dcdcdc; padding: 20px; width: 45%; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); margin: 10px;">
-                <h3 style="color: #045494;">Dynamisches Kalendersystem</h3>
-                <p style="color: #333;">Eine der Hauptfunktionen ist das dynamische Kalendersystem. Es ermöglicht Administratoren, Unterrichtsstunden auf bequeme und effiziente Weise zu visualisieren und zu verwalten.</p>
-            </div>
-            <div style="background-color: #dcdcdc; padding: 20px; width: 45%; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); margin: 10px;">
-                <h3 style="color: #045494;">Zugang und Analyse für Tutoren</h3>
-                <p style="color: #333;">Auch Tutoren haben Zugriff auf das System und erhalten einen Überblick über ihre persönlichen Statistiken, zukünftige und vergangene Unterrichtsstunden sowie ein flexibles Notizsystem zur Verfolgung ihres Fortschritts.</p>
-            </div>
-            <div style="background-color: #dcdcdc; padding: 20px; width: 45%; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); margin: 10px;">
-                <h3 style="color: #045494;">Detailliertes Schülermanagement</h3>
-                <p style="color: #333;">Die Anwendung umfasst auch ein detailliertes Schülermanagementsystem. Es ermöglicht Administratoren, Schülerinformationen hinzuzufügen, zu bearbeiten und anzuzeigen, einschließlich ihrer zugewiesenen Unterrichtsstunden.</p>
-            </div>
-        </div>
+    <div class="fullscreen">
+        <h1>Willkommen bei lernzenter.ch</h1>
+        <p>Entdecken Sie eine Welt des Lernens, die das Management der Schüler und Tutoren vereinfacht.</p>
+    </div>
+
+    <!-- Anwendungsvorschau -->
+    <div class="white">
+        <h2>Entdecken Sie die Vorteile unseres Systems</h2>
+    </div>
+
+    <div class="semitrans">
+        <h3>Intuitive und umfassende Lösung</h3>
+        <p>Unser System bietet eine nahtlose Integration aller Bildungsprozesse, unterstützt durch modernste Technologie.</p>
+    </div>
+
+    <div class="white">
+        <h3>Übersichtliches Kalendersystem</h3>
+        <p>Planen und verwalten Sie Unterrichtsstunden mit unserem dynamischen Kalender, der Flexibilität und Effizienz in den Vordergrund stellt.</p>
+    </div>
+
+    <div class="semitrans">
+        <h3>Erweiterte Analysetools</h3>
+        <p>Unser System bietet den Administratoren detaillierte Einblicke in Leistung der Branche und ermöglicht eine vereinfachte Organisation der Arbeitsprozesse.</p>
+    </div>
+
+    <div class="white">
+        <h3>Umfassendes Schülermanagement</h3>
+        <p>Verwalten Sie Schülerdaten effizient und intuitiv, von der Registrierung bis zur Leistungsüberwachung.</p>
     </div>
 
     <!-- Fußzeile -->
-    <div style="background-color: #ffffff; padding: 40px 0; text-align: center;">
-        <p> Build: 23. Dezember, Aleksandrs Unterkirhers. Alle Rechte vorbehalten.</p>
+    <div class="dark footer">
+        <p>Build: 2023; Dezember, Aleksandrs Unterkirhers. Alle Rechte vorbehalten.</p>
     </div>
 </body>
+
+
+
 </html>
