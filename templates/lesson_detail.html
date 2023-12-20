@@ -68,10 +68,9 @@
             
             <div class="form-group">
                 <label for="notes">Notizen</label>
-                {% for note in notes %}
-                    <p>{{ note.content }}</p>
-                {% endfor %}
+                <textarea name="notes" id="notes" class="form-control">{% for note in notes %}{{ note.content }}{% endfor %}</textarea>
             </div>
+            
             {% if is_admin %}
             <div class="form-group">
                 <label for="tutor_id">Tutor</label>

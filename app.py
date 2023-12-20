@@ -619,36 +619,6 @@ def edit_user(user_id):
     return True
 
 
-@app.route('/student/<id>')
-def student(id):
-    # Fetch the student with the given ID from the database
-    student = Student.query.get(id)
-
-    # Check if the student exists
-    if student is None:
-        # If the student does not exist, redirect to the home page
-        return redirect(url_for('home'))
-
-    # Fetch the tutor associated with the current user
-    tutor = Tutor.query.filter_by(user_id=current_user.id).first()
-
-    # Check if the tutor exists
-    if tutor is None:
-        # If the tutor does not exist, redirect to the home page
-        return redirect(url_for('home'))
-
-    # Check if there exists a lesson with student_id equal to <id> and tutor_id equal to the fetched tutor's ID
-    lesson = Lesson.query.filter_by(student_id=id, tutor_id=tutor.tutor_id).first()
-    if lesson is None:
-        # If no such lesson exists, redirect to the home page
-        return redirect(url_for('home'))
-
-    # Fetch all notes associated with the student from the database
-    notes = Note.query.filter_by(student_id=id).all()
-
-    # Render the 'student.html' template and pass the student data and the notes to it
-    return render_template('student.html', student=student, notes=notes)
-
 
 
 from datetime import datetime
@@ -1830,6 +1800,15 @@ def update_lesson(lesson_id):
         lesson.has_occured = True
     else:
         lesson.has_occured = False
+
+    updated_notes_content = request.form['notes']
+    note = Note.query.filter_by(lesson_id=lesson_id).first()
+    if note:
+        note.content = updated_notes_content
+
+    else:
+        note = Note(lesson_id = lesson_id, content = updated_notes_content)
+        db.session.add(note)
 
     db.session.commit()
 
