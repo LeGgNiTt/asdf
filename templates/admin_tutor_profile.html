@@ -65,6 +65,7 @@
                 {% for tutor_subject in subjects %}
                 <tr>
                     <td>{{ subject_names_dict[tutor_subject.subject_id] }}</td>
+                    <td>{{ tutor_subject.schooltype_name }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -73,24 +74,35 @@
         
         <div>
             <h2>Verfügbarkeit</h2>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Wochentag</th>
-                        <th>Verfügbarkeit</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% set german_weekdays = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"] %}
-                    {% for i in range(1, 7) %}
-                    <tr>
-                        <td>{{ german_weekdays[i-1] }}</td>
-                        <td>{{ sorted_availabilities[i] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <form method="POST">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Wochentag</th>
+                            <th>Startzeit</th>
+                            <th>Endzeit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set german_weekdays = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"] %}
+                        {% for i in range(1, 7) %}
+                        <tr>
+                            <td>{{ german_weekdays[i-1] }}</td>
+                            <td>
+                                <input type="time" name="start_time_{{ i }}" value="{{ sorted_availabilities[i].split(' - ')[0] if sorted_availabilities[i] != '00:00 - 00:00' else '' }}" class="time-input">
+                            </td>
+                            <td>
+                                <input type="time" name="end_time_{{ i }}" value="{{ sorted_availabilities[i].split(' - ')[1] if sorted_availabilities[i] != '00:00 - 00:00' else '' }}" class="time-input">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <button type="submit" class="btn btn-primary">Update</button>
+            </form>
         </div>
+            
+    </div>
             
     </div>      
 

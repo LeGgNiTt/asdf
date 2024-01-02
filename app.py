@@ -1425,10 +1425,24 @@ def tutor_profile():
 @login_required
 @admin_required
 def tutor_profil_id(tutor_id):
-    user_id = tutor_id
-    tutor = Tutor.query.filter_by(user_id=user_id).first()
+    tutor = Tutor.query.filter_by(user_id=tutor_id).first()
+
+    if request.method == 'POST':
+        # Delete existing availability times
+        TutorAvailability.query.filter_by(tutor_id=tutor.tutor_id).delete()
+
+        # Create new availability times based on form data
+        for i in range(1, 8):
+            start_time = request.form.get(f'start_time_{i}')
+            end_time = request.form.get(f'end_time_{i}')
+            if start_time and end_time:
+                availability = TutorAvailability(tutor_id=tutor.tutor_id, weekday_id=i, start_time=start_time, end_time=end_time)
+                db.session.add(availability)
+
+        db.session.commit()
+
     availabilities = TutorAvailability.query.filter_by(tutor_id=tutor.tutor_id).all()
-    sorted_availabilities = {i: '00:00 - 00:00' for i in range(1, 7)}  # Initialize with default values
+    sorted_availabilities = {i: '00:00 - 00:00' for i in range(1, 8)}  # Initialize with default values
 
     # Populate the sorted_availabilities dictionary with actual availability
     for availability in availabilities:
@@ -1438,8 +1452,15 @@ def tutor_profil_id(tutor_id):
     subjects = TutorSubject.query.filter_by(tutor_id=tutor.tutor_id).all()
     subject_names =  Subject.query.all()
     subject_names_dict = {subject.subject_id: subject.subject_name for subject in subject_names}
+
+    for subject in subjects:
+        subject_obj = Subject.query.filter_by(subject_id=subject.subject_id).first()
+        schooltype = SchoolType.query.filter_by(schooltype_id=subject_obj.schooltype_id).first()
+        subject.schooltype_name = schooltype.schooltype_name
+
     lessons = Lesson.query.filter_by(tutor_id=tutor.tutor_id).all()
     weekdays = Weekday.query.order_by(Weekday.weekday_id).all()  # Get all
+
     return render_template('admin_tutor_profile.html', tutor=tutor, sorted_availabilities=sorted_availabilities, subjects=subjects, lessons=lessons, weekdays=weekdays, subject_names_dict=subject_names_dict)
 
 from datetime import datetime
@@ -1804,7 +1825,7 @@ def update_lesson(lesson_id):
     updated_notes_content = request.form['notes']
     note = Note.query.filter_by(lesson_id=lesson_id).first()
     if note:
-        note.content = updated_notes_content
+        note.content = updated_notes_content 
 
     else:
         note = Note(lesson_id = lesson_id, content = updated_notes_content)
