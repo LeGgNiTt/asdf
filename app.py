@@ -1428,6 +1428,7 @@ def tutor_profile():
 @admin_required
 def tutor_profil_id(tutor_id):
     tutor = Tutor.query.filter_by(user_id=tutor_id).first()
+    user = User.query.filter_by(id=tutor.user_id).first()
 
     if request.method == 'POST':
         # Delete existing availability times
@@ -1441,6 +1442,9 @@ def tutor_profil_id(tutor_id):
                 availability = TutorAvailability(tutor_id=tutor.tutor_id, weekday_id=i, start_time=start_time, end_time=end_time)
                 db.session.add(availability)
 
+        paygrade_id = request.form.get('paygrade')
+        if paygrade_id:
+            user.paygrade_id = paygrade_id
         db.session.commit()
 
     availabilities = TutorAvailability.query.filter_by(tutor_id=tutor.tutor_id).all()
@@ -1463,7 +1467,9 @@ def tutor_profil_id(tutor_id):
     lessons = Lesson.query.filter_by(tutor_id=tutor.tutor_id).all()
     weekdays = Weekday.query.order_by(Weekday.weekday_id).all()  # Get all
 
-    return render_template('admin_tutor_profile.html', tutor=tutor, sorted_availabilities=sorted_availabilities, subjects=subjects, lessons=lessons, weekdays=weekdays, subject_names_dict=subject_names_dict)
+    paygrades = Paygrade.query.all()
+    paygrade = Paygrade.query.filter_by(id=user.paygrade_id).first()
+    return render_template('admin_tutor_profile.html', tutor=tutor, sorted_availabilities=sorted_availabilities, subjects=subjects, lessons=lessons, weekdays=weekdays, subject_names_dict=subject_names_dict, paygrades=paygrades, paygrade=paygrade, user=user)
 
 from datetime import datetime
 from flask import request, redirect, url_for, flash, render_template

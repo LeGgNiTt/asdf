@@ -98,7 +98,12 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                <button type="submit" class="btn btn-primary">Update</button>
+                <select name="paygrade">
+                    {% for paygrade in paygrades %}
+                    <option value="{{ paygrade.id }}" {% if paygrade.id == user.paygrade_id %}selected{% endif %}>{{ paygrade.value }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary">Aktualisieren</button>
             </form>
         </div>
             
