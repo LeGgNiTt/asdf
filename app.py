@@ -1122,7 +1122,9 @@ def modify_users():
 
     return render_template('modify_users.html', users=user_data)
 
-
+import math
+def round_down_to_nearest_five_cents(n):
+    return math.floor(n * 20) / 20
 
 @app.route('/add_lesson', methods=['GET', 'POST'])
 @login_required
@@ -1179,7 +1181,7 @@ def add_lesson():
                     subject_id=subject_id,
                     price=price,
                     price_adjustment_id=price_adjustment_id,
-                    final_price = round(float(price) * (1 - adjustment_value), 2),
+                    final_price = round_down_to_nearest_five_cents(float(price) * (1 - adjustment_value)),
                     lesson_type_id=1
                 )
                 for student_id in student_ids:
@@ -1197,7 +1199,7 @@ def add_lesson():
                 tutor_id=tutor_id,
                 subject_id=subject_id,
                 price=price,
-                final_price = round(float(price) * (1 - adjustment_value), 2),
+                final_price = round_down_to_nearest_five_cents(float(price) * (1 - adjustment_value)),
                 lesson_type_id = 2 
             )
             for student_id in student_ids:
@@ -1217,7 +1219,7 @@ def add_lesson():
                 subject_id=subject_id,
                 price=price,
                 price_adjustment_id=price_adjustment_id,
-                final_price = round(float(price) * (1 - adjustment_value), 2),
+                final_price = round_down_to_nearest_five_cents(float(price) * (1 - adjustment_value)),
                 lesson_type_id = 1
             )
             for student_id in student_ids:
