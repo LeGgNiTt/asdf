@@ -3,99 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Landing Page</title>
+    <title>Fit4School - Bern</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <style>
-        .fullscreen, .white, .semitrans, .dark {
-            padding: 60px 20px;
-            text-align: center;
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            color: #333;
         }
 
-        .fullscreen {
-            background-color: #f4f4f4;
-        }
-
-        .white {
-            background-color: #ffffff;
-        }
-
-        .semitrans {
-            background-color: rgba(255, 255, 255, 0.5);
-        }
-
-        .dark {
-            background-color: #045494;
+        .navbar {
+            background-color: #004b87; /* Dark blue color */
             color: white;
-        }
-
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 20px;
-        }
-
-        h2, h3 {
-            font-size: 2em;
-            margin-bottom: 15px;
-        }
-
-        p {
-            font-size: 1.2em;
-            line-height: 1.6;
+            padding: 15px;
+            text-align: right;
         }
 
         .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
             font-size: 1.2em;
         }
 
-        .footer {
-            padding: 30px 0;
+        .navbar a:hover {
+            background-color: #f4f4f4;
+            color: #004b87;
         }
 
+        .header {
+            background-color: #f4f4f4;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.8em;
+            color: #004b87; /* Brand color */
+        }
+
+        .header p {
+            font-size: 1.4em;
+        }
+
+        .content {
+            padding: 20px 40px;
+            background-color: white;
+            text-align: left;
+        }
+
+        .content h2 {
+            color: #004b87; /* Brand color */
+        }
+
+        .footer {
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        .animated-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('static/images/giphy.gif') no-repeat center center;
+            background-size: cover;
+            z-index: -1; /* Ensures the background stays behind the content */
+        }
+
+        /* Fallback static background */
+        @media (prefers-reduced-motion: reduce) {
+            .animated-background {
+                background: url('path-to-static-background.jpg') no-repeat center center;
+                background-size: cover;
+            }
+        }
+
+        /* Adjust content styles for better visibility over animated background */
+        .content {
+            /* ... existing styles ... */
+            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white */
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
     </style>
 </head>
 <body>
+    <div class="animated-background"></div>
     <!-- Navigationsleiste -->
     <div class="navbar">
         <a href="/login">Anmelden</a>
     </div>
 
     <!-- Hauptinhalt -->
-    <div class="fullscreen">
-        <h1>Willkommen bei lernzenter.ch</h1>
-        <p>Entdecken Sie eine Welt des Lernens, die das Management der Schüler und Tutoren vereinfacht.</p>
+    <div class="header">
+        <h1>Willkommen bei Fit4School Bern</h1>
+        <p>Ihr Partner für professionelle Nachhilfe und Prüfungsvorbereitung</p>
     </div>
 
-    <!-- Anwendungsvorschau -->
-    <div class="white">
-        <h2>Entdecken Sie die Vorteile unseres Systems</h2>
-    </div>
+    <div class="content" style="text-align: center; max-width: 800px; margin: auto;">
+        <h2>Über Fit4School</h2>
+        <p>Das Fit4School Lern- und Coachingcenter in Bern, gelegen am malerischen Eigerplatz, ist Ihre Anlaufstelle für erstklassige Nachhilfe und individuelles Lerncoaching. Unsere modernen, lichtdurchfluteten Räumlichkeiten bieten eine ideale Lernatmosphäre für Schülerinnen und Schüler aller Altersstufen.</p>
+        <p>Wir verstehen, dass jeder Lernende einzigartig ist. Deshalb bieten wir maßgeschneiderte Lernkonzepte, die auf die individuellen Bedürfnisse jedes Schülers zugeschnitten sind. Unsere erfahrenen Tutorinnen und Tutoren sind nicht nur Fachexperten, sondern auch motivierende Lernbegleiter.</p>
 
-    <div class="semitrans">
-        <h3>Intuitive und umfassende Lösung</h3>
-        <p>Unser System bietet eine nahtlose Integration aller Bildungsprozesse, unterstützt durch modernste Technologie.</p>
-    </div>
+        <h2>Unsere Services</h2>
+        <p>Ob intensive Prüfungsvorbereitung, kontinuierliche Nachhilfe in verschiedenen Fächern oder spezielle Lerncoaching-Sitzungen – wir haben das passende Angebot für Ihre Bedürfnisse. Unsere flexiblen Lernpakete sind ideal für Schüler und Auszubildende, die ihre Leistungen verbessern möchten.</p>
+        
+        <h2>Intuitives Scheduling-System</h2>
+        <p>Entdecken Sie unser innovatives Scheduling-System, das speziell für die Bedürfnisse von Lehrbetrieben und Bildungseinrichtungen entwickelt wurde. Unser System erleichtert die Planung und Verwaltung von Nachhilfestunden, bietet einen übersichtlichen Kalender und ermöglicht eine effiziente Organisation des Unterrichts. Mit benutzerfreundlichen Funktionen und Echtzeit-Updates halten Sie stets den Überblick über Termine und Verfügbarkeiten.</p>
 
-    <div class="white">
-        <h3>Übersichtliches Kalendersystem</h3>
-        <p>Planen und verwalten Sie Unterrichtsstunden mit unserem dynamischen Kalender, der Flexibilität und Effizienz in den Vordergrund stellt.</p>
-    </div>
+        <h2>Packages für Lehrbetriebe</h2>
+        <p>Wir unterstützen auch Lehrbetriebe mit speziellen Lektionenkontingenten, um Auszubildenden gezielte Unterstützung anzubieten. Unsere Tutorinnen und Tutoren können dabei direkt zu Ihrem Betrieb kommen, um ein maßgeschneidertes Lernerlebnis zu gewährleisten.</p>
 
-    <div class="semitrans">
-        <h3>Erweiterte Analysetools</h3>
-        <p>Unser System bietet den Administratoren detaillierte Einblicke in Leistung der Branche und ermöglicht eine vereinfachte Organisation der Arbeitsprozesse.</p>
-    </div>
-
-    <div class="white">
-        <h3>Umfassendes Schülermanagement</h3>
-        <p>Verwalten Sie Schülerdaten effizient und intuitiv, von der Registrierung bis zur Leistungsüberwachung.</p>
+        <h2>Kontakt und Beratung</h2>
+        <p>Interessiert an unseren Dienstleistungen? <a href="https://fit4school.ch/bern/" target="_blank">Besuchen Sie unsere Website</a> für eine unverbindliche Beratung. Unser Team steht bereit, um Sie und Ihre Lernenden optimal zu unterstützen.</p>
     </div>
 
     <!-- Fußzeile -->
-    <div class="dark footer">
-        <p>Build: 2023; Dezember, Aleksandrs Unterkirhers. Alle Rechte vorbehalten.</p>
+    <div class="footer">
+        <p>Build: Jan. 2024, Aleksandrs Unterkirhers. Alle Rechte vorbehalten.</p>
     </div>
 </body>
-
-
-
 </html>
