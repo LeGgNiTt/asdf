@@ -179,11 +179,27 @@ def get_lessons_in_range(from_date, end_date, subject_id=None, family_id=None, t
 
     return lesson_details
 
+from celery import Celery
+
+# Function to integrate Celery with Flask
+def make_celery(app):
+    # Configure Celery using Flask's settings
+    celery = Celery(app.import_name, backend=app.config['CELERY_RESULT_BACKEND'], broker=app.config['CELERY_BROKER_URL'])
+    celery.conf.update(app.config)
+    return celery
+
+
+TWILIO_ACCOUNT_SID = 'AC71388458358fdc57eebd06ede4f797e4'
+TWILIO_AUTH_TOKEN = '6ca0cbafd5e7de0da984b661d9fca602'
+TWILIO_WHATSAPP_NUMBER = 'whatsapp:+12056240334'  # e.g., 'whatsapp:+14155238886'
 
 app = Flask(__name__)
 # Database configuration and initialization
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:rootroot@localhost/showcase'
 app.config['SECRET_KEY'] = 'development'
+app.config['CELERY_BROKER_URL'] = 'db+mysql+pymysql://root:rootroot@localhost/showcase'
+app.config['CELERY_RESULT_BACKEND'] = 'db+mysql+pymysql://root:rootroot@localhost/showcase'
+celery = make_celery(app)
 db.init_app(app)
 with app.app_context():
     db.create_all()
@@ -192,7 +208,48 @@ migrate = Migrate(app, db)
 login_manager = LoginManager(app)
 bcrypt = Bcrypt(app)
 
+import phonenumbers
 
+def is_valid_number(phone_number):
+    try:
+        parsed_number = phonenumbers.parse(phone_number, None)
+        return phonenumbers.is_valid_number(parsed_number)
+    except phonenumbers.NumberParseException:
+        return False
+
+from twilio.rest import Client
+from twilio.base.exceptions import TwilioException
+
+# Twilio credentials
+
+
+def send_whatsapp_message(number, text):
+    client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+    try:
+        message = client.messages.create(
+            body=text,
+            from_=TWILIO_WHATSAPP_NUMBER,
+            to=f'whatsapp:{number}'
+        )
+        print(f"Message sent to {number}: {message.sid}")
+    except TwilioException as e:
+        print(f"Failed to send message to {number}: {e}")
+
+
+@celery.task
+def send_whatsapp_reminders():
+    now = datetime.now()
+    upcomming_lessons = Lesson.query.filter(Lesson.date.between(now, now + timedelta(hours=24))).all()
+    for lesson in upcomming_lessons:
+        tutor = Tutor.query.filter_by(tutor_id=lesson.tutor_id).first()
+        tutor_phone_num = tutor.phone_num
+        text = "reminder of upcomming lecture at " + str(lesson.date) + " from: " + str(lesson.start_time) + " to: " + str(lesson.end_time) 
+        if tutor_phone_num:
+            send_whatsapp_message(tutor_phone_num, text)
+
+
+
+send_whatsapp_message('+41799052142', 'test')
 
 
 @app.route('/')
