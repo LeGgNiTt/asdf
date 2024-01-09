@@ -1634,6 +1634,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from flask import send_file
 from reportlab.lib import colors
 
+import os
 
 @app.route('/admin/finances/create_pdf', methods=['POST'])
 @login_required
@@ -1645,7 +1646,8 @@ def create_pdf():
     finances = data['finances']
     total_profit = data['total_profit']
     others = data.get('others', [])
-    filename = "finances_{}.pdf".format(datetime.now().strftime("%Y%m%d%H%M%S"))
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    filename = os.path.join(dir_path, "finances_{}.pdf".format(datetime.now().strftime("%Y%m%d%H%M%S")))
     doc = SimpleDocTemplate(filename, pagesize=letter)
     elements = []
     styles = getSampleStyleSheet()
@@ -1711,7 +1713,8 @@ def create_tutor_pdf():
     data = request.get_json()
 
     lessons = data['lessons']
-    filename = "finances_{}.pdf".format(datetime.now().strftime("%Y%m%d%H%M%S"))
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    filename = os.path.join(dir_path, "finances_{}.pdf".format(datetime.now().strftime("%Y%m%d%H%M%S")))
     doc = SimpleDocTemplate(filename, pagesize=letter)
     elements = []
     styles = getSampleStyleSheet()
