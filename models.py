@@ -42,6 +42,7 @@ class Tutor(db.Model):
     name = db.Column(db.String(255), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     availabilities = db.relationship('TutorAvailability', backref='tutor')
+    phone_num = db.Column(db.String(20), nullable=True)
 
 
 class Weekday(db.Model):

@@ -56,7 +56,7 @@
                     <a class="nav-link" href="/tutor/lessons">Stunden-Übersicht</a>
                 </li>
                 <li class="nav-item avtive">
-                    <a class="nav-link" href="/tutor/edit_tutor">Fächer anzeigen</a>
+                    <a class="nav-link" href="/tutor/edit_tutor">Tutor Profil</a>
                 </li>
             </ul>
         </div>
@@ -86,19 +86,26 @@
                 {% endfor %}
             </tbody>
         </table>
-        <button class="btn btn-primary" onclick="window.location.href='/tutor/add_subject'">Add Subject</button>
+        <button class="btn btn-primary" onclick="window.location.href='/tutor/add_subject'">Fach hinzufügen</button>
     </div>
     <hr>
     <div class="container mt-4">
         <form action="/tutor/edit_tutor" method="post">
+            <!-- Phone Number Field -->
+            <div class="form-group">
+                <label for="phone_num">Telefonnummer:</label>
+                <input type="text" class="form-control" id="phone_num" name="phone_num" value="{{ tutor.phone_num or '' }}" placeholder="z.B. +41799052142">
+            </div>
+
             <table>
                 <tr>
                     <th>Day</th>
                     <th>Time Slot (Start - End)</th>
                 </tr>
+                {% set day_names = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"] %}
                 {% for day_id, time in times.items() %}
-                <tr>
-                    <td>Day {{ day_id }}</td>
+                    <tr>
+                        <td>{{ day_names[day_id|int-1] }}</td>
                     <td class="text-center align-middle">
                         <input type="time" name="start_time_{{ day_id }}" value="{{ time.start_time if time else '' }}" class="time-input">
                         -
@@ -108,7 +115,7 @@
                 {% endfor %}
             </table>
             <div class="text-center mt-4">
-                <input type="submit" value="Update Times" class="btn btn-primary">
+                <input type="submit" value="Aktualisieren" class="btn btn-primary">
             </div>
         </form>
     </div>

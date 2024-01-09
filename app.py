@@ -1380,6 +1380,9 @@ def edit_tutor():
                 availability = TutorAvailability(tutor_id=tutor.tutor_id, weekday_id=day_id, start_time=start_time, end_time=end_time)
                 db.session.add(availability)
 
+        phone_num = request.form.get('phone_num')
+        if phone_num:
+            tutor.phone_num = phone_num
         db.session.commit()
         return redirect(url_for('edit_tutor'))
 
@@ -1445,6 +1448,10 @@ def tutor_profil_id(tutor_id):
         paygrade_id = request.form.get('paygrade')
         if paygrade_id:
             user.paygrade_id = paygrade_id
+
+        phone_num = request.form.get('phone_num')
+        if phone_num:
+            tutor.phone_num = phone_num
         db.session.commit()
 
     availabilities = TutorAvailability.query.filter_by(tutor_id=tutor.tutor_id).all()
@@ -1638,8 +1645,8 @@ def create_pdf():
     finances = data['finances']
     total_profit = data['total_profit']
     others = data.get('others', [])
-
-    doc = SimpleDocTemplate("finances.pdf", pagesize=letter)
+    filename = "finances_{}.pdf".format(datetime.now().strftime("%Y%m%d%H%M%S"))
+    doc = SimpleDocTemplate(filename, pagesize=letter)
     elements = []
     styles = getSampleStyleSheet()
 
@@ -1695,7 +1702,7 @@ def create_pdf():
     # Generate PDF
     doc.build(elements)
 
-    return send_file('finances.pdf', as_attachment=True)
+    return send_file(filename, as_attachment=True)
 
 @app.route('/admin/tutors/create_pdf', methods=['POST'])
 @login_required
@@ -1704,8 +1711,8 @@ def create_tutor_pdf():
     data = request.get_json()
 
     lessons = data['lessons']
-
-    doc = SimpleDocTemplate("tutors.pdf", pagesize=letter)
+    filename = "finances_{}.pdf".format(datetime.now().strftime("%Y%m%d%H%M%S"))
+    doc = SimpleDocTemplate(filename, pagesize=letter)
     elements = []
     styles = getSampleStyleSheet()
 
@@ -1735,7 +1742,7 @@ def create_tutor_pdf():
     # Generate PDF
     doc.build(elements)
 
-    return send_file('tutors.pdf', as_attachment=True)
+    return send_file(filename, as_attachment=True)
 
 @app.route('/update_entrance_fee', methods=['POST'])
 def update_entrance_fee():

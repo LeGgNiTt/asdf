@@ -75,6 +75,12 @@
         <div>
             <h2>Verfügbarkeit</h2>
             <form method="POST">
+                <!-- Phone Number Field -->
+            <div class="form-group">
+                <label for="phone_num">Telefonnummer:</label>
+                <input type="text" class="form-control" id="phone_num" name="phone_num" value="{{ tutor.phone_num or '' }}" placeholder="z.B. +41799054221">
+            </div>
+
                 <table class="table">
                     <thead>
                         <tr>
@@ -98,6 +104,7 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                <p>Lohn: </p>
                 <select name="paygrade">
                     {% for paygrade in paygrades %}
                     <option value="{{ paygrade.id }}" {% if paygrade.id == user.paygrade_id %}selected{% endif %}>{{ paygrade.value }}</option>
