@@ -70,6 +70,10 @@
                     {% endfor %}
                 </select>                
             </div>
+            <div class="form-group">
+                <label for="student_num">Student Number:</label>
+                <input type="text" class="form-control" id="student_num" name="student_num" value="{{ student.phone_num or '' }}" placeholder="Zum Beispiel +41799052141">
+            </div>
             <button type="submit" class="btn btn-primary">Änderungen speichern</button>
         </form>
     </div>

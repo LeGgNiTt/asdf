@@ -174,3 +174,15 @@ class ReportCard(db.Model):
 
     def __repr__(self):
         return f'<ReportCard {self.id}>'
+    
+
+
+class Contacted(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    lesson_id = db.Column(db.Integer, db.ForeignKey('lesson.lesson_id'), nullable=False)
+    phone_num = db.Column(db.String(20), nullable=False)
+    
+    lesson = db.relationship('Lesson', backref='contacted')
+
+    def __repr__(self):
+        return f'<Contacted {self.id}>'

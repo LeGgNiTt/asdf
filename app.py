@@ -191,7 +191,7 @@ def make_celery(app):
 
 TWILIO_ACCOUNT_SID = 'AC71388458358fdc57eebd06ede4f797e4'
 TWILIO_AUTH_TOKEN = '6ca0cbafd5e7de0da984b661d9fca602'
-TWILIO_WHATSAPP_NUMBER = 'whatsapp:+12056240334'  # e.g., 'whatsapp:+14155238886'
+TWILIO_WHATSAPP_NUMBER = 'whatsapp:+14155238886'  # e.g., 'whatsapp:+14155238886'
 
 app = Flask(__name__)
 # Database configuration and initialization
@@ -223,6 +223,16 @@ from twilio.base.exceptions import TwilioException
 # Twilio credentials
 
 
+def format_number(phone_number):
+    try:
+        parsed_number = phonenumbers.parse(phone_number, "CH")  # 'CH' is the country code for Switzerland
+        formatted_number = phonenumbers.format_number(parsed_number, phonenumbers.PhoneNumberFormat.E164)
+        return formatted_number
+    except phonenumbers.NumberParseException:
+        return None  # or handle the error as you prefer
+
+
+
 def send_whatsapp_message(number, text):
     client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
     try:
@@ -231,7 +241,8 @@ def send_whatsapp_message(number, text):
             from_=TWILIO_WHATSAPP_NUMBER,
             to=f'whatsapp:{number}'
         )
-        print(f"Message sent to {number}: {message.sid}")
+        print(f"Message status: {message.status}")  
+        print(f"Message sent to {number}: {text}")
     except TwilioException as e:
         print(f"Failed to send message to {number}: {e}")
 
@@ -243,9 +254,25 @@ def send_whatsapp_reminders():
     for lesson in upcomming_lessons:
         tutor = Tutor.query.filter_by(tutor_id=lesson.tutor_id).first()
         tutor_phone_num = tutor.phone_num
+        tutor_phone_num = format_number(tutor_phone_num)
         text = "reminder of upcomming lecture at " + str(lesson.date) + " from: " + str(lesson.start_time) + " to: " + str(lesson.end_time) 
-        if tutor_phone_num:
+        if tutor_phone_num and not Contacted.query.filter_by(lesson_id=lesson.lesson_id, phone_num=tutor_phone_num).first():
             send_whatsapp_message(tutor_phone_num, text)
+            db.session.add(Contacted(lesson_id=lesson.id, phone_num=tutor_phone_num))
+        students = lesson.students
+        for student in students:
+            student_phone_num = student.phone_num
+            student_phone_num = format_number(student_phone_num)
+            if student_phone_num and not Contacted.query.filter_by(lesson_id=lesson.lesson_id, phone_num=student_phone_num).first():
+                send_whatsapp_message(student_phone_num, text)
+                db.session.add(Contacted(lesson_id=lesson.id, phone_num=student_phone_num))
+            family = Family.query.filter_by(family_id=student.family_id).first()
+            family_phone_num = family.phone_num
+            family_phone_num = format_number(family_phone_num)
+            if family_phone_num != student_phone_num and not Contacted.query.filter_by(lesson_id=lesson.lesson_id, phone_num=family_phone_num).first():
+                send_whatsapp_message(family_phone_num, text)
+                db.session.add(Contacted(lesson_id=lesson.id, phone_num=family_phone_num))
+    db.session.commit()
 
 
 
@@ -1012,6 +1039,7 @@ def edit_student(student_id):
         student.LastName = request.form.get('last_name')
         student.DateOfBirth = request.form.get('date_of_birth')
         student.schooltype_id = request.form.get('schooltype_id')
+        student.phone_num = request.form.get('student_num')
         db.session.commit()
         return redirect(url_for('modify_family'))
     return render_template('edit_student.html', student=student, schooltypes=schooltypes)
@@ -1183,10 +1211,12 @@ import math
 def round_down_to_nearest_five_cents(n):
     return math.floor(n * 20) / 20
 
-@app.route('/add_lesson', methods=['GET', 'POST'])
+@app.route('/add_lesson', defaults={'lesson_id': None}, methods=['GET', 'POST'])
+@app.route('/add_lesson/<int:lesson_id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
-def add_lesson():
+def add_lesson(lesson_id):
+    lesson = Lesson.query.get(lesson_id) if lesson_id else None
     if request.method == 'POST':
         date = request.form.get('date')
         date = datetime.strptime(date, '%Y-%m-%d').date()
@@ -1287,10 +1317,10 @@ def add_lesson():
             return redirect(url_for('modify_lessons'))
 
     
-    students = Student.query.all()
+    students = Student.query.order_by(Student.LastName).all()
     price_adjustments = PriceAdjustment.query.all()
     schooltypes = SchoolType.query.all()
-    return render_template('add_lesson.html', students=students, price_adjustments=price_adjustments, schooltypes=schooltypes)
+    return render_template('add_lesson.html', students=students, price_adjustments=price_adjustments, schooltypes=schooltypes, lesson=lesson)
 
 @app.route('/add_lesson/<int:student_id>', methods=['GET', 'POST'])
 @login_required
@@ -1916,6 +1946,42 @@ def update_lesson(lesson_id):
 def query_tutors():
     return 200
 
+@app.route('/delete_family/<int:family_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_family(family_id):
+    family = Family.query.get(family_id)
+    students_in_family = Student.query.filter_by(family_id=family_id).first()
+    if family and not students_in_family:
+        # Delete or update all finance records related to the family
+        Finance.query.filter_by(family_id=family_id).delete()
+        db.session.delete(family)
+        db.session.commit()
+    return redirect(url_for('modify_family'))
+
+
+@app.route('/delete_student/<int:student_id>', methods=['POST'])
+def delete_student(student_id):
+    student = Student.query.get(student_id)
+    if student:
+        # Remove the student from all lessons
+        for lesson in student.enrolled_lessons:
+            lesson.students.remove(student)
+        
+        # Delete all report cards related to the student
+        ReportCard.query.filter_by(student_id=student_id).delete()
+
+        # Remove the student from the family
+        # Note: This assumes that a family can exist without students. If this is not the case, you might want to delete the family as well.
+        student.family_id = None
+
+        # Remove the student's school type
+        # Note: This assumes that a school type can exist without students. If this is not the case, you might want to delete the school type as well.
+        student.schooltype_id = None
+
+        db.session.delete(student)
+        db.session.commit()
+    return redirect(url_for('modify_family'))
 
 
 
