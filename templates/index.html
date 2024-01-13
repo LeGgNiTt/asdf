@@ -12,8 +12,26 @@
             padding: 0;
             box-sizing: border-box;
             color: #333;
+            background-color: #f4f4f4; /* Optional: Sets a light background color for the whole page */
         }
-
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .body-content {
+            min-height: calc(100% - 60px); /* Adjust 60px based on the actual height of your footer */
+            padding-bottom: 20px; /* Space above the footer */
+        }
+        .content-wrapper {
+            min-height: 100%; /* Minimum height of 100% for the viewport */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .main-content {
+            flex: 1; /* Expands to take up available space */
+        }
         .navbar {
             background-color: #004b87; /* Dark blue color */
             color: white;
@@ -34,7 +52,6 @@
         }
 
         .header {
-            background-color: #f4f4f4;
             padding: 40px 20px;
             text-align: center;
         }
@@ -49,86 +66,108 @@
             font-size: 1.4em;
         }
 
-        .content {
-            padding: 20px 40px;
-            background-color: white;
-            text-align: left;
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
         }
 
-        .content h2 {
-            color: #004b87; /* Brand color */
+        .box {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .box h2 {
+            color: #004b87;
+            margin-bottom: 10px;
+        }
+
+        .box p {
+            color: #333;
+        }
+
+        .box:hover {
+            transform: translateY(-10px);
         }
 
         .footer {
-            background-color: #333;
-            color: white;
-            padding: 20px;
+            background-color: #f4f4f4; /* Light gray background */
+            color: #333; /* Dark text for contrast */
+            padding: 10px 20px;
             text-align: center;
-            font-size: 0.9em;
-        }
-        .animated-background {
-            position: fixed;
-            top: 0;
-            left: 0;
+            font-size: 0.8em;
+            border-top: 1px solid #ddd; /* Optional: adds a subtle line at the top of the footer */
+            position: relative; /* Ensures the footer is at the bottom */
+            bottom: 0;
             width: 100%;
-            height: 100%;
-            background: url('static/images/giphy.gif') no-repeat center center;
-            background-size: cover;
-            z-index: -1; /* Ensures the background stays behind the content */
+        }
+        .login-button {
+            background-color: #004b87; /* Dark blue, matching the navbar */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 20px; /* Space above the button */
+            transition: background-color 0.3s ease;
         }
 
-        /* Fallback static background */
-        @media (prefers-reduced-motion: reduce) {
-            .animated-background {
-                background: url('path-to-static-background.jpg') no-repeat center center;
-                background-size: cover;
-            }
+        .login-button:hover {
+            background-color: #002d54; /* Slightly darker blue on hover */
         }
 
-        /* Adjust content styles for better visibility over animated background */
-        .content {
-            /* ... existing styles ... */
-            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white */
-            border-radius: 15px;
-            padding: 40px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
+
     </style>
 </head>
 <body>
-    <div class="animated-background"></div>
-    <!-- Navigationsleiste -->
-    <div class="navbar">
-        <a href="/login">Anmelden</a>
-    </div>
+    <div class="content-wrapper">
+        <!-- Navigationsleiste -->
+        <div class="navbar">
+            <a href="/login">Anmelden</a>
+        </div>
+        <div class="main-content">
+            <!-- Hauptinhalt -->
+            <div class="header">
+                <h1>Willkommen bei fit4school Bern</h1>
+                <p>Ihr Partner für professionelle Nachhilfe und Prüfungsvorbereitung</p>
+            </div>
 
-    <!-- Hauptinhalt -->
-    <div class="header">
-        <h1>Willkommen bei fit4school Bern</h1>
-        <p>Ihr Partner für professionelle Nachhilfe und Prüfungsvorbereitung</p>
-    </div>
-
-    <div class="content" style="text-align: center; max-width: 800px; margin: auto;">
-        <h2>Über Fit4School</h2>
-        <p>Das Fit4School Lern- und Coachingcenter in Bern, gelegen am malerischen Eigerplatz, ist Ihre Anlaufstelle für erstklassige Nachhilfe und individuelles Lerncoaching. Unsere modernen, lichtdurchfluteten Räumlichkeiten bieten eine ideale Lernatmosphäre für Schülerinnen und Schüler aller Altersstufen.</p>
-        <p>Wir verstehen, dass jeder Lernende einzigartig ist. Deshalb bieten wir maßgeschneiderte Lernkonzepte, die auf die individuellen Bedürfnisse jedes Schülers zugeschnitten sind. Unsere erfahrenen Tutorinnen und Tutoren sind nicht nur Fachexperten, sondern auch motivierende Lernbegleiter.</p>
-
-        <h2>Unsere Services</h2>
-        <p>Ob intensive Prüfungsvorbereitung, kontinuierliche Nachhilfe in verschiedenen Fächern oder spezielle Lerncoaching-Sitzungen – wir haben das passende Angebot für Ihre Bedürfnisse. Unsere flexiblen Lernpakete sind ideal für Schüler und Auszubildende, die ihre Leistungen verbessern möchten.</p>
-        
-        <h2>Intuitives Scheduling-System</h2>
-        <p>Entdecken Sie unser innovatives Scheduling-System, das speziell für die Bedürfnisse von Lehrbetrieben und Bildungseinrichtungen entwickelt wurde. Unser System erleichtert die Planung und Verwaltung von Nachhilfestunden, bietet einen übersichtlichen Kalender und ermöglicht eine effiziente Organisation des Unterrichts. Mit benutzerfreundlichen Funktionen und Echtzeit-Updates halten Sie stets den Überblick über Termine und Verfügbarkeiten.</p>
-
-        <h2>Packages für Lehrbetriebe</h2>
-        <p>Wir unterstützen auch Lehrbetriebe mit speziellen Lektionenkontingenten, um Auszubildenden gezielte Unterstützung anzubieten. Unsere Tutorinnen und Tutoren können dabei direkt zu Ihrem Betrieb kommen, um ein maßgeschneidertes Lernerlebnis zu gewährleisten.</p>
-
-        <h2>Kontakt und Beratung</h2>
-        <p>Interessiert an unseren Dienstleistungen? <a href="https://fit4school.ch/bern/" target="_blank">Besuchen Sie unsere Website</a> für eine unverbindliche Beratung. Unser Team steht bereit, um Sie und Ihre Lernenden optimal zu unterstützen.</p>
-    </div>
-
-    <!-- Fußzeile -->
-    <div class="footer">
-        <p>Build: Jan. 2024, Aleksandrs Unterkirhers. Alle Rechte vorbehalten.</p>
+            <div class="container">
+                <div class="box">
+                    <h2>Über fit4school</h2>
+                    <p>Das Fit4School Lern- und Coachingcenter in Bern, gelegen am malerischen Eigerplatz, ist Ihre Anlaufstelle für erstklassige Nachhilfe und individuelles Lerncoaching. Unsere modernen, lichtdurchfluteten Räumlichkeiten bieten eine ideale Lernatmosphäre für Schülerinnen und Schüler aller Altersstufen.</p>
+                    <p>Wir verstehen, dass jeder Lernende einzigartig ist. Deshalb bieten wir maßgeschneiderte Lernkonzepte, die auf die individuellen Bedürfnisse jedes Schülers zugeschnitten sind. Unsere erfahrenen Tutorinnen und Tutoren sind nicht nur Fachexperten, sondern auch motivierende Lernbegleiter.</p>    
+                </div>
+                <div class="box">
+                    <h2>Unsere Services</h2>
+                    <p>Ob intensive Prüfungsvorbereitung, kontinuierliche Nachhilfe in verschiedenen Fächern oder spezielle Lerncoaching-Sitzungen – wir haben das passende Angebot für Ihre Bedürfnisse. Unsere flexiblen Lernpakete sind ideal für Schüler und Auszubildende, die ihre Leistungen verbessern möchten.</p>
+                
+                </div>
+                <div class="box">
+                    <h2>Intuitives Scheduling-System</h2>
+                    <p>Entdecken Sie unser innovatives Scheduling-System, das speziell für die Bedürfnisse von Lehrbetrieben und Bildungseinrichtungen entwickelt wurde. Unser System erleichtert die Planung und Verwaltung von Nachhilfestunden, bietet einen übersichtlichen Kalender und ermöglicht eine effiziente Organisation des Unterrichts. Mit benutzerfreundlichen Funktionen und Echtzeit-Updates halten Sie stets den Überblick über Termine und Verfügbarkeiten.</p>
+                    <br>
+                    <a href="/login" class="login-button">Anmelden</a>
+                </div>
+                <div class="box">
+                    <h2>Packages für Lehrbetriebe</h2>
+                    <p>Wir unterstützen auch Lehrbetriebe mit speziellen Lektionenkontingenten, um Auszubildenden gezielte Unterstützung anzubieten. Unsere Tutorinnen und Tutoren können dabei direkt zu Ihrem Betrieb kommen, um ein maßgeschneidertes Lernerlebnis zu gewährleisten.</p>
+                    <h2>Kontakt und Beratung</h2>
+                    <p>Interessiert an unseren Dienstleistungen? <a href="https://fit4school.ch/bern/" target="_blank">Besuchen Sie unsere Website</a> für eine unverbindliche Beratung. Unser Team steht bereit, um Sie und Ihre Lernenden optimal zu unterstützen.</p>    
+                    
+                </div>
+            </div>
+        </div>
+        <!-- Fußzeile -->
+        <div class="footer">
+            <p>Build: Jan. 2024, Aleksandrs Unterkirhers. Alle Rechte vorbehalten.</p>
+        </div>
     </div>
 </body>
 </html>

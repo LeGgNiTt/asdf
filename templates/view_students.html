@@ -132,7 +132,7 @@
                         </div>
                         {% endfor %}
                     </div>
-                    <a href="/add_lesson/{{ student_id }}" class="btn btn-primary">Stunde erstellen</a>
+                    <a href="{{ url_for('add_lesson_for_student', student_id=student_id) }}" class="btn btn-primary">Neue Lektion für Schüler</a>
                     <a href="/tutor/create_report_card/{{ student_id }}" class="btn btn-secondary">Bericht erstellen</a>
                 </div>
                 <!-- Modal for viewing notes -->

@@ -189,17 +189,22 @@ def make_celery(app):
     return celery
 
 
-TWILIO_ACCOUNT_SID = 'AC71388458358fdc57eebd06ede4f797e4'
-TWILIO_AUTH_TOKEN = '6ca0cbafd5e7de0da984b661d9fca602'
-TWILIO_WHATSAPP_NUMBER = 'whatsapp:+14155238886'  # e.g., 'whatsapp:+14155238886'
+
 
 app = Flask(__name__)
 # Database configuration and initialization
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:rootroot@localhost/showcase'
+app.config['SQLALCHEMY_POOL_SIZE'] = 10
+app.config['SQLALCHEMY_POOL_TIMEOUT'] = 30
+app.config['SQLALCHEMY_POOL_RECYCLE'] = 280     
 app.config['SECRET_KEY'] = 'development'
+
+'''
 app.config['CELERY_BROKER_URL'] = 'db+mysql+pymysql://root:rootroot@localhost/showcase'
 app.config['CELERY_RESULT_BACKEND'] = 'db+mysql+pymysql://root:rootroot@localhost/showcase'
 celery = make_celery(app)
+'''
+
 db.init_app(app)
 with app.app_context():
     db.create_all()
@@ -232,7 +237,7 @@ def format_number(phone_number):
         return None  # or handle the error as you prefer
 
 
-
+'''
 def send_whatsapp_message(number, text):
     client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
     try:
@@ -278,6 +283,7 @@ def send_whatsapp_reminders():
 
 send_whatsapp_message('+41799052142', 'test')
 
+'''
 
 @app.route('/')
 def index():
@@ -1113,8 +1119,8 @@ def filter_lessons_in_range(from_date, end_date, school_type_id=None, subject_id
 @admin_required
 def modify_lessons():
     today = datetime.now()
-    from_date = datetime(today.year, today.month, 1)
-    to_date = datetime(today.year, today.month, 1) + relativedelta(months=1) - timedelta(days=1)
+    from_date = datetime(today.year, today.month, today.day)
+    to_date = datetime(today.year, today.month, today.day) + timedelta(days=7)
     schooltype_id = None
     subject_id = None
     tutor_id = None
@@ -1217,6 +1223,23 @@ def round_down_to_nearest_five_cents(n):
 @admin_required
 def add_lesson(lesson_id):
     lesson = Lesson.query.get(lesson_id) if lesson_id else None
+    prepopulated_data = {}
+    if lesson:
+        subject_id = lesson.subject_id
+        subject = Subject.query.get(subject_id)
+        schooltype_id = subject.schooltype_id
+        prepopulated_data = {
+            'date': lesson.date,
+            'start_time': lesson.start_time,
+            'end_time': lesson.end_time,	
+            'tutor_id': lesson.tutor_id,
+            'subject_id': lesson.subject_id,
+            'schooltype_id': schooltype_id,
+            'student_ids': [student.StudentID for student in lesson.students],
+            'price': lesson.price,
+            'price_adjustment_id': lesson.price_adjustment_id
+        }
+
     if request.method == 'POST':
         date = request.form.get('date')
         date = datetime.strptime(date, '%Y-%m-%d').date()
@@ -1226,7 +1249,6 @@ def add_lesson(lesson_id):
         student_id = request.form.get('student_id')
         subject_id = request.form.get('subject_id')
         price = request.form.get('price')
-        regelmaessig = request.form.get('regelmaessig') is not None
         
         price_adjustment_id = request.form.get('price_adjustment_id')
         price_adjustment = PriceAdjustment.query.get(price_adjustment_id)
@@ -1258,26 +1280,7 @@ def add_lesson(lesson_id):
                 db.session.add(new_lesson)
             db.session.commit()
             return redirect(url_for('modify_lessons'))
-        if regelmaessig:
-            for i in range(4):  # create a lesson for each of the next 4 weeks
-                new_lesson = Lesson(
-                    date=date + timedelta(weeks=i),
-                    start_time=start_time,
-                    end_time=end_time,
-                    tutor_id=tutor_id,
-                    subject_id=subject_id,
-                    price=price,
-                    price_adjustment_id=price_adjustment_id,
-                    final_price = round_down_to_nearest_five_cents(float(price) * (1 - adjustment_value)),
-                    lesson_type_id=1
-                )
-                for student_id in student_ids:
-                    student = Student.query.get(student_id)
-                    student.enrolled_lessons.append(new_lesson)
-                db.session.add(new_lesson)
-            db.session.commit()
-            return redirect(url_for('modify_lessons'))
-
+        
         if len(student_ids) > 1:
             new_lesson = Lesson(
                 date=date,
@@ -1320,16 +1323,80 @@ def add_lesson(lesson_id):
     students = Student.query.order_by(Student.LastName).all()
     price_adjustments = PriceAdjustment.query.all()
     schooltypes = SchoolType.query.all()
-    return render_template('add_lesson.html', students=students, price_adjustments=price_adjustments, schooltypes=schooltypes, lesson=lesson)
+    return render_template('add_lesson.html', students=students, price_adjustments=price_adjustments, schooltypes=schooltypes, prepopulated_data=prepopulated_data)
 
-@app.route('/add_lesson/<int:student_id>', methods=['GET', 'POST'])
+@app.route('/tutor/add_lesson/lesson/<int:lesson_id>', methods=['GET', 'POST'])
+@login_required
+@tutor_required
+def add_lesson_based_on_existing(lesson_id):
+    students = []
+    tutor_id = Tutor.query.filter_by(user_id=current_user.id).first().tutor_id
+    if lesson_id:
+        lesson = Lesson.query.get_or_404(lesson_id)
+        schooltype = Subject.query.get(lesson.subject_id).schooltype
+        for student in lesson.students:
+            students.append(student)
+        prepopulated_data = {
+            'date': lesson.date.strftime('%Y-%m-%d'),
+            'start_time': lesson.start_time.strftime('%H:%M'),
+            'end_time': lesson.end_time.strftime('%H:%M'),
+            'schooltype_id': schooltype.schooltype_id,
+            'subject_id': lesson.subject_id,
+        }
+
+    if request.method == 'POST':
+        date = request.form.get('date')
+        start_time = request.form.get('start_time')
+        end_time = request.form.get('end_time')
+        subject_id = request.form.get('subject_id')
+
+        # Fetch the last lesson's pricing details
+        last_lesson = lesson
+        if last_lesson:
+            price = last_lesson.price
+            price_adjustment_id = last_lesson.price_adjustment_id
+            final_price = last_lesson.final_price
+        else:
+            # Default pricing if no last lesson exists
+            price = 0
+            price_adjustment_id = None
+            final_price = 0
+
+        new_lesson = Lesson(
+            date=date,
+            start_time=start_time,
+            end_time=end_time,
+            tutor_id=tutor_id,
+            subject_id=subject_id,
+            price=price,
+            price_adjustment_id=price_adjustment_id,
+            final_price=final_price
+        )
+
+        # Associate the student with the lesson
+        if students:
+            for student in students:
+                new_lesson.students.append(student)
+
+        db.session.add(new_lesson)
+        db.session.commit()
+
+        return redirect(url_for('view_students'))  # Redirect to an appropriate page
+    subjects = Subject.query.all()  # Assuming you have a Subject model
+    schooltypes = SchoolType.query.all()
+    return render_template('tutor_add_lesson_for_student.html', students=students, subjects=subjects, schooltypes=schooltypes, prepopulated_data=prepopulated_data)
+    
+
+
+
+@app.route('/tutor/add_lesson/student/<int:student_id>', methods=['GET', 'POST'])
 @login_required
 @tutor_required
 def add_lesson_for_student(student_id):
-    student = Student.query.get_or_404(student_id)
+    students = []
+    prepopulated_data = {}
+    student_prime = Student.query.get_or_404(student_id)
     tutor_id = Tutor.query.filter_by(user_id=current_user.id).first().tutor_id
-    schooltypes = SchoolType.query.all()
-
     if request.method == 'POST':
         date = request.form.get('date')
         start_time = request.form.get('start_time')
@@ -1358,17 +1425,16 @@ def add_lesson_for_student(student_id):
             price_adjustment_id=price_adjustment_id,
             final_price=final_price
         )
-
-        # Associate the student with the lesson
-        new_lesson.students.append(student)
+        new_lesson.students.append(student_prime)
 
         db.session.add(new_lesson)
         db.session.commit()
 
         return redirect(url_for('view_students'))  # Redirect to an appropriate page
-
+    students.append(student_prime)
     subjects = Subject.query.all()  # Assuming you have a Subject model
-    return render_template('tutor_add_lesson_for_student.html', student=student, subjects=subjects, schooltypes=schooltypes)
+    schooltypes = SchoolType.query.all()
+    return render_template('tutor_add_lesson_for_student.html', students=students, subjects=subjects, schooltypes=schooltypes, prepopulated_data=prepopulated_data)
 
 
 
@@ -1640,12 +1706,13 @@ from dateutil.relativedelta import relativedelta
 
 
 
-
+from datetime import date
 
 @app.route('/admin/finances', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def admin_finances():
+    display_lessons = []
     today = datetime.now()
     from_date = datetime(today.year, today.month, 1)
     end_date = datetime(today.year, today.month, 1) + relativedelta(months=1) - timedelta(days=1)
@@ -1656,23 +1723,39 @@ def admin_finances():
     lessons = get_lessons_in_range(from_date, end_date, subject_id, family_id, tutor_id)
     tutors = {lesson['lesson'].tutor_id: Tutor.query.get(lesson['lesson'].tutor_id) for lesson in lessons}
     for lesson in lessons:
-            if lesson['lesson'].has_occured == True:
-                # Calculate tutor_payment based on your logic (e.g., lesson['lesson'].price - lesson['discount'])
-                tutor_id = lesson['lesson'].tutor_id
-                tutor = tutors[tutor_id]
-                user_id = tutor.user_id
-                user = User.query.filter_by(id=user_id).first()
-                paygrade = Paygrade.query.filter_by(id=user.paygrade_id).first()
-
-                if paygrade:
-                    lesson['tutor_payment'] = paygrade.value
+        num_students = len(lesson['lesson'].students.all())
+        for i, student in enumerate(lesson['lesson'].students.all()):
+            display_lesson = {}
+            display_lesson['date'] = lesson['lesson'].date
+            display_lesson['subject_name'] = Subject.query.get(lesson['lesson'].subject_id).subject_name
+            display_lesson['tutor_name'] = Tutor.query.get(lesson['lesson'].tutor_id).name
+            display_lesson['student_name'] = f"{student.FirstName} {student.LastName}"
+            display_lesson['price'] = lesson['lesson'].price / num_students if 'price' in lesson['lesson'].__dict__ else 0
+            price_adjustment_id = lesson['lesson'].price_adjustment_id
+            price_adjustment = PriceAdjustment.query.get(price_adjustment_id)
+            discount = price_adjustment.value if price_adjustment else 0
+            display_lesson['discount'] = f"{discount * 100}%"
+            display_lesson['final_price'] = lesson['lesson'].final_price / num_students if 'final_price' in lesson['lesson'].__dict__ else 0
+            if i == 0:
+                if lesson['lesson'].has_occured == True:
+                    tutor_id = lesson['lesson'].tutor_id
+                    tutor = tutors[tutor_id]
+                    user_id = tutor.user_id
+                    user = User.query.filter_by(id=user_id).first()
+                    paygrade = Paygrade.query.filter_by(id=user.paygrade_id).first()
+                    start_datetime = datetime.combine(date.today(), lesson['lesson'].start_time)
+                    end_datetime = datetime.combine(date.today(), lesson['lesson'].end_time)
+                    duration_seconds = (end_datetime - start_datetime).total_seconds()
+                    duration_hours = duration_seconds / 3600
+                    display_lesson['tutor_payment'] = paygrade.value * duration_hours
                 else:
-                    lesson['tutor_payment'] = 0  # Handle the case where the paygrade is not found
-               
+                    display_lesson['tutor_payment'] = 0  # Set tutor_payment to 0 if lesson didn't occur
             else:
-                lesson['tutor_payment'] = 0  # Set tutor_payment to 0 if lesson didn't occur
-                lesson['gross_wage'] = lesson['lesson'].final_price
+                display_lesson['tutor_payment'] = 0
+            display_lesson['gross_wage'] = display_lesson['final_price'] - display_lesson['tutor_payment']
+            display_lessons.append(display_lesson)
     if request.method == 'POST':
+        display_lessons = []
         from_date_str = request.form.get('from_date')
         end_date_str = request.form.get('end_date')
         from_date = datetime.strptime(from_date_str, '%Y-%m-%d')
@@ -1687,23 +1770,40 @@ def admin_finances():
         school_type = int(school_type) if school_type else None
         family_id = int(family_id) if family_id else None
         tutor_id = int(tutor_id) if tutor_id else None
-
+        
         lessons = get_lessons_in_range(from_date, end_date, subject_id, family_id, tutor_id)
         for lesson in lessons:
-            if lesson['lesson'].has_occured == True:
-                # Calculate tutor_payment based on your logic (e.g., lesson['lesson'].price - lesson['discount'])
-                tutor_id = lesson['lesson'].tutor_id
-                tutor = tutors[tutor_id]
-                user_id = tutor.user_id
-                user = User.query.filter_by(id=user_id).first()
-                paygrade = Paygrade.query.filter_by(id=user.paygrade_id).first()
-
-                lesson['tutor_payment'] = paygrade.value
-                
-            else:
-                lesson['tutor_payment'] = 0  # Set tutor_payment to 0 if lesson didn't occur
-                lesson['gross_wage'] = lesson['lesson'].final_price
-        tutors = {lesson['lesson'].tutor_id: Tutor.query.get(lesson['lesson'].tutor_id) for lesson in lessons}
+            num_students = len(lesson['lesson'].students.all())
+            for i, student in enumerate(lesson['lesson'].students.all()):
+                display_lesson = {}
+                display_lesson['date'] = lesson['lesson'].date
+                display_lesson['subject_name'] = Subject.query.get(lesson['lesson'].subject_id).subject_name
+                display_lesson['tutor_name'] = Tutor.query.get(lesson['lesson'].tutor_id).name
+                display_lesson['student_name'] = f"{student.FirstName} {student.LastName}"
+                display_lesson['price'] = lesson['lesson'].price / num_students if 'price' in lesson['lesson'].__dict__ else 0
+                price_adjustment_id = lesson['lesson'].price_adjustment_id
+                price_adjustment = PriceAdjustment.query.get(price_adjustment_id)
+                discount = price_adjustment.value if price_adjustment else 0
+                display_lesson['discount'] = f"{discount * 100}%"
+                display_lesson['final_price'] = lesson['lesson'].final_price / num_students if 'final_price' in lesson['lesson'].__dict__ else 0
+                if i == 0:
+                    if lesson['lesson'].has_occured == True:
+                        tutor_id = lesson['lesson'].tutor_id
+                        tutor = tutors[tutor_id]
+                        user_id = tutor.user_id
+                        user = User.query.filter_by(id=user_id).first()
+                        paygrade = Paygrade.query.filter_by(id=user.paygrade_id).first()
+                        start_datetime = datetime.combine(date.today(), lesson['lesson'].start_time)
+                        end_datetime = datetime.combine(date.today(), lesson['lesson'].end_time)
+                        duration_seconds = (end_datetime - start_datetime).total_seconds()
+                        duration_hours = duration_seconds / 3600
+                        display_lesson['tutor_payment'] = paygrade.value * duration_hours
+                    else:
+                        display_lesson['tutor_payment'] = 0  # Set tutor_payment to 0 if lesson didn't occur
+                else:
+                    display_lesson['tutor_payment'] = 0
+                display_lesson['gross_wage'] = display_lesson['final_price'] - display_lesson['tutor_payment']
+                display_lessons.append(display_lesson)
     users = {tutor.user_id: User.query.get(tutor.user_id) for tutor in tutors.values()}
     paygrades = Paygrade.query.all()
     schooltypes = SchoolType.query.all()
@@ -1711,7 +1811,7 @@ def admin_finances():
     all_tutors = Tutor.query.all()    
     finances = Finance.query.filter(Finance.date.between(from_date, end_date)).all()
     lesson_schooltypes = {lesson['lesson'].lesson_id: SchoolType.query.get(Subject.query.get(lesson['lesson'].subject_id).schooltype_id) for lesson in lessons}
-    return render_template('admin_finances.html', lessons=lessons, tutors=tutors, users=users, paygrades=paygrades, schooltypes=schooltypes, families=families, all_tutors=all_tutors, default_from_date=from_date.strftime('%Y-%m-%d'), default_end_date=end_date.strftime('%Y-%m-%d'), submitted_school_type_id=school_type, submitted_family_id=family_id, submitted_tutor_id=tutor_id, lesson_schooltypes=lesson_schooltypes, finances=finances)
+    return render_template('admin_finances.html', lessons=display_lessons, tutors=tutors, users=users, paygrades=paygrades, schooltypes=schooltypes, families=families, all_tutors=all_tutors, default_from_date=from_date.strftime('%Y-%m-%d'), default_end_date=end_date.strftime('%Y-%m-%d'), submitted_school_type_id=school_type, submitted_family_id=family_id, submitted_tutor_id=tutor_id, lesson_schooltypes=lesson_schooltypes, finances=finances)
 
 
 
@@ -1872,13 +1972,14 @@ def lesson_detail(lesson_id):
             return redirect(url_for('tutor_dashboard', user_id=user.id))
 
     is_admin = user.role.name == 'admin'
+    is_tutor = user.role.name == 'tutor'
     subject = Subject.query.get(lesson.subject_id)
     schooltypes = SchoolType.query.all()
     tutors = Tutor.query.all()
     notes = Note.query.filter_by(lesson_id=lesson_id).all()
     students = lesson.students.all()
     price_adjustment = PriceAdjustment.query.all()
-    return render_template('lesson_detail.html', lesson=lesson, is_admin=is_admin, schooltypes=schooltypes, subject=subject, tutor=tutor, tutoren=tutors, notes=notes, students=students, price_adjustments=price_adjustment)
+    return render_template('lesson_detail.html', lesson=lesson, is_admin=is_admin, schooltypes=schooltypes, subject=subject, tutor=tutor, tutoren=tutors, notes=notes, students=students, price_adjustments=price_adjustment, is_tutor=is_tutor)
 
 from datetime import datetime
 

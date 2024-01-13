@@ -43,18 +43,24 @@
     </nav>
 
     <div class="container mt-4">
-        <h2>Lektion hinzufügen für {{ student.FirstName }} {{ student.LastName }}</h2>
+        <h2>Lektion hinzufügen für:
+            {% for student in students %}
+            {{ student.FirstName }} {{ student.LastName }}
+            {% endfor %}
+        </h2>
         <form method="post">
+            <!-- Schulart Dropdown -->
             <!-- Schulart Dropdown -->
             <div class="form-group">
                 <label for="schooltype">Schulart</label>
                 <select class="form-control" id="schooltype" name="schooltype_id">
                     <option value="">Wählen Sie eine Schulart aus</option>
                     {% for schooltype in schooltypes %}
-                    <option value="{{ schooltype.schooltype_id }}">{{ schooltype.schooltype_name }}</option>
+                    <option value="{{ schooltype.schooltype_id }}" {% if prepopulated_data and prepopulated_data['schooltype_id'] == schooltype.schooltype_id %}selected{% endif %}>{{ schooltype.schooltype_name }}</option>
                     {% endfor %}
                 </select>
             </div>
+
             <!-- Fach Dropdown (Anfangs leer) -->
             <div class="form-group">
                 <label for="subject">Fach</label>
@@ -65,22 +71,18 @@
 
             <div class="form-group">
                 <label for="date">Datum</label>
-                <input type="date" class="form-control" id="date" name="date" required>
+                <input type="date" class="form-control" id="date" name="date" value="{{ prepopulated_data['date'] if prepopulated_data else '' }}" required>
             </div>
-
-            <!-- Startzeit Feld -->
+            
             <div class="form-group">
                 <label for="start_time">Startzeit</label>
-                <input type="time" class="form-control" id="start_time" name="start_time" required>
+                <input type="time" class="form-control" id="start_time" name="start_time" value="{{ prepopulated_data['start_time'] if prepopulated_data else '' }}" required>
             </div>
-
-            <!-- Endzeit Feld -->
+            
             <div class="form-group">
                 <label for="end_time">Endzeit</label>
-                <input type="time" class="form-control" id="end_time" name="end_time" required>
+                <input type="time" class="form-control" id="end_time" name="end_time" value="{{ prepopulated_data['end_time'] if prepopulated_data else '' }}" required>
             </div>
-
-            <!-- Senden Button -->
             <button type="submit" class="btn btn-primary">Lektion hinzufügen</button>
         </form>
     </div>
@@ -95,29 +97,32 @@
             const subjectSelect = document.getElementById('subject');
             // Funktion zur Behandlung der Auswahl der Schulart
             function handleSchooltypeSelection() {
-                console.log('Schulartauswahl geändert');
                 const schooltypeId = this.value;
-                console.log(`schooltypeId: ${schooltypeId}`);  // Diese Zeile hinzufügen
+                console.log('Schulartauswahl geändert', schooltypeId);
                 if (schooltypeId) {
                     fetchSubjects(schooltypeId);
                 } else {
-                    clearDropdowns();
+                    clearDropdown(subjectSelect);
                 }
             }
 
             // Funktion zum Abrufen und Befüllen der Fächer
             function fetchSubjects(schooltypeId) {
-                console.log('Fächer für Schulart abrufen', schooltypeId);
                 fetch(`/api/subjects/${schooltypeId}`)
                 .then(response => response.json())
                 .then(subjects => {
-                    populateDropdown(subjectSelect, subjects, 'Wählen Sie ein Fach aus');
+                    populateDropdown(subjectSelect, subjects, 'Fach auswählen');
                 })
                 .catch(error => console.error('Fehler:', error));
             }
 
-            
-            schooltypeSelect.addEventListener('change', handleSchooltypeSelection);
+            function initialLoad() {
+                const preselectedSchooltypeId = schooltypeSelect.value;
+                if (preselectedSchooltypeId) {
+                    handleSchooltypeSelection.call(schooltypeSelect);
+                }
+            }
+
             function populateDropdown(dropdown, items, defaultOptionText) {
                 let options = `<option value="">${defaultOptionText}</option>`;
                 items.forEach(item => {
@@ -125,18 +130,17 @@
                 });
                 dropdown.innerHTML = options;
             }
-        
-            // Hilfsfunktion zum Leeren der Dropdowns
-            function clearDropdowns() {
-                subjectSelect.innerHTML = '';
-                tutorSelect.innerHTML = '';
-            }
+
+            function clearDropdown(dropdown) {
+                    while (dropdown.firstChild) {
+                        dropdown.removeChild(dropdown.firstChild);
+                    }
+                }
+
             schooltypeSelect.addEventListener('change', handleSchooltypeSelection);
+            initialLoad();
         });
     </script>
 
-    <footer class="footer">
-        <p>Software von: Aleksandrs Unterkirhers</p>
-    </footer>
 </body>
 </html>

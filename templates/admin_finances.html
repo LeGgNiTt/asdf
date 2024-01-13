@@ -109,7 +109,7 @@
                             <!-- Schultyp Dropdown -->
                             <label for="school_type">Schultyp:</label>
                             <select id="school_type" name="school_type" onchange="fetchSubjects(this.value)">
-                                <option value="">--Auswählen--</option>
+                                <option value="">--Alle--</option>
                                 {% for schooltype in schooltypes %}
                                     <option value="{{ schooltype.schooltype_id }}" {% if schooltype.schooltype_id == submitted_school_type_id|int %}selected{% endif %}>{{ schooltype.schooltype_name }}</option>
                                 {% endfor %}
@@ -118,14 +118,14 @@
                             <!-- Fach Dropdown -->
                             <label for="subject_id">Fach:</label>
                             <select id="subject_id" name="subject_id">
-                                <option value="">--Auswählen--</option>
+                                <option value="">--Alle--</option>
                                 <!-- Dies wird dynamisch basierend auf dem ausgewählten Schultyp gefüllt -->
                             </select>
                             <br>
                             <!-- Familie Dropdown -->
                             <label for="family_id">Familie:</label>
                             <select id="family_id" name="family_id">
-                                <option value="">--Auswählen--</option>
+                                <option value="">--Alle--</option>
                                 {% for family in families %}
                                     <option value="{{ family.id }}" {% if family.id == submitted_family_id|int %}selected{% endif %}>{{ family.name }}</option>
                                 {% endfor %}
@@ -134,7 +134,7 @@
                             <!-- Tutor Dropdown -->
                             <label for="tutor_id">Tutor:</label>
                             <select id="tutor_id" name="tutor_id">
-                                <option value="">--Auswählen--</option>
+                                <option value="">--Alle--</option>
                                 {% for tutor in all_tutors %}
                                     <option value="{{ tutor.tutor_id }}" {% if tutor.tutor_id == submitted_tutor_id|int %}selected{% endif %}>{{ tutor.name }}</option>
                                 {% endfor %}
@@ -163,20 +163,21 @@
                             <tbody>
                                 {% for lesson in lessons %}
                                     <tr>
-                                        <td>{{ lesson['lesson'].date }}</td>
-                                        <td>{{ lesson['subject_name'] }}</td>
-                                        <td>{{ lesson['tutor_name'] }}</td>
-                                        <td>{{ lesson['student_names'] | join(', ') }}</td>
-                                        <td>{{ lesson['lesson'].price }}</td>
-                                        <td>{{ lesson['discount'] }}</td>
-                                        <td>{{ lesson['lesson'].final_price }}</td>
-                                        <td>{{ lesson['tutor_payment'] }}</td>
-                                        <td>{{ "{:.2f}".format(lesson['gross_wage']) }}</td>
+                                        <td>{{ lesson.date }}</td>
+                                        <td>{{ lesson.subject_name }}</td>
+                                        <td>{{ lesson.tutor_name }}</td>
+                                        <td>{{ lesson.student_name }}</td>
+                                        <td>{{ lesson.price }}</td>
+                                        <td>{{ lesson.discount }}</td>
+                                        <td>{{ lesson.final_price }}</td>
+                                        <td>{{ lesson.tutor_payment }}</td>
+                                        <td>{{ "{:.2f}".format(lesson.gross_wage) }}</td>
                                     </tr>
                                     {% set ns.total_profit = ns.total_profit + lesson['gross_wage'] %}
                                 {% endfor %}
                             </tbody>
                         </table>
+                        <br>
 
                         <!-- Tabelle 2 -->
                         <table class="table table-bordered" id="table2">
@@ -184,16 +185,12 @@
                                 <tr>
                                     <th>Beschreibung</th>
                                     <th>Betrag</th>
-                                    <th></th>
-                                    <th>Betrag</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for finance in finances %}
                                     <tr>
                                         <td>{{ finance.description }}</td>
-                                        <td>{{ finance.amount }}</td>
-                                        <td></td>
                                         <td>{{ finance.amount }}</td>
                                     </tr>
                                     {% set ns.total_profit = ns.total_profit + finance.amount %}
@@ -205,14 +202,13 @@
                         <table class="table table-bordered" id="table3">
                             <thead>
                                 <tr>
-                                    <th colspan="5">Gesamt</th>
-                                    <th>Gesamtgewinn</th>
+                                    <th>Bruttogewinn</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
                                     <td colspan="5"></td>
-                                    <td>{{ ns.total_profit }}</td>
+                                    <td>{{ ns.total_profit|round(2) }}</td>
                                 </tr>
                             </tbody>
                         </table>

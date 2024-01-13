@@ -21,6 +21,28 @@
         .fc-day-grid-event .fc-content {
             white-space: normal;
         }
+        body {
+            background-color: #f4f4f4; /* Soft background color */
+        }
+
+        .navbar {
+            margin-bottom: 20px; /* Space below the navbar */
+        }
+
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .table {
+            margin-top: 20px;
+        }
+
+        .btn {
+            margin-right: 10px; /* Space between buttons */
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
 </head>
@@ -57,8 +79,9 @@
         
 
         <!-- Liste der Fächer -->
-        <table class="table">
-            <thead>
+        <!-- Inside your main container -->
+        <table class="table table-hover">
+            <thead class="thead-light">
                 <tr>
                     <th>Schulart</th>
                     <th>Fachname</th>
@@ -73,7 +96,7 @@
                 {% endfor %}
             </tbody>
         </table>
-        
+
         <div class="my-2">
             <a href="{{ url_for('add_schooltype') }}" class="btn btn-primary">Schulart hinzufügen</a>
             <a href="{{ url_for('add_subject') }}" class="btn btn-secondary">Fach hinzufügen</a>

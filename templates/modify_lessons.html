@@ -21,6 +21,48 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
 </head>
+<style>
+    .lesson-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        padding: 20px;
+        justify-content: center; /* Centers boxes if they don't fill the entire row */
+    }
+
+    .lesson-box {
+        background-color: #f8f9fa; /* Light gray background */
+        border: 1px solid #ddd; /* Light border */
+        border-radius: 5px; /* Rounded corners */
+        padding: 15px;
+        width: calc(33.333% - 20px); /* Three boxes per row with spacing */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+        text-align: center; /* Center-aligns the text and button */
+    }
+
+    .lesson-title {
+        color: #004b87; /* Dark blue for titles */
+        margin-bottom: 10px; /* Spacing below title */
+    }
+
+    .lesson-info, .lesson-details {
+        margin-bottom: 8px; /* Consistent spacing for readability */
+    }
+
+    /* Responsive adjustments for smaller screens */
+    @media (max-width: 768px) {
+        .lesson-box {
+            width: calc(50% - 20px); /* Two boxes per row */
+        }
+    }
+
+    @media (max-width: 480px) {
+        .lesson-box {
+            width: 100%; /* Full width for very small screens */
+        }
+    }
+
+</style>
 <body>
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -73,35 +115,18 @@
         <a href="{{ url_for('add_lesson') }}" class="btn btn-primary mb-3">Lektion hinzufügen</a>
         <br>
         <br>
-        <table class="table" id="lessons-table">
-            <!-- Table headers -->
-            <thead>
-                <tr>
-                    <th>Datum</th>
-                    <th>Startzeit</th>
-                    <th>Endzeit</th>
-                    <th>Tutor Name</th>
-                    <th>Schüler Name</th>
-                    <th>Fach Name</th>
-                    <th>Bearbeiten</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for lesson in lessons %}
-                <tr>
-                    <td>{{ lesson.date|formatdate }}</td>
-                    <td>{{ lesson.start_time }}</td>
-                    <td>{{ lesson.end_time }}</td>
-                    <td>{{ lesson.tutor_name }}</td>
-                    <td>{{ lesson.student_name }}</td>
-                    <td>{{ lesson.subject_name }}</td>
-                    <td>
-                        <a href="{{ url_for('lesson_detail', lesson_id=lesson.lesson_id) }}" class="btn btn-primary btn-sm">Bearbeiten</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="lesson-container">
+            {% for lesson in lessons %}
+                <div class="lesson-box">
+                    <h3 class="lesson-title">{{lesson.student_name}} | {{ lesson.subject_name }}</h3>
+                    <p class="lesson-info">{{ lesson.date|formatdate }} | {{ lesson.start_time }} - {{ lesson.end_time }}</p>
+                    <p class="lesson-details">Tutor: {{ lesson.tutor_name }}</p>
+                    <a href="{{ url_for('lesson_detail', lesson_id=lesson.lesson_id) }}" class="btn btn-primary btn-sm">Bearbeiten</a>
+                </div>
+            {% endfor %}
+        </div>
+
+        
     </div>
     <script>
     $(document).ready( function () {
