@@ -196,8 +196,11 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:rootroot@localhost/showcase'
 app.config['SQLALCHEMY_POOL_SIZE'] = 10
 app.config['SQLALCHEMY_POOL_TIMEOUT'] = 30
-app.config['SQLALCHEMY_POOL_RECYCLE'] = 280     
+app.config['SQLALCHEMY_POOL_RECYCLE'] = 280
+app.config['SQLALCHEMY_MAX_OVERFLOW'] = 2
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_pre_ping': True}
 app.config['SECRET_KEY'] = 'development'
+
 
 '''
 app.config['CELERY_BROKER_URL'] = 'db+mysql+pymysql://root:rootroot@localhost/showcase'
@@ -1719,8 +1722,8 @@ def admin_finances():
     school_type = None
     subject_id = None
     family_id = None
-    tutor_id = None
-    lessons = get_lessons_in_range(from_date, end_date, subject_id, family_id, tutor_id)
+    filter_tutor_id = None
+    lessons = get_lessons_in_range(from_date, end_date, subject_id, family_id, filter_tutor_id)
     tutors = {lesson['lesson'].tutor_id: Tutor.query.get(lesson['lesson'].tutor_id) for lesson in lessons}
     for lesson in lessons:
         num_students = len(lesson['lesson'].students.all())
@@ -1769,9 +1772,9 @@ def admin_finances():
         subject_id = int(subject_id) if subject_id else None
         school_type = int(school_type) if school_type else None
         family_id = int(family_id) if family_id else None
-        tutor_id = int(tutor_id) if tutor_id else None
+        filter_tutor_id = int(tutor_id) if tutor_id else None
         
-        lessons = get_lessons_in_range(from_date, end_date, subject_id, family_id, tutor_id)
+        lessons = get_lessons_in_range(from_date, end_date, subject_id, family_id, filter_tutor_id)
         for lesson in lessons:
             num_students = len(lesson['lesson'].students.all())
             for i, student in enumerate(lesson['lesson'].students.all()):
@@ -1811,7 +1814,7 @@ def admin_finances():
     all_tutors = Tutor.query.all()    
     finances = Finance.query.filter(Finance.date.between(from_date, end_date)).all()
     lesson_schooltypes = {lesson['lesson'].lesson_id: SchoolType.query.get(Subject.query.get(lesson['lesson'].subject_id).schooltype_id) for lesson in lessons}
-    return render_template('admin_finances.html', lessons=display_lessons, tutors=tutors, users=users, paygrades=paygrades, schooltypes=schooltypes, families=families, all_tutors=all_tutors, default_from_date=from_date.strftime('%Y-%m-%d'), default_end_date=end_date.strftime('%Y-%m-%d'), submitted_school_type_id=school_type, submitted_family_id=family_id, submitted_tutor_id=tutor_id, lesson_schooltypes=lesson_schooltypes, finances=finances)
+    return render_template('admin_finances.html', lessons=display_lessons, tutors=tutors, users=users, paygrades=paygrades, schooltypes=schooltypes, families=families, all_tutors=all_tutors, default_from_date=from_date.strftime('%Y-%m-%d'), default_end_date=end_date.strftime('%Y-%m-%d'), submitted_school_type_id=school_type, submitted_family_id=family_id, submitted_tutor_id=filter_tutor_id, lesson_schooltypes=lesson_schooltypes, finances=finances)
 
 
 
