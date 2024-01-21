@@ -179,14 +179,6 @@ def get_lessons_in_range(from_date, end_date, subject_id=None, family_id=None, t
 
     return lesson_details
 
-from celery import Celery
-
-# Function to integrate Celery with Flask
-def make_celery(app):
-    # Configure Celery using Flask's settings
-    celery = Celery(app.import_name, backend=app.config['CELERY_RESULT_BACKEND'], broker=app.config['CELERY_BROKER_URL'])
-    celery.conf.update(app.config)
-    return celery
 
 
 
@@ -202,11 +194,7 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_pre_ping': True}
 app.config['SECRET_KEY'] = 'development'
 
 
-'''
-app.config['CELERY_BROKER_URL'] = 'db+mysql+pymysql://root:rootroot@localhost/showcase'
-app.config['CELERY_RESULT_BACKEND'] = 'db+mysql+pymysql://root:rootroot@localhost/showcase'
-celery = make_celery(app)
-'''
+
 
 db.init_app(app)
 with app.app_context():
@@ -215,6 +203,14 @@ with app.app_context():
 migrate = Migrate(app, db)
 login_manager = LoginManager(app)
 bcrypt = Bcrypt(app)
+
+
+
+
+
+app.config['CELERY_BROKER_URL'] = 'db+mysql+pymysql://root:rootroot@localhost/showcase'
+app.config['CELERY_RESULT_BACKEND'] = 'db+mysql+pymysql://root:rootroot@localhost/showcase'
+
 
 import phonenumbers
 
@@ -225,10 +221,10 @@ def is_valid_number(phone_number):
     except phonenumbers.NumberParseException:
         return False
 
+
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioException
 
-# Twilio credentials
 
 
 def format_number(phone_number):
@@ -239,54 +235,6 @@ def format_number(phone_number):
     except phonenumbers.NumberParseException:
         return None  # or handle the error as you prefer
 
-
-'''
-def send_whatsapp_message(number, text):
-    client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-    try:
-        message = client.messages.create(
-            body=text,
-            from_=TWILIO_WHATSAPP_NUMBER,
-            to=f'whatsapp:{number}'
-        )
-        print(f"Message status: {message.status}")  
-        print(f"Message sent to {number}: {text}")
-    except TwilioException as e:
-        print(f"Failed to send message to {number}: {e}")
-
-
-@celery.task
-def send_whatsapp_reminders():
-    now = datetime.now()
-    upcomming_lessons = Lesson.query.filter(Lesson.date.between(now, now + timedelta(hours=24))).all()
-    for lesson in upcomming_lessons:
-        tutor = Tutor.query.filter_by(tutor_id=lesson.tutor_id).first()
-        tutor_phone_num = tutor.phone_num
-        tutor_phone_num = format_number(tutor_phone_num)
-        text = "reminder of upcomming lecture at " + str(lesson.date) + " from: " + str(lesson.start_time) + " to: " + str(lesson.end_time) 
-        if tutor_phone_num and not Contacted.query.filter_by(lesson_id=lesson.lesson_id, phone_num=tutor_phone_num).first():
-            send_whatsapp_message(tutor_phone_num, text)
-            db.session.add(Contacted(lesson_id=lesson.id, phone_num=tutor_phone_num))
-        students = lesson.students
-        for student in students:
-            student_phone_num = student.phone_num
-            student_phone_num = format_number(student_phone_num)
-            if student_phone_num and not Contacted.query.filter_by(lesson_id=lesson.lesson_id, phone_num=student_phone_num).first():
-                send_whatsapp_message(student_phone_num, text)
-                db.session.add(Contacted(lesson_id=lesson.id, phone_num=student_phone_num))
-            family = Family.query.filter_by(family_id=student.family_id).first()
-            family_phone_num = family.phone_num
-            family_phone_num = format_number(family_phone_num)
-            if family_phone_num != student_phone_num and not Contacted.query.filter_by(lesson_id=lesson.lesson_id, phone_num=family_phone_num).first():
-                send_whatsapp_message(family_phone_num, text)
-                db.session.add(Contacted(lesson_id=lesson.id, phone_num=family_phone_num))
-    db.session.commit()
-
-
-
-send_whatsapp_message('+41799052142', 'test')
-
-'''
 
 @app.route('/')
 def index():
