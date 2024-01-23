@@ -69,32 +69,34 @@ def send_whatsapp_reminders():
         students = lesson.students
         student_names = [f"{student.FirstName} {student.LastName}" for student in students]  # Get the students' names
 
-
-        if tutor_phone_num and not Contacted.query.filter_by(lesson_id=lesson.lesson_id, phone_num=tutor_phone_num).first():
-            tutor_params = [lesson_date, start_time, ', '.join(student_names)]
-            send_whatsapp_template_message(tutor_phone_num, 'reminder_tutor', tutor_params)
-            db.session.add(Contacted(lesson_id=lesson.lesson_id, phone_num=tutor_phone_num))
-        else:
-            print(f"Reminder to tutor {tutor.name} not sent: no phone number or already contacted")
+        if tutor_phone_num is not None:
+            if tutor_phone_num and not Contacted.query.filter_by(lesson_id=lesson.lesson_id, phone_num=tutor_phone_num).first():
+                tutor_params = [lesson_date, start_time, ', '.join(student_names)]
+                send_whatsapp_template_message(tutor_phone_num, 'reminder_tutor', tutor_params)
+                db.session.add(Contacted(lesson_id=lesson.lesson_id, phone_num=tutor_phone_num))
+            else:
+                print(f"Reminder to tutor {tutor.name} not sent: no phone number or already contacted")
         
         
         
         for student in students:
             student_phone_num = student.phone_num
             student_phone_num = format_number(student_phone_num)
-            if student_phone_num and not Contacted.query.filter_by(lesson_id=lesson.lesson_id, phone_num=student_phone_num).first():
-                student_params = [lesson_date, start_time, tutor.name]
-                send_whatsapp_template_message(student_phone_num, 'reminder_student', student_params)
-                db.session.add(Contacted(lesson_id=lesson.lesson_id, phone_num=student_phone_num))
+            if student_phone_num is not None:
+                if student_phone_num and not Contacted.query.filter_by(lesson_id=lesson.lesson_id, phone_num=student_phone_num).first():
+                    student_params = [lesson_date, start_time, tutor.name]
+                    send_whatsapp_template_message(student_phone_num, 'reminder_student', student_params)
+                    db.session.add(Contacted(lesson_id=lesson.lesson_id, phone_num=student_phone_num))
 
             student_name = f"{student.FirstName}"
             family = Family.query.filter_by(id=student.family_id).first()
             family_phone_num = family.phone_num
             family_phone_num = format_number(family_phone_num)
-            if family_phone_num != student_phone_num and not Contacted.query.filter_by(lesson_id=lesson.lesson_id, phone_num=family_phone_num).first():
-                family_params = [lesson_date, start_time, student_name, tutor.name]
-                send_whatsapp_template_message(family_phone_num, 'family_reminder', family_params)
-                db.session.add(Contacted(lesson_id=lesson.lesson_id, phone_num=family_phone_num))
+            if family_phone_num is not None:
+                if family_phone_num != student_phone_num and not Contacted.query.filter_by(lesson_id=lesson.lesson_id, phone_num=family_phone_num).first():
+                    family_params = [lesson_date, start_time, student_name, tutor.name]
+                    send_whatsapp_template_message(family_phone_num, 'family_reminder', family_params)
+                    db.session.add(Contacted(lesson_id=lesson.lesson_id, phone_num=family_phone_num))
     db.session.commit()
 
 
