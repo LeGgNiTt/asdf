@@ -1211,7 +1211,7 @@ def add_lesson(lesson_id):
 
         student_ids = request.form.getlist('student_ids')
         if ferienkurs == True:
-            for i in range(0,5):
+            for i in range(0,4):
                 new_lesson = Lesson(
                     date=date + timedelta(days=i),
                     start_time=start_time,
@@ -1659,10 +1659,10 @@ from dateutil.relativedelta import relativedelta
 
 from datetime import date
 
-@app.route('/admin/finances', methods=['GET', 'POST'])
+@app.route('/admin/financess', methods=['GET', 'POST'])
 @login_required
 @admin_required
-def admin_finances():
+def admin_financess():
     display_lessons = []
     today = datetime.now()
     from_date = datetime(today.year, today.month, 1)
@@ -1765,11 +1765,315 @@ def admin_finances():
     return render_template('admin_finances.html', lessons=display_lessons, tutors=tutors, users=users, paygrades=paygrades, schooltypes=schooltypes, families=families, all_tutors=all_tutors, default_from_date=from_date.strftime('%Y-%m-%d'), default_end_date=end_date.strftime('%Y-%m-%d'), submitted_school_type_id=school_type, submitted_family_id=family_id, submitted_tutor_id=filter_tutor_id, lesson_schooltypes=lesson_schooltypes, finances=finances)
 
 
+@app.route('/admin/finances/', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_finances():
+    display_lessons = []
+    total_profit = 0
+    today = datetime.now()
+    from_date = datetime(today.year, today.month, 1)
+    end_date = datetime(today.year, today.month, 1) + relativedelta(months=1) - timedelta(days=1)
+    lessons = get_lessons_in_range(from_date, end_date, None, None, None)
+    if request.method == 'POST':
+        from_date_str = request.form.get('from_date')
+        end_date_str = request.form.get('end_date')
+        from_date = datetime.strptime(from_date_str, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+        lessons = get_lessons_in_range(from_date, end_date, None, None, None)
+    for lesson in lessons:
+        display_lesson = {}
+        has_occured = lesson['lesson'].has_occured
+        display_lesson['date'] = lesson['lesson'].date
+        display_lesson['subject_name'] = Subject.query.get(lesson['lesson'].subject_id).subject_name
+        display_lesson['tutor_name'] = Tutor.query.get(lesson['lesson'].tutor_id).name
+        display_lesson['student_names'] = [f"{student.FirstName} {student.LastName}" for student in lesson['lesson'].students]
+        display_lesson['price'] = lesson['lesson'].price
+        price_adjustment_id = lesson['lesson'].price_adjustment_id
+        price_adjustment = PriceAdjustment.query.get(price_adjustment_id)
+        discount = price_adjustment.value if price_adjustment else 0
+        display_lesson['discount'] = f"{discount * 100}%"
+        display_lesson['final_price'] = lesson['lesson'].final_price
+        if has_occured:
+            tutor_id = lesson['lesson'].tutor_id
+            tutor = Tutor.query.get(tutor_id)
+            user_id = tutor.user_id
+            user = User.query.get(user_id)
+            paygrade = Paygrade.query.get(user.paygrade_id)
+            start_datetime = datetime.combine(date.today(), lesson['lesson'].start_time)
+            end_datetime = datetime.combine(date.today(), lesson['lesson'].end_time)
+            duration_seconds = (end_datetime - start_datetime).total_seconds()
+            duration_hours = duration_seconds / 3600
+            tutor_payment = paygrade.value * duration_hours
+            display_lesson['tutor_payment'] = tutor_payment
+            display_lesson['brutto'] = lesson['lesson'].final_price - tutor_payment
+        else:
+            display_lesson['tutor_payment'] = 0
+            display_lesson['brutto'] = display_lesson['final_price']
+        total_profit += display_lesson['brutto']
+        display_lessons.append(display_lesson)
+    total_profit = round_down_to_nearest_five_cents(total_profit)
+    return render_template('admin_financess.html', lessons=display_lessons, default_from_date=from_date.strftime('%Y-%m-%d'), default_end_date=end_date.strftime('%Y-%m-%d'), total_profit=total_profit)
+
+@app.route('/admin/finances/families', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def finances_families():
+    families = Family.query.all()
+    selected_family_id = request.form.get('family_id')
+    from_date = request.form.get('from_date')
+    end_date = request.form.get('end_date')
+    display_lessons = []
+    total = 0
+    if request.method == 'POST':
+        if selected_family_id:
+            lessons = get_lessons_in_range(from_date, end_date, None, int(selected_family_id), None)
+            for lesson_detail in lessons:
+                lesson = lesson_detail['lesson']
+                total_students = lesson.students.count()
+                price_per_student = lesson.price / total_students
+                final_price_per_student = lesson.final_price / total_students
+                for student in lesson.students:
+                    if student.family_id == int(selected_family_id):
+                        total += final_price_per_student
+                        price_adjustment_id = lesson.price_adjustment_id
+                        price_adjustment = PriceAdjustment.query.get(price_adjustment_id)
+                        discount = price_adjustment.value if price_adjustment else 0
+
+                        part_lesson = {
+                            'date' : lesson.date,
+                            'subject_name' : Subject.query.get(lesson.subject_id).subject_name,
+                            'student_name' : f"{student.FirstName} {student.LastName}",
+                            'price' : price_per_student,
+                            'discount' : f"{discount * 100}%",
+                            'final_price' : final_price_per_student
+                        }
+                        display_lessons.append(part_lesson)
+    total = round_down_to_nearest_five_cents(total)
+    return render_template('admin_finances_families.html', families=families, lessons=display_lessons, selected_family_id=selected_family_id, default_from_date=from_date, default_end_date=end_date, total = total)
+
+                
+
+
+@app.route('/admin/finances/tutors', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def finances_tutors():
+    tutors = Tutor.query.all()
+    selected_tutor_id = request.form.get('tutor_id')
+    from_date = request.form.get('from_date')
+    end_date = request.form.get('end_date')
+    display_lessons = []
+    if request.method == 'POST':
+        if selected_tutor_id:
+            lessons = get_lessons_in_range(from_date, end_date, None, None, int(selected_tutor_id))
+            for lesson_detail in lessons:
+                lesson = lesson_detail['lesson']
+                has_occured = lesson.has_occured
+                tutor_paygrade = Paygrade.query.filter_by(id=User.query.get(Tutor.query.get(lesson.tutor_id).user_id).paygrade_id).first()
+                start_time = datetime.combine(lesson.date, lesson.start_time)
+                end_datetime = datetime.combine(lesson.date, lesson.end_time)
+                duration_timedelta = end_datetime - start_time
+                duration_hours = duration_timedelta.seconds / 3600
+                if has_occured:
+                    tutor_payment = int(tutor_paygrade.value * duration_hours)
+                else:
+                    tutor_payment = 0
+                subject_name = Subject.query.get(lesson.subject_id).subject_name
+                student_names = [f"{student.FirstName} {student.LastName}" for student in lesson.students]
+                display_lesson = {
+                    'date' : lesson.date,
+                    'subject_name' : subject_name,
+                    'student_names' : student_names,
+                    'duration_hours' : duration_hours,
+                    'tutor_payment' : tutor_payment
+                }
+                display_lessons.append(display_lesson)
+    
+    return render_template('admin_finances_tutors.html', tutors=tutors, lessons=display_lessons, selected_tutor_id=selected_tutor_id, default_from_date=from_date, default_end_date=end_date)
+
+
+@app.route('/tutors/finances', methods=['GET', 'POST'])
+@login_required
+@tutor_required
+def tutor_finances():
+    tutor = Tutor.query.filter_by(user_id=current_user.id).first()
+    from_date = request.form.get('from_date')
+    end_date = request.form.get('end_date')
+    display_lessons = []
+    if request.method == 'POST':
+        lessons = get_lessons_in_range(from_date, end_date, None, None, tutor.tutor_id)
+        tutor_paygrade = Paygrade.query.filter_by(id=User.query.get(tutor.user_id).paygrade_id).first()
+        for lesson_detail in lessons:
+            lesson = lesson_detail['lesson']
+            start_time = datetime.combine(lesson.date, lesson.start_time)
+            end_datetime = datetime.combine(lesson.date, lesson.end_time)
+            duration_timedelta = end_datetime - start_time
+            duration_hours = duration_timedelta.seconds / 3600
+            tutor_payment = int(tutor_paygrade.value * duration_hours)
+            subject_name = Subject.query.get(lesson.subject_id).subject_name
+            student_names = [f"{student.FirstName} {student.LastName}" for student in lesson.students]
+            display_lesson = {
+                'date' : lesson.date,
+                'subject_name' : subject_name,
+                'student_names' : student_names,
+                'duration_hours' : duration_hours,
+                'tutor_payment' : tutor_payment
+            }
+            display_lessons.append(display_lesson)
+    return render_template('tutor_finances.html', lessons=display_lessons, default_from_date=from_date, default_end_date=end_date)
+
+
+from flask import send_file
+from pdf_generator import PDFGenerator
+
+@app.route('/admin/finances/pdf')
+@login_required
+@admin_required
+def download_finances_pdf():
+    from_date = request.args.get('from_date')
+    end_date = request.args.get('end_date')
+    display_lessons = []
+    total = 0
+    lessons = get_lessons_in_range(from_date, end_date, None, None, None)
+    tutors = {lesson['lesson'].tutor_id: Tutor.query.get(lesson['lesson'].tutor_id) for lesson in lessons}
+    for lesson in lessons:
+        display_lesson = {}
+        has_occured = lesson['lesson'].has_occured
+        display_lesson['Datum'] = lesson['lesson'].date
+        display_lesson['Fach'] = Subject.query.get(lesson['lesson'].subject_id).subject_name
+        display_lesson['Tutor'] = Tutor.query.get(lesson['lesson'].tutor_id).name
+        display_lesson['Schüler'] = ', '.join([f"{student.FirstName} {student.LastName}" for student in lesson['lesson'].students])
+        display_lesson['Preis'] = lesson['lesson'].price
+        price_adjustment_id = lesson['lesson'].price_adjustment_id
+        price_adjustment = PriceAdjustment.query.get(price_adjustment_id)
+        discount = price_adjustment.value if price_adjustment else 0
+        display_lesson['Rabatt'] = f"{discount * 100}%"
+        display_lesson['Endpreis'] = lesson['lesson'].final_price
+        if has_occured:
+            tutor_id = lesson['lesson'].tutor_id
+            tutor = tutors[tutor_id]
+            user_id = tutor.user_id
+            user = User.query.get(user_id)
+            paygrade = Paygrade.query.get(user.paygrade_id)
+            start_datetime = datetime.combine(date.today(), lesson['lesson'].start_time)
+            end_datetime = datetime.combine(date.today(), lesson['lesson'].end_time)
+            duration_seconds = (end_datetime - start_datetime).total_seconds()
+            duration_hours = duration_seconds / 3600
+            tutor_payment = paygrade.value * duration_hours
+            display_lesson['Tutorlohn'] = tutor_payment
+            display_lesson['Brutto'] = lesson['lesson'].final_price - tutor_payment
+        else:
+            display_lesson['Tutorlohn'] = 0
+            display_lesson['Brutto'] = display_lesson['Endpreis']
+        total += display_lesson['Brutto']
+        display_lessons.append(display_lesson)
+    total = round_down_to_nearest_five_cents(total)
+    pdf_title = f"Finanzübersicht ({from_date} - {end_date})"
+    headers = ['Datum', 'Fach', 'Tutor', 'Schüler', 'Preis', 'Rabatt', 'Endpreis', 'Tutorlohn', 'Brutto']
+    pdf_filename = f"finances_{from_date}_{end_date}.pdf"
+    pdf_path = os.path.join('static/pdfs', pdf_filename)
+    pdf = PDFGenerator()
+    pdf.generate_landscape_pdf(pdf_path, pdf_title, display_lessons, headers, total)
+    return send_file(pdf_path, as_attachment=True, download_name=pdf_filename)
+
+
+@app.route('/admin/finances/families/pdf')
+@login_required
+@admin_required
+def download_family_finances_pdf():
+    selected_family_id = request.args.get('family_id')
+    family = Family.query.get(selected_family_id)
+    from_date = request.args.get('from_date')
+    end_date = request.args.get('end_date')
+    display_lessons = []
+    lessons = get_lessons_in_range(from_date, end_date, None, int(selected_family_id), None)
+    total = 0
+    for lesson_detail in lessons:
+        lesson = lesson_detail['lesson']
+        total_students = lesson.students.count()
+        price_per_student = lesson.price / total_students
+        final_price_per_student = lesson.final_price / total_students
+        for student in lesson.students:
+            if student.family_id == int(selected_family_id):
+                price_adjustment_id = lesson.price_adjustment_id
+                price_adjustment = PriceAdjustment.query.get(price_adjustment_id)
+                discount = price_adjustment.value if price_adjustment else 0
+                total += final_price_per_student
+
+                part_lesson = {
+                    'Datum' : lesson.date,
+                    'Fach' : Subject.query.get(lesson.subject_id).subject_name,
+                    'Schüler' : f"{student.FirstName} {student.LastName}",
+                    'Preis': f"{price_per_student:.2f}.-",
+                    'Rabatt' : f"{discount * 100}%",
+                    'Endpreis': f"{final_price_per_student:.2f}.-"
+                }
+                display_lessons.append(part_lesson)
+    
+    pdf_title = f"Finanzübersicht für Familie {family.name} ({from_date} - {end_date})"
+    headers = ['Datum', 'Fach', 'Schüler', 'Preis', 'Rabatt', 'Endpreis']
+    pdf_filename = f"family_finances_{family.name}_{from_date}_{end_date}.pdf"
+    pdf_path = os.path.join('static/pdfs', pdf_filename)
+
+    pdf = PDFGenerator()
+    pdf.generate_pdf(pdf_path, pdf_title, display_lessons, headers, total)
+
+    return send_file(pdf_path, as_attachment=True, download_name=pdf_filename)
+    
+    
+
+@app.route('/admin/finances/tutors/pdf')
+@login_required
+@admin_required
+def download_tutor_finances_pdf():
+    selected_tutor_id = request.args.get('tutor_id')
+    tutor = Tutor.query.get(selected_tutor_id)
+    from_date = request.args.get('from_date')
+    end_date = request.args.get('end_date')
+    display_lessons = []
+    total = 0
+    lessons = get_lessons_in_range(from_date, end_date, None, None, int(selected_tutor_id))
+    tutor_paygrade = Paygrade.query.filter_by(id=User.query.get(tutor.user_id).paygrade_id).first()
+    for lesson_detail in lessons:
+        lesson = lesson_detail['lesson']
+        has_occured = lesson.has_occured
+        start_time = datetime.combine(lesson.date, lesson.start_time)
+        end_datetime = datetime.combine(lesson.date, lesson.end_time)
+        duration_timedelta = end_datetime - start_time
+        duration_hours = duration_timedelta.seconds / 3600
+        if has_occured:
+            tutor_payment = int(tutor_paygrade.value * duration_hours)
+            total += tutor_payment
+        else:
+            tutor_payment = 0
+            
+        subject_name = Subject.query.get(lesson.subject_id).subject_name
+        student_names = [f"{student.FirstName} {student.LastName}" for student in lesson.students]
+        display_lesson = {
+            'Datum' : lesson.date,
+            'Fach' : subject_name,
+            'Schüler' : student_names,
+            'Dauer' : f"{duration_hours:.2f} Stunden",
+            'Tutorlohn' : f"{tutor_payment:.2f}.-"
+        }
+        display_lessons.append(display_lesson)
+    pdf_title = f"Finanzübersicht für Tutor {tutor.name} ({from_date} - {end_date})"
+    headers = ['Datum', 'Fach', 'Schüler', 'Dauer', 'Tutorlohn']
+    pdf_filename = f"tutor_finances_{tutor.name}_{from_date}_{end_date}.pdf"
+    pdf_path = os.path.join('static/pdfs', pdf_filename)
+
+    pdf = PDFGenerator()
+    pdf.generate_pdf(pdf_path, pdf_title, display_lessons, headers, total)
+
+    return send_file(pdf_path, as_attachment=True, download_name=pdf_filename)
+
+        
 
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
-from flask import send_file
+
 from reportlab.lib import colors
 
 import os

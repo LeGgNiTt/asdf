@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Globale Finanzübersicht</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        .form-control, .btn-primary {
+            border-radius: 0.25rem;
+        }
+        .table {
+            margin-top: 20px;
+        }
+        .table th {
+            background-color: #007bff;
+            color: white;
+        }
+        .table thead th {
+            vertical-align: bottom;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .table tbody + tbody {
+            border-top: 2px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+<!-- Navigationsleiste -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Navigation umschalten">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="/modify_lessons">Lektion bearbeiten</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/modify_users">Benutzer bearbeiten</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/modify_subjects">Fächer bearbeiten</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/modify_family">Familie bearbeiten</a>
+            </li>
+            <!-- Weitere Links hinzufügen, falls erforderlich -->
+        </ul>
+    </div>
+</nav>
+<!-- Centered Navigation Links -->
+<br>
+
+
+
+<div class="d-flex justify-content-center mb-3">
+    <a href="/admin/finances/families" class="btn btn-info mr-2">Finanzen der Familien</a>
+    <a href="/admin/finances/tutors" class="btn btn-info">Finanzen der Tutoren</a>
+</div>
+
+<div class="container mt-5">
+    <h2>Globale Finanzübersicht</h2>
+    <form method="POST" class="mb-4">
+        <div class="row">
+            <div class="col">
+                <label for="from_date">Von Datum:</label>
+                <input type="date" class="form-control" id="from_date" name="from_date" value="{{ default_from_date }}">
+            </div>
+            <div class="col">
+                <label for="end_date">Bis Datum:</label>
+                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ default_end_date }}">
+            </div>
+            <div class="col d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">Filtern</button>
+                <a href="{{ url_for('download_finances_pdf', from_date=default_from_date, end_date=default_end_date) }}" class="btn btn-success ml-2">Gesamtfinanzen PDF herunterladen</a>
+            </div>
+        </div>
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>Datum</th>
+                <th>Thema</th>
+                <th>Tutor Name</th>
+                <th>Schülernamen</th>
+                <th>Preis</th>
+                <th>Rabatt (%)</th>
+                <th>Endpreis</th>
+                <th>Tutorzahlung</th>
+                <th>Bruttogewinn</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lesson in lessons %}
+                <tr>
+                    <td>{{ lesson.date }}</td>
+                    <td>{{ lesson.subject_name }}</td>
+                    <td>{{ lesson.tutor_name }}</td>
+                    <td>{{ lesson.student_names|join(', ') }}</td>
+                    <td>{{ lesson.price }}</td>
+                    <td>{{ lesson.discount }}</td>
+                    <td>{{ lesson.final_price }}</td>
+                    <td>{{ lesson.tutor_payment }}</td>
+                    <td>{{ lesson.brutto }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <!-- Total Profit Box -->
+    <div class="d-flex justify-content-center">
+        <div class="card text-white bg-success mb-3" style="max-width: 18rem;">
+            <div class="card-header">Bruttogewinn</div>
+            <div class="card-body">
+                <h5 class="card-title">Bruttogewinn</h5>
+                <p class="card-text">{{ total_profit }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

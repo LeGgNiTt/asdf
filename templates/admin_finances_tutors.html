@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Tutor Finanzen Übersicht</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+    <!-- Navigationsleiste -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_lessons">Lektionen bearbeiten</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_users">Benutzer bearbeiten</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_subjects">Fächer bearbeiten</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_tutors">Tutoren bearbeiten</a>
+                </li>
+                <!-- Weitere Links falls benötigt -->
+            </ul>
+        </div>
+    </nav>
+    <div class="container mt-5">
+        <h1>Tutor Finanzen Übersicht</h1>
+        <form method="POST" class="mb-3">
+            <div class="form-group">
+                <label for="tutor_id">Tutor auswählen:</label>
+                <select name="tutor_id" id="tutor_id" class="form-control">
+                    {% for tutor in tutors %}
+                        <option value="{{ tutor.tutor_id }}" {% if tutor.tutor_id == selected_tutor_id|int %}selected{% endif %}>
+                            {{ tutor.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="from_date">Von Datum:</label>
+                <input type="date" class="form-control" id="from_date" name="from_date" value="{{ default_from_date }}">
+            </div>
+            <div class="form-group">
+                <label for="end_date">Bis Datum:</label>
+                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ default_end_date }}">
+            </div>
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary">Filtern</button>
+                <a href="{{ url_for('download_tutor_finances_pdf', tutor_id=selected_tutor_id, from_date=default_from_date, end_date=default_end_date) }}" class="btn btn-success">PDF herunterladen</a>
+            </div>
+        </form>
+        <table class="table mt-4">
+            <thead>
+                <tr>
+                    <th>Datum</th>
+                    <th>Fach</th>
+                    <th>Schülernamen</th>
+                    <th>Dauer (Stunden)</th>
+                    <th>Tutor Zahlung</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lesson in lessons %}
+                    <tr>
+                        <td>{{ lesson.date }}</td>
+                        <td>{{ lesson.subject_name }}</td>
+                        <td>{{ lesson.student_names|join(", ") }}</td>
+                        <td>{{ lesson.duration_hours }}</td>
+                        <td>{{ lesson.tutor_payment }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Bootstrap JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
