@@ -123,7 +123,7 @@ from sqlalchemy import or_
 
 def get_lessons_in_range(from_date, end_date, subject_id=None, family_id=None, tutor_id=None):
     lessons = Lesson.query.filter(Lesson.date.between(from_date, end_date))    
-    print(f"Input parameters: {from_date}, {end_date}, {subject_id}, {family_id} , {tutor_id}")
+    
       
     if subject_id:
         lessons = lessons.filter(Lesson.subject_id == subject_id)
@@ -134,7 +134,7 @@ def get_lessons_in_range(from_date, end_date, subject_id=None, family_id=None, t
     if family_id:
         # Find all students with the given family_id
         student_ids = [student.StudentID for student in Student.query.filter(Student.family_id == family_id).all()]
-        print(f"Student IDs: {student_ids}")  # Debugging line
+        
         # Find all lessons with those student IDs
         lessons = lessons.filter(Lesson.students.any(Student.StudentID.in_(student_ids)))
     
@@ -1852,7 +1852,7 @@ def finances_families():
     total = round_down_to_nearest_five_cents(total)
     return render_template('admin_finances_families.html', families=families, lessons=display_lessons, selected_family_id=selected_family_id, default_from_date=from_date, default_end_date=end_date, total = total)
 
-                
+from flask import current_app
 
 
 @app.route('/admin/finances/tutors', methods=['GET', 'POST'])
@@ -1972,7 +1972,7 @@ def download_finances_pdf():
     pdf_title = f"Finanzübersicht ({from_date} - {end_date})"
     headers = ['Datum', 'Fach', 'Tutor', 'Schüler', 'Preis', 'Rabatt', 'Endpreis', 'Tutorlohn', 'Brutto']
     pdf_filename = f"finances_{from_date}_{end_date}.pdf"
-    pdf_path = os.path.join('static/pdfs', pdf_filename)
+    pdf_path = os.path.join(current_app.root_path, 'static', 'pdfs', pdf_filename)
     pdf = PDFGenerator()
     pdf.generate_landscape_pdf(pdf_path, pdf_title, display_lessons, headers, total)
     return send_file(pdf_path, as_attachment=True, download_name=pdf_filename)
@@ -2014,7 +2014,7 @@ def download_family_finances_pdf():
     pdf_title = f"Finanzübersicht für Familie {family.name} ({from_date} - {end_date})"
     headers = ['Datum', 'Fach', 'Schüler', 'Preis', 'Rabatt', 'Endpreis']
     pdf_filename = f"family_finances_{family.name}_{from_date}_{end_date}.pdf"
-    pdf_path = os.path.join('static/pdfs', pdf_filename)
+    pdf_path = os.path.join(current_app.root_path, 'static', 'pdfs', pdf_filename)
 
     pdf = PDFGenerator()
     pdf.generate_pdf(pdf_path, pdf_title, display_lessons, headers, total)
@@ -2061,7 +2061,7 @@ def download_tutor_finances_pdf():
     pdf_title = f"Finanzübersicht für Tutor {tutor.name} ({from_date} - {end_date})"
     headers = ['Datum', 'Fach', 'Schüler', 'Dauer', 'Tutorlohn']
     pdf_filename = f"tutor_finances_{tutor.name}_{from_date}_{end_date}.pdf"
-    pdf_path = os.path.join('static/pdfs', pdf_filename)
+    pdf_path = os.path.join(current_app.root_path, 'static', 'pdfs', pdf_filename)
 
     pdf = PDFGenerator()
     pdf.generate_pdf(pdf_path, pdf_title, display_lessons, headers, total)
