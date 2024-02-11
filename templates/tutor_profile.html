@@ -4,19 +4,21 @@
     <meta charset="UTF-8">
     <title>Tutor Profil</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-
-    <!-- jQuery (required for Bootstrap's JavaScript) -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-
-    <!-- Popper.js (required for Bootstrap's JavaScript) -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-
-    <!-- Bootstrap JavaScript -->
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css">
+    <style>
+        body {
+            background-color: #f0f0f0; /* Very light grey */
+        }
+        #calendar {
+            margin: auto;
+            padding: 10px;
+            max-width: 95%;
+            height: 50%;
+            background-color: #ffffff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -41,53 +43,35 @@
             </ul>
         </div>
     </nav>
-
-    <!-- Main Content -->
-    <div class="container mt-4">
+    <div class="container-fluid mt-4">
         <h2>Welcome, {{ tutor.name }}</h2>
-        <div class="container mt-4">
-            <h2>Dashboard</h2>
-            <!-- Calendar and Stats -->
-            <div class="row">
-                <div class="col-md-12">
-                    <!-- Calendar Placeholder -->
-                    <div id="calendar-placeholder"></div>
-                </div>
-            </div>
-        </div>
+        <div id='calendar' class='mt-4'></div>
     </div>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/locale/de.js"></script>
-
     <script>
-        var calendarInitialized = false;
-    
         $(document).ready(function() {
-            // Check if FullCalendar has already been initialized
-            if (!calendarInitialized) {
-                $('#calendar-placeholder').fullCalendar({
-                    header: {
-                        left: 'prev,next today',
-                        center: 'title',
-                        right: 'month,agendaWeek,agendaDay'
-                    },
-                    defaultView: 'agendaWeek',
-                    height: 800,
-                    navLinks: true,
-                    editable: true,
-                    eventLimit: true,
-                    events: '/api/tutor_lessons',
-                    eventClick: function(calEvent, jsEvent, view) {
-                        window.location.href = '/lesson/' + calEvent.id;
-                    },
-                    timeFormat: 'H:mm',
-                    locale: 'de'
-                });
-    
-                calendarInitialized = true;
-            }
+            $('#calendar').fullCalendar({
+                header: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'month,agendaWeek,agendaDay'
+                },
+                defaultView: 'agendaWeek',
+                height: 900,
+
+                navLinks: true,
+                editable: true,
+                eventLimit: true,
+                events: '/api/tutor_lessons', // Adjust the endpoint as necessary
+                eventClick: function(calEvent, jsEvent, view) {
+                    window.location.href = '/lesson/' + calEvent.id; // Adjust as necessary
+                },
+                timeFormat: 'H:mm',
+                locale: 'de'
+            });
         });
     </script>
 </body>
