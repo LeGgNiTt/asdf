@@ -37,6 +37,7 @@
             <div class="form-group">
                 <label for="tutor_id">Tutor auswählen:</label>
                 <select name="tutor_id" id="tutor_id" class="form-control">
+                    <option value="Alle" {% if selected_family_id == 'Alle' %}selected{% endif %}>Alle</option>
                     {% for tutor in tutors %}
                         <option value="{{ tutor.tutor_id }}" {% if tutor.tutor_id == selected_tutor_id|int %}selected{% endif %}>
                             {{ tutor.name }}

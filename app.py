@@ -1770,6 +1770,7 @@ def admin_financess():
 @admin_required
 def admin_finances():
     display_lessons = []
+    total_fp = 0
     total_profit = 0
     today = datetime.now()
     from_date = datetime(today.year, today.month, 1)
@@ -1794,6 +1795,7 @@ def admin_finances():
         discount = price_adjustment.value if price_adjustment else 0
         display_lesson['discount'] = f"{discount * 100}%"
         display_lesson['final_price'] = lesson['lesson'].final_price
+        total_fp += display_lesson['final_price']
         if has_occured:
             tutor_id = lesson['lesson'].tutor_id
             tutor = Tutor.query.get(tutor_id)
@@ -1813,7 +1815,7 @@ def admin_finances():
         total_profit += display_lesson['brutto']
         display_lessons.append(display_lesson)
     total_profit = round_down_to_nearest_five_cents(total_profit)
-    return render_template('admin_financess.html', lessons=display_lessons, default_from_date=from_date.strftime('%Y-%m-%d'), default_end_date=end_date.strftime('%Y-%m-%d'), total_profit=total_profit)
+    return render_template('admin_financess.html', lessons=display_lessons, default_from_date=from_date.strftime('%Y-%m-%d'), default_end_date=end_date.strftime('%Y-%m-%d'), total_profit=total_profit, total_fp=total_fp)
 
 @app.route('/admin/finances/families', methods=['GET', 'POST'])
 @login_required
@@ -1827,14 +1829,17 @@ def finances_families():
     total = 0
     if request.method == 'POST':
         if selected_family_id:
-            lessons = get_lessons_in_range(from_date, end_date, None, int(selected_family_id), None)
+            if selected_family_id == "Alle":
+                lessons = get_lessons_in_range(from_date, end_date, None, None, None)
+            else:
+                lessons = get_lessons_in_range(from_date, end_date, None, int(selected_family_id), None)
             for lesson_detail in lessons:
                 lesson = lesson_detail['lesson']
                 total_students = lesson.students.count()
                 price_per_student = lesson.price / total_students
                 final_price_per_student = lesson.final_price / total_students
                 for student in lesson.students:
-                    if student.family_id == int(selected_family_id):
+                    if selected_family_id == "Alle" or student.family_id == int(selected_family_id):
                         total += final_price_per_student
                         price_adjustment_id = lesson.price_adjustment_id
                         price_adjustment = PriceAdjustment.query.get(price_adjustment_id)
@@ -1850,7 +1855,7 @@ def finances_families():
                         }
                         display_lessons.append(part_lesson)
     total = round_down_to_nearest_five_cents(total)
-    return render_template('admin_finances_families.html', families=families, lessons=display_lessons, selected_family_id=selected_family_id, default_from_date=from_date, default_end_date=end_date, total = total)
+    return render_template('admin_finances_families.html', families = families, lessons=display_lessons, selected_family_id=selected_family_id, default_from_date=from_date, default_end_date=end_date, total = total)
 
 from flask import current_app
 
@@ -1866,7 +1871,10 @@ def finances_tutors():
     display_lessons = []
     if request.method == 'POST':
         if selected_tutor_id:
-            lessons = get_lessons_in_range(from_date, end_date, None, None, int(selected_tutor_id))
+            if selected_tutor_id == "Alle":
+                lessons = get_lessons_in_range(from_date, end_date, None, None, None)
+            else:
+                lessons = get_lessons_in_range(from_date, end_date, None, None, int(selected_tutor_id))
             for lesson_detail in lessons:
                 lesson = lesson_detail['lesson']
                 has_occured = lesson.has_occured
@@ -1935,6 +1943,7 @@ def download_finances_pdf():
     end_date = request.args.get('end_date')
     display_lessons = []
     total = 0
+    total_fp = 0
     lessons = get_lessons_in_range(from_date, end_date, None, None, None)
     tutors = {lesson['lesson'].tutor_id: Tutor.query.get(lesson['lesson'].tutor_id) for lesson in lessons}
     for lesson in lessons:
@@ -1950,6 +1959,7 @@ def download_finances_pdf():
         discount = price_adjustment.value if price_adjustment else 0
         display_lesson['Rabatt'] = f"{discount * 100}%"
         display_lesson['Endpreis'] = lesson['lesson'].final_price
+        total_fp += display_lesson['Endpreis']
         if has_occured:
             tutor_id = lesson['lesson'].tutor_id
             tutor = tutors[tutor_id]
@@ -1970,11 +1980,11 @@ def download_finances_pdf():
         display_lessons.append(display_lesson)
     total = round_down_to_nearest_five_cents(total)
     pdf_title = f"Finanzübersicht ({from_date} - {end_date})"
-    headers = ['Datum', 'Fach', 'Tutor', 'Schüler', 'Preis', 'Rabatt', 'Endpreis', 'Tutorlohn', 'Brutto']
+    headers = ['Datum', 'Fach', 'Schüler', 'Tutor', 'Preis', 'Rabatt', 'Endpreis', 'Tutorlohn', 'Brutto']
     pdf_filename = f"finances_{from_date}_{end_date}.pdf"
     pdf_path = os.path.join(current_app.root_path, 'static', 'pdfs', pdf_filename)
     pdf = PDFGenerator()
-    pdf.generate_landscape_pdf(pdf_path, pdf_title, display_lessons, headers, total)
+    pdf.generate_landscape_pdf(pdf_path, pdf_title, display_lessons, headers, total_fp, total)
     return send_file(pdf_path, as_attachment=True, download_name=pdf_filename)
 
 
@@ -1987,7 +1997,10 @@ def download_family_finances_pdf():
     from_date = request.args.get('from_date')
     end_date = request.args.get('end_date')
     display_lessons = []
-    lessons = get_lessons_in_range(from_date, end_date, None, int(selected_family_id), None)
+    if selected_family_id == "Alle":
+        lessons = get_lessons_in_range(from_date, end_date, None, None, None)
+    else:
+        lessons = get_lessons_in_range(from_date, end_date, None, int(selected_family_id), None)
     total = 0
     for lesson_detail in lessons:
         lesson = lesson_detail['lesson']
@@ -1995,7 +2008,7 @@ def download_family_finances_pdf():
         price_per_student = lesson.price / total_students
         final_price_per_student = lesson.final_price / total_students
         for student in lesson.students:
-            if student.family_id == int(selected_family_id):
+            if selected_family_id == "Alle" or student.family_id == int(selected_family_id):
                 price_adjustment_id = lesson.price_adjustment_id
                 price_adjustment = PriceAdjustment.query.get(price_adjustment_id)
                 discount = price_adjustment.value if price_adjustment else 0
@@ -2010,10 +2023,15 @@ def download_family_finances_pdf():
                     'Endpreis': f"{final_price_per_student:.2f}.-"
                 }
                 display_lessons.append(part_lesson)
-    
-    pdf_title = f"Finanzübersicht für Familie {family.name} ({from_date} - {end_date})"
+    if selected_family_id == "Alle":
+        pdf_title = f"Finanzübersicht für alle Familien ({from_date} - {end_date})"
+    else:
+        pdf_title = f"Finanzübersicht für Familie {family.name} ({from_date} - {end_date})"
     headers = ['Datum', 'Fach', 'Schüler', 'Preis', 'Rabatt', 'Endpreis']
-    pdf_filename = f"family_finances_{family.name}_{from_date}_{end_date}.pdf"
+    if selected_family_id == "Alle":
+        pdf_filename = f"family_finances_all_{from_date}_{end_date}.pdf"
+    else:
+        pdf_filename = f"family_finances_{family.name}_{from_date}_{end_date}.pdf"
     pdf_path = os.path.join(current_app.root_path, 'static', 'pdfs', pdf_filename)
 
     pdf = PDFGenerator()
@@ -2033,8 +2051,12 @@ def download_tutor_finances_pdf():
     end_date = request.args.get('end_date')
     display_lessons = []
     total = 0
-    lessons = get_lessons_in_range(from_date, end_date, None, None, int(selected_tutor_id))
-    tutor_paygrade = Paygrade.query.filter_by(id=User.query.get(tutor.user_id).paygrade_id).first()
+    if selected_tutor_id == "Alle":
+        lessons = get_lessons_in_range(from_date, end_date, None, None, None)
+    else:
+        lessons = get_lessons_in_range(from_date, end_date, None, None, int(selected_tutor_id))
+
+    
     for lesson_detail in lessons:
         lesson = lesson_detail['lesson']
         has_occured = lesson.has_occured
@@ -2042,6 +2064,8 @@ def download_tutor_finances_pdf():
         end_datetime = datetime.combine(lesson.date, lesson.end_time)
         duration_timedelta = end_datetime - start_time
         duration_hours = duration_timedelta.seconds / 3600
+        tutor = Tutor.query.get(lesson.tutor_id)
+        tutor_paygrade = Paygrade.query.filter_by(id=User.query.get(tutor.user_id).paygrade_id).first()
         if has_occured:
             tutor_payment = int(tutor_paygrade.value * duration_hours)
             total += tutor_payment
@@ -2050,6 +2074,7 @@ def download_tutor_finances_pdf():
             
         subject_name = Subject.query.get(lesson.subject_id).subject_name
         student_names = [f"{student.FirstName} {student.LastName}" for student in lesson.students]
+        student_names = ', '.join(student_names)
         display_lesson = {
             'Datum' : lesson.date,
             'Fach' : subject_name,
@@ -2058,13 +2083,22 @@ def download_tutor_finances_pdf():
             'Tutorlohn' : f"{tutor_payment:.2f}.-"
         }
         display_lessons.append(display_lesson)
-    pdf_title = f"Finanzübersicht für Tutor {tutor.name} ({from_date} - {end_date})"
+    if selected_tutor_id == "Alle":
+        pdf_title = f"Finanzübersicht für alle Tutoren ({from_date} - {end_date})"
+    else:
+        pdf_title = f"Finanzübersicht für Tutor {tutor.name} ({from_date} - {end_date})"
     headers = ['Datum', 'Fach', 'Schüler', 'Dauer', 'Tutorlohn']
-    pdf_filename = f"tutor_finances_{tutor.name}_{from_date}_{end_date}.pdf"
+    if selected_tutor_id == "Alle":
+        pdf_filename = f"tutor_finances_all_{from_date}_{end_date}.pdf"
+    else:
+        pdf_filename = f"tutor_finances_{tutor.name}_{from_date}_{end_date}.pdf"
+    
     pdf_path = os.path.join(current_app.root_path, 'static', 'pdfs', pdf_filename)
 
     pdf = PDFGenerator()
-    pdf.generate_pdf(pdf_path, pdf_title, display_lessons, headers, total)
+    #pdf.generate_pdf(pdf_path, pdf_title, display_lessons, headers, total)
+    subtotal = 0
+    pdf.generate_landscape_pdf(pdf_path, pdf_title, display_lessons, headers, total, subtotal)
 
     return send_file(pdf_path, as_attachment=True, download_name=pdf_filename)
 
