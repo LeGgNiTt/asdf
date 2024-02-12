@@ -1530,6 +1530,24 @@ def tutor_profile():
         return render_template('tutor_profile.html', tutor=tutor)
 
 
+
+
+@app.route('/tutor/subject/<int:tutor_id>', methonds=['GET', 'POST'])
+@login_required
+@admin_required
+def tutor_edit_subjects(tutor_id):
+    tutor = Tutor.query.filter_by(user_id=tutor_id).first()
+    user = User.query.filter_by(id=tutor.user_id).first()
+
+
+    if request.method == 'POST':
+        pass #TODO 
+    
+    
+
+
+    return render_template('edit_tutor_subjects.html')
+
 @app.route('/tutor/<int:tutor_id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
