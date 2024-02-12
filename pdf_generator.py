@@ -91,3 +91,37 @@ class PDFGenerator(FPDF):
         
         # Save PDF to file
         self.output(filename)
+
+
+    def generate_tutor_l_pdf(self, filename, title, data, headers, total):
+        self.title = title
+        self.add_page(orientation='L')
+        self.set_fill_color(200, 200, 255)
+        col_widths = [self.w / len(headers)] * len(headers)
+        for i in range(-2,0):
+            col_widths[i] = col_widths[i] * 0.5
+
+        col_widths[0] = col_widths[0] * 0.4
+        col_widths[1] = col_widths[1] 
+        col_widths[2] = col_widths[2] * 2
+        col_widths[4] = col_widths[4]  
+
+        #headers
+        self.set_font('Arial', 'B', 10)
+        for i, header in enumerate(headers):
+            self.cell(col_widths[i], 10, header, 1, 0, 'C', 1)
+        self.ln()
+
+        # Data
+        self.set_font('Arial', '', 10)
+        for row in data:
+            for i, header in enumerate(headers):
+                self.cell(col_widths[i], 10, str(row[header]), 1)
+            self.ln()
+
+        self.set_font('Arial', 'B', 12)
+        self.ln(10)  # Ensure there's a bit of space before printing the total
+        total_formatted = f"{total:.2f}.-"
+        self.cell(0, 10, f'Total: {total_formatted}', 0, 1, 'R')
+
+        self.output(filename)

@@ -2128,7 +2128,7 @@ def download_tutor_finances_pdf():
     pdf = PDFGenerator()
     #pdf.generate_pdf(pdf_path, pdf_title, display_lessons, headers, total)
     subtotal = 0
-    pdf.generate_landscape_pdf(pdf_path, pdf_title, display_lessons, headers, total, subtotal)
+    pdf.generate_tutor_l_pdf(pdf_path, pdf_title, display_lessons, headers, total)
 
     return send_file(pdf_path, as_attachment=True, download_name=pdf_filename)
 
