@@ -62,6 +62,7 @@
             <thead>
                 <tr>
                     <th>Datum</th>
+                    <th>Tutor</th>
                     <th>Fach</th>
                     <th>Schülernamen</th>
                     <th>Dauer (Stunden)</th>
@@ -72,6 +73,7 @@
                 {% for lesson in lessons %}
                     <tr>
                         <td>{{ lesson.date }}</td>
+                        <td>{{ lesson.tutor }}</td>
                         <td>{{ lesson.subject_name }}</td>
                         <td>{{ lesson.student_names|join(", ") }}</td>
                         <td>{{ lesson.duration_hours }}</td>

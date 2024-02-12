@@ -1822,6 +1822,7 @@ def admin_finances():
 @admin_required
 def finances_families():
     families = Family.query.all()
+    lessons_grouped_by_family = {}
     selected_family_id = request.form.get('family_id')
     from_date = request.form.get('from_date')
     end_date = request.form.get('end_date')
@@ -1840,22 +1841,31 @@ def finances_families():
                 final_price_per_student = lesson.final_price / total_students
                 for student in lesson.students:
                     if selected_family_id == "Alle" or student.family_id == int(selected_family_id):
+                        family_name = Family.query.get(student.family_id).name
                         total += final_price_per_student
                         price_adjustment_id = lesson.price_adjustment_id
                         price_adjustment = PriceAdjustment.query.get(price_adjustment_id)
                         discount = price_adjustment.value if price_adjustment else 0
-
                         part_lesson = {
                             'date' : lesson.date,
                             'subject_name' : Subject.query.get(lesson.subject_id).subject_name,
-                            'student_name' : f"{student.FirstName} {student.LastName}",
+                            'student_name' : f"{student.FirstName} {student.LastName} ({family_name})",
                             'price' : price_per_student,
                             'discount' : f"{discount * 100}%",
                             'final_price' : final_price_per_student
                         }
-                        display_lessons.append(part_lesson)
+                        if family_name not in lessons_grouped_by_family:
+                            lessons_grouped_by_family[family_name] = []
+                        lessons_grouped_by_family[family_name].append(part_lesson)
+    
+    # Sort the lessons by family name
+    sorted_lessons = sorted(lessons_grouped_by_family.items(), key=lambda x: x[0])
+    
+    for family_name, lessons in sorted_lessons:
+        display_lessons.extend(lessons)
+    
     total = round_down_to_nearest_five_cents(total)
-    return render_template('admin_finances_families.html', families = families, lessons=display_lessons, selected_family_id=selected_family_id, default_from_date=from_date, default_end_date=end_date, total = total)
+    return render_template('admin_finances_families.html', families=families, lessons=display_lessons, selected_family_id=selected_family_id, default_from_date=from_date, default_end_date=end_date, total=total)
 
 from flask import current_app
 
@@ -1865,6 +1875,7 @@ from flask import current_app
 @admin_required
 def finances_tutors():
     tutors = Tutor.query.all()
+    lessons_grouped_by_tutor = {}
     selected_tutor_id = request.form.get('tutor_id')
     from_date = request.form.get('from_date')
     end_date = request.form.get('end_date')
@@ -1876,7 +1887,9 @@ def finances_tutors():
             else:
                 lessons = get_lessons_in_range(from_date, end_date, None, None, int(selected_tutor_id))
             for lesson_detail in lessons:
+                
                 lesson = lesson_detail['lesson']
+                tutor_id = lesson.tutor_id
                 has_occured = lesson.has_occured
                 tutor_paygrade = Paygrade.query.filter_by(id=User.query.get(Tutor.query.get(lesson.tutor_id).user_id).paygrade_id).first()
                 start_time = datetime.combine(lesson.date, lesson.start_time)
@@ -1891,12 +1904,18 @@ def finances_tutors():
                 student_names = [f"{student.FirstName} {student.LastName}" for student in lesson.students]
                 display_lesson = {
                     'date' : lesson.date,
+                    'tutor' : Tutor.query.get(lesson.tutor_id).name,
                     'subject_name' : subject_name,
                     'student_names' : student_names,
                     'duration_hours' : duration_hours,
                     'tutor_payment' : tutor_payment
                 }
-                display_lessons.append(display_lesson)
+                if tutor_id not in lessons_grouped_by_tutor:
+                    lessons_grouped_by_tutor[tutor_id] = []
+                lessons_grouped_by_tutor[tutor_id].append(display_lesson)
+    sorted_lessons = sorted(lessons_grouped_by_tutor.items(), key=lambda x: Tutor.query.get(x[0]).name)
+    for tutor_id, lessons in sorted_lessons:
+        display_lessons.extend(lessons)
     
     return render_template('admin_finances_tutors.html', tutors=tutors, lessons=display_lessons, selected_tutor_id=selected_tutor_id, default_from_date=from_date, default_end_date=end_date)
 
@@ -1994,6 +2013,7 @@ def download_finances_pdf():
 def download_family_finances_pdf():
     selected_family_id = request.args.get('family_id')
     family = Family.query.get(selected_family_id)
+    lessons_grouped_by_family = {}
     from_date = request.args.get('from_date')
     end_date = request.args.get('end_date')
     display_lessons = []
@@ -2009,6 +2029,7 @@ def download_family_finances_pdf():
         final_price_per_student = lesson.final_price / total_students
         for student in lesson.students:
             if selected_family_id == "Alle" or student.family_id == int(selected_family_id):
+                family_name = Family.query.get(student.family_id).name
                 price_adjustment_id = lesson.price_adjustment_id
                 price_adjustment = PriceAdjustment.query.get(price_adjustment_id)
                 discount = price_adjustment.value if price_adjustment else 0
@@ -2017,12 +2038,21 @@ def download_family_finances_pdf():
                 part_lesson = {
                     'Datum' : lesson.date,
                     'Fach' : Subject.query.get(lesson.subject_id).subject_name,
-                    'Schüler' : f"{student.FirstName} {student.LastName}",
+                    'Schüler' : f"{student.FirstName} {student.LastName} ({family_name})",
                     'Preis': f"{price_per_student:.2f}.-",
                     'Rabatt' : f"{discount * 100}%",
                     'Endpreis': f"{final_price_per_student:.2f}.-"
                 }
-                display_lessons.append(part_lesson)
+                if family_name not in lessons_grouped_by_family:
+                    lessons_grouped_by_family[family_name] = []
+                lessons_grouped_by_family[family_name].append(part_lesson)
+    
+    # Sort the lessons by family name
+    sorted_lessons = sorted(lessons_grouped_by_family.items(), key=lambda x: x[0])
+    
+    for family_name, lessons in sorted_lessons:
+        display_lessons.extend(lessons)
+
     if selected_family_id == "Alle":
         pdf_title = f"Finanzübersicht für alle Familien ({from_date} - {end_date})"
     else:

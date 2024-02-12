@@ -28,10 +28,11 @@ class PDFGenerator(FPDF):
         # Define column widths
         # Assuming the last 3 columns should be narrower
         col_widths = [self.w / len(headers)] * len(headers)  # Default width for each column
-        narrower_col_width = col_widths[0] * 0.75  # Last three columns are 75% of default width
+        narrower_col_width = col_widths[0] * 0.5  # Last three columns are 75% of default width
         for i in range(-3, 0):  # Adjust the width of the last three columns
             col_widths[i] = narrower_col_width
-        
+        col_widths[0] = col_widths[0] * 0.75
+        col_widths[2] = col_widths[2] * 2
         # Header
         self.set_font('Arial', 'B', 10)
         for i, header in enumerate(headers):
