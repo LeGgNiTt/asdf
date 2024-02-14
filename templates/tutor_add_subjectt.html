@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Fach zu Tutor hinzufügen</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_lessons">Lektion bearbeiten</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_users">Benutzer bearbeiten</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/modify_subjects">Fächer bearbeiten</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_family">Familie bearbeiten</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        <h2>Fach zu Tutor hinzufügen: {{ tutor.name }}</h2>
+        <form action="{{ url_for('tutor_add_subjectt', tutor_id=tutor.tutor_id) }}" method="post">
+            <div class="form-group">
+                <label for="schooltype_id">Schultyp:</label>
+                <select id="schooltype_id" name="schooltype_id" class="form-control" required onchange="updateSubjects()">
+                    <option value="">Wählen Sie einen Schultyp aus</option>
+                    {% for schooltype in schooltypes %}
+                    <option value="{{ schooltype.schooltype_id }}">{{ schooltype.schooltype_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="subject_id">Fachname:</label>
+                <select id="subject_id" name="subject_id" class="form-control" required>
+                    <!-- Subjects will be populated here based on the selected School Type -->
+                </select>
+            </div>
+            <input type="submit" value="Fach hinzufügen" class="btn btn-primary">
+        </form>
+    </div>
+
+    <script>
+        function updateSubjects() {
+            var schoolTypeId = $('#schooltype_id').val();
+            $('#subject_id').empty(); // Clear existing options first
+            $('#subject_id').append($('<option>', {
+                value: '',
+                text: 'Wählen Sie ein Fach aus' // Default prompt option
+            }));
+
+            $.ajax({
+                url: '/api/subjects/' + schoolTypeId,
+                type: 'GET',
+                success: function(subjects) {
+                    subjects.forEach(function(subject) {
+                        $('#subject_id').append($('<option>', {
+                            value: subject.id, // Ensure this matches your JSON response keys
+                            text: subject.name  // The visible text part of the option
+                        }));
+                    });
+                },
+                error: function(error) {
+                    console.error("Error updating subjects: ", error);
+                    $('#subject_id').append($('<option>', {
+                        value: '',
+                        text: 'Fehler beim Laden der Fächer'
+                    }));
+                }
+            });
+        }
+
+
+
+    </script>
+</body>
+</html>

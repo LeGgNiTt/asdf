@@ -85,6 +85,7 @@
                 <tr>
                     <th>Schulart</th>
                     <th>Fachname</th>
+                    <th>Löschen (falls nicht genutzt)</th>
                 </tr>
             </thead>
             <tbody>
@@ -92,6 +93,10 @@
                 <tr>
                     <td>{{ subject.schooltype.schooltype_name }}</td>
                     <td>{{ subject.subject_name }}</td>
+                    <td>
+                        <!-- Delete button -->
+                        <button class="btn btn-danger" onclick="deleteSubject({{ subject.subject_id }})">Löschen</button>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -103,6 +108,36 @@
         </div>
 
     </div>
+    <script>
+        function deleteSubject(subjectId) {
+            if(confirm("Sind Sie sicher, dass Sie dieses Fach löschen möchten?")) {
+                fetch('/delete_subject/' + subjectId, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // CSRF token header might be required depending on your setup
+                    },
+                    // Include credentials if necessary for authentication
+                    credentials: 'same-origin',
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert(data.message);
+                    // Reload the page to reflect the changes
+                    window.location.reload();
+                })
+                .catch(error => {
+                    console.error('There was a problem with your fetch operation:', error);
+                });
+            }
+        }
+        </script>
+        
 
     <!-- Skripte -->
     <!-- Bootstrap- und jQuery-Skripte hier -->

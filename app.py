@@ -40,7 +40,16 @@ def tutor_with_id_required(f, user_id):
         return f(*args, **kwargs)
     return decorated_function
 
-
+def create_paygrade(amount):
+    with app.app_context():
+        paygrade = Paygrade.query.filter_by(value=amount).first()
+        if not paygrade:
+            paygrade = Paygrade(value=amount)
+            db.session.add(paygrade)
+            db.session.commit()
+            print(f"Paygrade '{amount}' created.")
+        else:
+            print(f"Paygrade '{amount}' already exists.")
 
 def create_admin_user(username, password):
     with app.app_context():
@@ -185,7 +194,7 @@ def get_lessons_in_range(from_date, end_date, subject_id=None, family_id=None, t
 
 app = Flask(__name__)
 # Database configuration and initialization
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:rootroot@localhost/showcase'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://aunterkirher:rootroot@localhost/showcase2'
 app.config['SQLALCHEMY_POOL_SIZE'] = 10
 app.config['SQLALCHEMY_POOL_TIMEOUT'] = 30
 app.config['SQLALCHEMY_POOL_RECYCLE'] = 280
@@ -924,6 +933,18 @@ def modify_subjects():
     subjects = Subject.query.join(SchoolType).order_by(SchoolType.schooltype_name, Subject.subject_name).all()
     return render_template('modify_subjects.html', subjects=subjects)
 
+@app.route('/delete_subject/<int:subject_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_subjectt(subject_id):
+    subject = Subject.query.get(subject_id)
+    if subject:
+        db.session.delete(subject)
+        db.session.commit()
+        return jsonify(message='Erfolgreich gelöscht'), 200
+    else:
+        return jsonify(message='Subject not found'), 404
+
 @app.route('/modify_family')
 @login_required
 @admin_required
@@ -1121,17 +1142,21 @@ def modify_lessons():
 
 @app.route('/delete_lesson/<int:lesson_id>', methods=['POST'])
 def delete_lesson(lesson_id):
-    # Fetch the lesson from the database
     lesson = Lesson.query.get(lesson_id)
-    if lesson is None:
+    if lesson:
+        for student in lesson.students:
+            lesson.students.remove(student)
+        Note.query.filter_by(lesson_id=lesson_id).delete()
+        Contacted.query.filter_by(lesson_id=lesson_id).delete()
+        db.session.delete(lesson)
+        db.session.commit()
+
+        redirect_url = url_for('admin_dashboard') if current_user.role.name == 'admin' else url_for('tutor_lessons')
+        return jsonify({'message': 'Lesson deleted successfully', 'redirect_url': redirect_url}), 200
+    else:
         return jsonify({'message': 'Lesson not found'}), 404
 
-    # Delete the lesson
-    db.session.delete(lesson)
-    db.session.commit()
 
-    # Return a success message
-    return jsonify({'message': 'Lesson deleted successfully'}), 200
 
 @app.route('/tutor/delete_subject/<int:subject_id>', methods=['POST'])
 @tutor_required
@@ -1532,7 +1557,7 @@ def tutor_profile():
 
 
 
-@app.route('/tutor/subject/<int:tutor_id>', methonds=['GET', 'POST'])
+@app.route('/tutor/subject/<int:tutor_id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def tutor_edit_subjects(tutor_id):
@@ -1599,6 +1624,26 @@ def tutor_profil_id(tutor_id):
     paygrades = Paygrade.query.all()
     paygrade = Paygrade.query.filter_by(id=user.paygrade_id).first()
     return render_template('admin_tutor_profile.html', tutor=tutor, sorted_availabilities=sorted_availabilities, subjects=subjects, lessons=lessons, weekdays=weekdays, subject_names_dict=subject_names_dict, paygrades=paygrades, paygrade=paygrade, user=user)
+
+@app.route('/tutor/<int:tutor_id>/add_subject', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def tutor_add_subjectt(tutor_id):
+    tutor = Tutor.query.filter_by(tutor_id=tutor_id).first()
+    user = User.query.filter_by(id=tutor.user_id).first()
+    #we will have 2 dropdowns, subject dependent on schooltype, so we need to get all schooltypes and subjects
+    schooltypes = SchoolType.query.all()
+    subjects = Subject.query.all()
+    if request.method == 'POST':
+        subject_id = request.form.get('subject_id')
+        tutor_subject = TutorSubject(tutor_id=tutor.tutor_id, subject_id=subject_id)
+        db.session.add(tutor_subject)
+        db.session.commit()
+        return(redirect(url_for('tutor_profil_id', tutor_id=user.id)))
+
+
+        
+    return(render_template('tutor_add_subjectt.html', tutor=tutor, schooltypes=schooltypes, subjects=subjects))
 
 from datetime import datetime
 from flask import request, redirect, url_for, flash, render_template
@@ -2424,4 +2469,7 @@ def delete_student(student_id):
 
 
 if __name__ == '__main__':
+    create_role('tutor')
+    
     app.run(debug=True)
+    
