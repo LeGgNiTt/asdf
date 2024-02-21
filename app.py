@@ -1112,7 +1112,14 @@ def modify_lessons():
         # Convert the IDs to integers if they are not None or an empty string
 
         student_id = None
-        tutor_id =  None
+        if tutor_id == 'Alle':
+            tutor_id = None
+        else:
+            if tutor_id is not None:
+                tutor_id = int(tutor_id)
+
+
+
         
         lessons = filter_lessons_in_range(from_date, to_date, schooltype_id, subject_id, tutor_id)
 
@@ -1136,8 +1143,9 @@ def modify_lessons():
 
     all_tutors = Tutor.query.all()
     all_students = Student.query.all()
+    formatted_lessons.sort(key=lambda x: (x['date'], x['start_time']))
 
-    return render_template('modify_lessons.html', lessons=formatted_lessons, from_date=from_date, to_date=to_date, tutors=all_tutors, students=all_students)
+    return render_template('modify_lessons.html', lessons=formatted_lessons, from_date=from_date, to_date=to_date, tutors=all_tutors, students=all_students, tutor_id=tutor_id)
 
 
 @app.route('/delete_lesson/<int:lesson_id>', methods=['POST'])
