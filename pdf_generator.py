@@ -103,7 +103,8 @@ class PDFGenerator(FPDF):
 
         col_widths[0] = col_widths[0] * 0.4
         col_widths[1] = col_widths[1] 
-        col_widths[2] = col_widths[2] * 2
+        col_widths[2] = col_widths[2] 
+        col_widths[3] = col_widths[3] * 2
         col_widths[4] = col_widths[4]  
 
         #headers
@@ -114,10 +115,11 @@ class PDFGenerator(FPDF):
 
         # Data
         self.set_font('Arial', '', 10)
-        for row in data:
-            for i, header in enumerate(headers):
-                self.cell(col_widths[i], 10, str(row[header]), 1)
-            self.ln()
+        for tutor_id, lessons in data:
+            for lesson in lessons:
+                for i, header in enumerate(headers):
+                    self.cell(col_widths[i], 10, str(lesson[header]), 1)
+                self.ln()
 
         self.set_font('Arial', 'B', 12)
         self.ln(10)  # Ensure there's a bit of space before printing the total

@@ -1144,7 +1144,7 @@ def modify_lessons():
     all_tutors = Tutor.query.all()
     all_students = Student.query.all()
     formatted_lessons.sort(key=lambda x: (x['date'], x['start_time']))
-
+    
     return render_template('modify_lessons.html', lessons=formatted_lessons, from_date=from_date, to_date=to_date, tutors=all_tutors, students=all_students, tutor_id=tutor_id)
 
 
@@ -2150,7 +2150,7 @@ def download_tutor_finances_pdf():
     tutor = Tutor.query.get(selected_tutor_id)
     from_date = request.args.get('from_date')
     end_date = request.args.get('end_date')
-    display_lessons = []
+    lessons_grouped_by_tutor = {}
     total = 0
     if selected_tutor_id == "Alle":
         lessons = get_lessons_in_range(from_date, end_date, None, None, None)
@@ -2178,17 +2178,23 @@ def download_tutor_finances_pdf():
         student_names = ', '.join(student_names)
         display_lesson = {
             'Datum' : lesson.date,
+            'Tutor' : Tutor.query.get(lesson.tutor_id).name,
             'Fach' : subject_name,
             'Schüler' : student_names,
             'Dauer' : f"{duration_hours:.2f} Stunden",
             'Tutorlohn' : f"{tutor_payment:.2f}.-"
         }
-        display_lessons.append(display_lesson)
+        if tutor.tutor_id not in lessons_grouped_by_tutor:
+            lessons_grouped_by_tutor[tutor.tutor_id] = []
+        lessons_grouped_by_tutor[tutor.tutor_id].append(display_lesson)
+    sorted_lessons = sorted(lessons_grouped_by_tutor.items(), key=lambda x: Tutor.query.get(x[0]).name)
+    
+    
     if selected_tutor_id == "Alle":
         pdf_title = f"Finanzübersicht für alle Tutoren ({from_date} - {end_date})"
     else:
         pdf_title = f"Finanzübersicht für Tutor {tutor.name} ({from_date} - {end_date})"
-    headers = ['Datum', 'Fach', 'Schüler', 'Dauer', 'Tutorlohn']
+    headers = ['Datum', 'Tutor', 'Fach', 'Schüler', 'Dauer', 'Tutorlohn']
     if selected_tutor_id == "Alle":
         pdf_filename = f"tutor_finances_all_{from_date}_{end_date}.pdf"
     else:
@@ -2199,7 +2205,7 @@ def download_tutor_finances_pdf():
     pdf = PDFGenerator()
     #pdf.generate_pdf(pdf_path, pdf_title, display_lessons, headers, total)
     subtotal = 0
-    pdf.generate_tutor_l_pdf(pdf_path, pdf_title, display_lessons, headers, total)
+    pdf.generate_tutor_l_pdf(pdf_path, pdf_title, sorted_lessons, headers, total)
 
     return send_file(pdf_path, as_attachment=True, download_name=pdf_filename)
 

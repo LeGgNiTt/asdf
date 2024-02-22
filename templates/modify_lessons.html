@@ -108,7 +108,7 @@
                 <div class="form-group col-md-6">
                     <label for="tutor_id">Tutor auswählen:</label>
                     <select name="tutor_id" id="tutor_id" class="form-control">
-                        <option value="">--Alle--</option>
+                        <option value="Alle">Alle</option>
                         {% for tutor in tutors %}
                         <option value="{{ tutor.tutor_id }}" {% if tutor_id|string == tutor.tutor_id|string %}selected{% endif %}>
                             {{ tutor.name }}
