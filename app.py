@@ -978,6 +978,11 @@ def edit_family(family_id):
         family.name = request.form.get('name')
         family.address = request.form.get('address')
         family.phone_num = request.form.get('phone_num')
+        entrance_day_str = request.form.get('entrance_day')
+        if entrance_day_str:
+            family.entrance_day = datetime.strptime(entrance_day_str, '%Y-%m-%d').date()
+        else:
+            family.entrance_day = None
         db.session.commit()
         return redirect(url_for('modify_family'))
     return render_template('edit_family.html', family=family)
@@ -1748,7 +1753,9 @@ def admin_financess():
         num_students = len(lesson['lesson'].students.all())
         for i, student in enumerate(lesson['lesson'].students.all()):
             display_lesson = {}
-            display_lesson['date'] = lesson['lesson'].date
+            #convert date to dd-mm-yyyy
+            lesson_date = lesson['lesson'].date.strftime('%d-%m-%Y')
+            display_lesson['date'] = lesson_date
             display_lesson['subject_name'] = Subject.query.get(lesson['lesson'].subject_id).subject_name
             display_lesson['tutor_name'] = Tutor.query.get(lesson['lesson'].tutor_id).name
             display_lesson['student_name'] = f"{student.FirstName} {student.LastName}"
@@ -1856,7 +1863,9 @@ def admin_finances():
     for lesson in lessons:
         display_lesson = {}
         has_occured = lesson['lesson'].has_occured
-        display_lesson['date'] = lesson['lesson'].date
+        #convert date to dd/mm/yyyy
+        lesson_date = lesson['lesson'].date.strftime('%d/%m/%Y')
+        display_lesson['date'] = lesson_date
         display_lesson['subject_name'] = Subject.query.get(lesson['lesson'].subject_id).subject_name
         display_lesson['tutor_name'] = Tutor.query.get(lesson['lesson'].tutor_id).name
         display_lesson['student_names'] = [f"{student.FirstName} {student.LastName}" for student in lesson['lesson'].students]
@@ -1917,8 +1926,10 @@ def finances_families():
                         price_adjustment_id = lesson.price_adjustment_id
                         price_adjustment = PriceAdjustment.query.get(price_adjustment_id)
                         discount = price_adjustment.value if price_adjustment else 0
+                        #convert date to dd/mm/yyyy
+                        lesson_date = lesson.date.strftime('%d/%m/%Y')
                         part_lesson = {
-                            'date' : lesson.date,
+                            'date' : lesson_date,
                             'subject_name' : Subject.query.get(lesson.subject_id).subject_name,
                             'student_name' : f"{student.FirstName} {student.LastName} ({family_name})",
                             'price' : price_per_student,
@@ -1973,12 +1984,14 @@ def finances_tutors():
                     tutor_payment = 0
                 subject_name = Subject.query.get(lesson.subject_id).subject_name
                 student_names = [f"{student.FirstName} {student.LastName}" for student in lesson.students]
+                #convert date to dd/mm/yyyy
+                lesson_date = lesson.date.strftime('%d/%m/%Y')
                 display_lesson = {
-                    'date' : lesson.date,
+                    'date' : lesson_date,
                     'tutor' : Tutor.query.get(lesson.tutor_id).name,
                     'subject_name' : subject_name,
                     'student_names' : student_names,
-                    'duration_hours' : duration_hours,
+                    'duration_hours' : round(duration_hours, 2),
                     'tutor_payment' : tutor_payment
                 }
                 if tutor_id not in lessons_grouped_by_tutor:
@@ -2039,7 +2052,8 @@ def download_finances_pdf():
     for lesson in lessons:
         display_lesson = {}
         has_occured = lesson['lesson'].has_occured
-        display_lesson['Datum'] = lesson['lesson'].date
+        lesson_date = lesson['lesson'].date.strftime('%d/%m/%Y')
+        display_lesson['Datum'] = lesson_date
         display_lesson['Fach'] = Subject.query.get(lesson['lesson'].subject_id).subject_name
         display_lesson['Tutor'] = Tutor.query.get(lesson['lesson'].tutor_id).name
         display_lesson['Schüler'] = ', '.join([f"{student.FirstName} {student.LastName}" for student in lesson['lesson'].students])
@@ -2105,14 +2119,16 @@ def download_family_finances_pdf():
                 price_adjustment = PriceAdjustment.query.get(price_adjustment_id)
                 discount = price_adjustment.value if price_adjustment else 0
                 total += final_price_per_student
+                #convert date to dd/mm/yyyy
+                lesson_date = lesson.date.strftime('%d/%m/%Y')
 
                 part_lesson = {
-                    'Datum' : lesson.date,
+                    'Datum' : lesson_date,
                     'Fach' : Subject.query.get(lesson.subject_id).subject_name,
                     'Schüler' : f"{student.FirstName} {student.LastName} ({family_name})",
-                    'Preis': f"{price_per_student:.2f}.-",
+                    'Preis': f"{price_per_student:.2f}",
                     'Rabatt' : f"{discount * 100}%",
-                    'Endpreis': f"{final_price_per_student:.2f}.-"
+                    'Endpreis': f"{final_price_per_student:.2f}"
                 }
                 if family_name not in lessons_grouped_by_family:
                     lessons_grouped_by_family[family_name] = []
@@ -2176,13 +2192,15 @@ def download_tutor_finances_pdf():
         subject_name = Subject.query.get(lesson.subject_id).subject_name
         student_names = [f"{student.FirstName} {student.LastName}" for student in lesson.students]
         student_names = ', '.join(student_names)
+        #format time to dd/mm/yyyy
+        lesson_date = lesson.date.strftime('%d/%m/%Y')
         display_lesson = {
-            'Datum' : lesson.date,
+            'Datum' : lesson_date,
             'Tutor' : Tutor.query.get(lesson.tutor_id).name,
             'Fach' : subject_name,
             'Schüler' : student_names,
             'Dauer' : f"{duration_hours:.2f} Stunden",
-            'Tutorlohn' : f"{tutor_payment:.2f}.-"
+            'Tutorlohn' : f"{tutor_payment:.2f}"
         }
         if tutor.tutor_id not in lessons_grouped_by_tutor:
             lessons_grouped_by_tutor[tutor.tutor_id] = []

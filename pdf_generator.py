@@ -48,7 +48,7 @@ class PDFGenerator(FPDF):
         
         self.set_font('Arial', 'B', 12)
         self.ln(10)  # Ensure there's a bit of space before printing the total
-        total_formatted = f"{total:.2f}.-"
+        total_formatted = f"{total:.2f}"
         self.cell(0, 10, f'Total: {total_formatted}', 0, 1, 'R')
         
         # Save PDF to file
@@ -83,10 +83,10 @@ class PDFGenerator(FPDF):
         
         self.set_font('Arial', 'B', 12)
         self.ln(10)  # Ensure there's a bit of space before printing the total
-        subtotal_formatted = f"{subtotal:.2f}.-"
+        subtotal_formatted = f"{subtotal:.2f}"
         self.cell(0, 10, f'Umsatz: {subtotal_formatted}', 0, 1, 'R')
         self.ln(10)  # Ensure there's a bit of space before printing the total
-        total_formatted = f"{total:.2f}.-"
+        total_formatted = f"{total:.2f}"
         self.cell(0, 10, f'Total: {total_formatted}', 0, 1, 'R')
         
         # Save PDF to file
@@ -123,7 +123,7 @@ class PDFGenerator(FPDF):
 
         self.set_font('Arial', 'B', 12)
         self.ln(10)  # Ensure there's a bit of space before printing the total
-        total_formatted = f"{total:.2f}.-"
+        total_formatted = f"{total:.2f}"
         self.cell(0, 10, f'Total: {total_formatted}', 0, 1, 'R')
 
         self.output(filename)

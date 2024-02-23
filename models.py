@@ -78,6 +78,7 @@ class Family(db.Model):
     created_at = db.Column(db.TIMESTAMP, default=datetime.utcnow)
     updated_at = db.Column(db.TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
     entrance_fee = db.Column(db.Float, default=False)
+    entrance_day = db.Column(db.Date, nullable=True)
 
 class PriceAdjustment(db.Model):
     __tablename__ = 'price_adjustment'

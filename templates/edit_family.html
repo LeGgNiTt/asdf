@@ -61,6 +61,10 @@
                 <label for="phone_num">Telefonnummer</label>
                 <input type="text" class="form-control" id="phone_num" name="phone_num" value="{{ family.phone_num }}">
             </div>
+            <div class="form-group">
+                <label for="entrance_day">Einschreibedatum</label>
+                <input type="date" id="entrance_day" name="entrance_day" class="form-control" value="{{ family.entrance_day.strftime('%Y-%m-%d') if family.entrance_day else '' }}">
+            </div>
             <button type="submit" class="btn btn-primary">Familie aktualisieren</button>
         </form>
     </div>

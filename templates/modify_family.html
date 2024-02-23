@@ -75,6 +75,7 @@
                     <!-- Hier kommen die Familieninformationen und Änderungsoptionen hin -->
                     <p>Adresse: {{ family.address }}</p>
                     <p>Telefon: {{ family.phone_num }}</p>
+                    <p>Einschreibedatum: {{ family.entrance_day.strftime('%d/%m/%Y') if family.entrance_day else 'N/A' }}</p>
                     <!-- Fügen Sie bei Bedarf weitere Details hinzu -->
                     <a href="{{ url_for('edit_family', family_id=family.id) }}" class="btn btn-primary btn-sm">Familie bearbeiten</a>
                     <a href="{{ url_for('add_student_to_family', family_id=family.id) }}" class="btn btn-primary btn-sm">Schüler hinzufügen</a>
