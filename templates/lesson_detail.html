@@ -205,22 +205,50 @@
 
     // Function to calculate the final price
     function calculateFinalPrice() {
-        // If the price or price adjustment has not been changed by the user, do not calculate and update the final price
-        if (!isUserChanged) {
-            return;
+        const price = parseFloat(priceInput.value); // Price per hour
+            if (isNaN(price)) {
+                console.error('Price is not a valid number');
+                return;
+            }
+
+            // Parsing start and end time to hours and minutes
+            const [startHour, startMinute] = startTimeInput.value.split(':').map(Number);
+            const [endHour, endMinute] = endTimeInput.value.split(':').map(Number);
+
+            // Calculating duration in hours
+            let duration = (endHour + endMinute / 60) - (startHour + startMinute / 60);
+
+            // Ensure duration is positive; could be negative if end time is earlier than start time
+            if (duration < 0) {
+                console.error('End time is earlier than start time.');
+                return;
+            }
+
+            const selectedAdjustmentId = priceAdjustmentSelect.value;
+            const adjustmentValue = priceAdjustments[selectedAdjustmentId] ? parseFloat(priceAdjustments[selectedAdjustmentId]) : 0;
+            
+            // Check if adjustmentValue is NaN
+            if (isNaN(adjustmentValue)) {
+                console.error('Adjustment value is not a valid number');
+                return;
+            }
+
+            // Final price calculation incorporating the duration
+            const finalPrice = price * duration * (1 - adjustmentValue);
+
+            // Set the final price, rounded to 2 decimal places
+            finalPriceInput.value = finalPrice.toFixed(2);
         }
 
-        const price = parseFloat(priceField.value);
-        const priceAdjustmentOption = priceAdjustmentField.options[priceAdjustmentField.selectedIndex];
-        const priceAdjustment = parseFloat(priceAdjustmentOption.getAttribute('data-value'));
 
-        // Calculate the final price
-        const finalPrice = price * (1 - priceAdjustment);
-
-        // Set the value of the final price field
-        finalPriceField.value = finalPrice.toFixed(2);
-    }
-
+    startTimeField.addEventListener('input', function() {
+        isUserChanged = true;
+        calculateFinalPrice();
+    });
+    endTimeField.addEventListener('input', function() {
+        isUserChanged = true;
+        calculateFinalPrice();
+    });
     // Add event listeners to the price and price adjustment fields
     priceField.addEventListener('input', function() {
         isUserChanged = true;

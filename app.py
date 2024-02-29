@@ -1234,6 +1234,9 @@ def add_lesson(lesson_id):
         date = datetime.strptime(date, '%Y-%m-%d').date()
         start_time = request.form.get('start_time')
         end_time = request.form.get('end_time')
+        start_time_object = datetime.strptime(start_time, '%H:%M').time()
+        end_time_object = datetime.strptime(end_time, '%H:%M').time()
+        duration = (datetime.combine(date, end_time_object) - datetime.combine(date, start_time_object)).seconds / 3600
         tutor_id = request.form.get('tutor_id')
         student_id = request.form.get('student_id')
         subject_id = request.form.get('subject_id')
@@ -1278,7 +1281,7 @@ def add_lesson(lesson_id):
                 tutor_id=tutor_id,
                 subject_id=subject_id,
                 price=price,
-                final_price = round_down_to_nearest_five_cents(float(price) * (1 - adjustment_value)),
+                final_price = round_down_to_nearest_five_cents(float(price) * duration * (1 - adjustment_value)),
                 lesson_type_id = 2 
             )
             for student_id in student_ids:
@@ -1298,7 +1301,7 @@ def add_lesson(lesson_id):
                 subject_id=subject_id,
                 price=price,
                 price_adjustment_id=price_adjustment_id,
-                final_price = round_down_to_nearest_five_cents(float(price) * (1 - adjustment_value)),
+                final_price = round_down_to_nearest_five_cents(float(price) * duration * (1 - adjustment_value)),
                 lesson_type_id = 1
             )
             for student_id in student_ids:
@@ -2437,6 +2440,9 @@ def update_lesson(lesson_id):
             print(f"Invalid price_adjustment: {request.form['price_adjustment']}")
     if 'final_price' in request.form:
         lesson.final_price = float(request.form['final_price'])
+    else:
+        price_adjustment = PriceAdjustment.query.get(lesson.price_adjustment_id)
+        lesson.final_price = lesson.price * (1 - price_adjustment.value) if price_adjustment else lesson.price
     if request.form.get('has_occured') is not None:
         lesson.has_occured = True
     else:

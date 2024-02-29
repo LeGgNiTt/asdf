@@ -146,7 +146,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="price">Preis</label>
+                    <label for="price">Stundenpreis</label>
                     <input type="number" class="form-control" id="price" name="price" value="{{ prepopulated_data['price'] if prepopulated_data else '90' }}" required>
                 </div>
                 <!-- Preisanpassung Dropdown -->
@@ -186,6 +186,7 @@
         
         <script>
             document.addEventListener('DOMContentLoaded', function() {
+                
 
                 function handleSchooltypeSelection() {
                     const schooltypeId = this.value;
@@ -301,13 +302,41 @@
                 }
                 
                 function calculateFinalPrice() {
-                    const price = parseFloat(priceInput.value);
-                    const selectedAdjustmentId = priceAdjustmentSelect.value;
-                    const adjustmentValue = selectedAdjustmentId ? priceAdjustments[selectedAdjustmentId] : 0;
-                    const finalPrice = price * (1 - adjustmentValue);
+                    const price = parseFloat(priceInput.value); // Price per hour
+                        if (isNaN(price)) {
+                            console.error('Price is not a valid number');
+                            return;
+                        }
 
-                    finalPriceInput.value = finalPrice.toFixed(2); // Rounds to 2 decimal places
-                }
+                        // Parsing start and end time to hours and minutes
+                        const [startHour, startMinute] = startTimeInput.value.split(':').map(Number);
+                        const [endHour, endMinute] = endTimeInput.value.split(':').map(Number);
+
+                        // Calculating duration in hours
+                        let duration = (endHour + endMinute / 60) - (startHour + startMinute / 60);
+
+                        // Ensure duration is positive; could be negative if end time is earlier than start time
+                        if (duration < 0) {
+                            console.error('End time is earlier than start time.');
+                            return;
+                        }
+
+                        const selectedAdjustmentId = priceAdjustmentSelect.value;
+                        const adjustmentValue = priceAdjustments[selectedAdjustmentId] ? parseFloat(priceAdjustments[selectedAdjustmentId]) : 0;
+                        
+                        // Check if adjustmentValue is NaN
+                        if (isNaN(adjustmentValue)) {
+                            console.error('Adjustment value is not a valid number');
+                            return;
+                        }
+
+                        // Final price calculation incorporating the duration
+                        const finalPrice = price * duration * (1 - adjustmentValue);
+
+                        // Set the final price, rounded to 2 decimal places
+                        finalPriceInput.value = finalPrice.toFixed(2);
+                    }
+
 
                 
                 const priceInput = document.getElementById('price');
@@ -324,8 +353,15 @@
                 subjectSelect.addEventListener('change', updateTutorList);
                 
                 dateInput.addEventListener('change', updateTutorList);
-                startTimeInput.addEventListener('change', updateTutorList);
-                endTimeInput.addEventListener('change', updateTutorList);
+                startTimeInput.addEventListener('change', function() {
+                    updateTutorList();
+                    calculateFinalPrice();
+                });
+
+                endTimeInput.addEventListener('change', function() {
+                    updateTutorList();
+                    calculateFinalPrice();
+                });
 
                 priceInput.addEventListener('change', calculateFinalPrice);
                 priceAdjustmentSelect.addEventListener('change', calculateFinalPrice);
