@@ -1234,9 +1234,8 @@ def add_lesson(lesson_id):
         date = datetime.strptime(date, '%Y-%m-%d').date()
         start_time = request.form.get('start_time')
         end_time = request.form.get('end_time')
-        start_time_object = datetime.strptime(start_time, '%H:%M').time()
-        end_time_object = datetime.strptime(end_time, '%H:%M').time()
-        duration = (datetime.combine(date, end_time_object) - datetime.combine(date, start_time_object)).seconds / 3600
+        #calculate duration with endtime and starttime
+        duration = (datetime.strptime(end_time, '%H:%M:%S') - datetime.strptime(start_time, '%H:%M:%S')).seconds / 3600
         tutor_id = request.form.get('tutor_id')
         student_id = request.form.get('student_id')
         subject_id = request.form.get('subject_id')
