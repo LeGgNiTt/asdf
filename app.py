@@ -247,7 +247,7 @@ def format_number(phone_number):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('fit4school.html')
 
 @app.route('/about')
 def about():
