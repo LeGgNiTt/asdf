@@ -1203,8 +1203,10 @@ def modify_users():
     return render_template('modify_users.html', users=user_data)
 
 import math
-def round_down_to_nearest_five_cents(n):
-    return math.floor(n * 20) / 20
+def round_to_nearest_five_cents(amount):
+    # Rounds the amount to the nearest .05
+    return round(amount * 20) / 20.0
+
 
 @app.route('/add_lesson', defaults={'lesson_id': None}, methods=['GET', 'POST'])
 @app.route('/add_lesson/<int:lesson_id>', methods=['GET', 'POST'])
@@ -1235,7 +1237,7 @@ def add_lesson(lesson_id):
         start_time = request.form.get('start_time')
         end_time = request.form.get('end_time')
         #calculate duration with endtime and starttime
-        duration = (datetime.strptime(end_time, '%H:%M:%S') - datetime.strptime(start_time, '%H:%M:%S')).seconds / 3600
+        duration = (datetime.strptime(end_time, '%H:%M') - datetime.strptime(start_time, '%H:%M')).seconds / 3600
         tutor_id = request.form.get('tutor_id')
         student_id = request.form.get('student_id')
         subject_id = request.form.get('subject_id')
@@ -1280,7 +1282,7 @@ def add_lesson(lesson_id):
                 tutor_id=tutor_id,
                 subject_id=subject_id,
                 price=price,
-                final_price = round_down_to_nearest_five_cents(float(price) * duration * (1 - adjustment_value)),
+                final_price = round_to_nearest_five_cents(float(price) * duration * (1 - adjustment_value)),
                 lesson_type_id = 2 
             )
             for student_id in student_ids:
@@ -1300,7 +1302,7 @@ def add_lesson(lesson_id):
                 subject_id=subject_id,
                 price=price,
                 price_adjustment_id=price_adjustment_id,
-                final_price = round_down_to_nearest_five_cents(float(price) * duration * (1 - adjustment_value)),
+                final_price = round_to_nearest_five_cents(float(price) * duration * (1 - adjustment_value)),
                 lesson_type_id = 1
             )
             for student_id in student_ids:
@@ -1890,13 +1892,13 @@ def admin_finances():
             duration_hours = duration_seconds / 3600
             tutor_payment = paygrade.value * duration_hours
             display_lesson['tutor_payment'] = tutor_payment
-            display_lesson['brutto'] = lesson['lesson'].final_price - tutor_payment
+            display_lesson['brutto'] = round_to_nearest_five_cents(lesson['lesson'].final_price - tutor_payment)
         else:
             display_lesson['tutor_payment'] = 0
             display_lesson['brutto'] = display_lesson['final_price']
         total_profit += display_lesson['brutto']
         display_lessons.append(display_lesson)
-    total_profit = round_down_to_nearest_five_cents(total_profit)
+    total_profit = round_to_nearest_five_cents(total_profit)
     return render_template('admin_financess.html', lessons=display_lessons, default_from_date=from_date.strftime('%Y-%m-%d'), default_end_date=end_date.strftime('%Y-%m-%d'), total_profit=total_profit, total_fp=total_fp)
 
 @app.route('/admin/finances/families', methods=['GET', 'POST'])
@@ -1921,6 +1923,7 @@ def finances_families():
                 total_students = lesson.students.count()
                 price_per_student = lesson.price / total_students
                 final_price_per_student = lesson.final_price / total_students
+                final_price_per_student = round_to_nearest_five_cents(final_price_per_student)
                 for student in lesson.students:
                     if selected_family_id == "Alle" or student.family_id == int(selected_family_id):
                         family_name = Family.query.get(student.family_id).name
@@ -1948,7 +1951,7 @@ def finances_families():
     for family_name, lessons in sorted_lessons:
         display_lessons.extend(lessons)
     
-    total = round_down_to_nearest_five_cents(total)
+    total = round_to_nearest_five_cents(total)
     return render_template('admin_finances_families.html', families=families, lessons=display_lessons, selected_family_id=selected_family_id, default_from_date=from_date, default_end_date=end_date, total=total)
 
 from flask import current_app
@@ -2084,7 +2087,7 @@ def download_finances_pdf():
             display_lesson['Brutto'] = display_lesson['Endpreis']
         total += display_lesson['Brutto']
         display_lessons.append(display_lesson)
-    total = round_down_to_nearest_five_cents(total)
+    total = round_to_nearest_five_cents(total)
     pdf_title = f"Finanzübersicht ({from_date} - {end_date})"
     headers = ['Datum', 'Fach', 'Schüler', 'Tutor', 'Preis', 'Rabatt', 'Endpreis', 'Tutorlohn', 'Brutto']
     pdf_filename = f"finances_{from_date}_{end_date}.pdf"
