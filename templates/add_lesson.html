@@ -68,12 +68,18 @@
             <h2>Lektion hinzufügen</h2>
             <form method="post">
 
-                <!-- Ferienkurs Checkbox -->
+                <!-- Ferienkurs Checkboxen -->
                 <div class="form-group">
-                    <div class="form-check">
+                    <div class="form-check form-check-inline">
                         <input class="form-check-input" type="checkbox" id="ferienkurs" name="ferienkurs">
                         <label class="form-check-label" for="ferienkurs">
-                            Ferienkurs
+                            4-Tage-Ferienkurs
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="ferienkurs_2" name="ferienkurs_2">
+                        <label class="form-check-label" for="ferienkurs_2">
+                            5-Tage-Ferienkurs
                         </label>
                     </div>
                 </div>
@@ -369,6 +375,14 @@
 
                 initialLoad(); 
             });
+            document.getElementById('ferienkurs').addEventListener('change', function() {
+                document.getElementById('ferienkurs_2').disabled = this.checked;
+                });
+
+            document.getElementById('ferienkurs_2').addEventListener('change', function() {
+                document.getElementById('ferienkurs').disabled = this.checked;
+            });
+
             </script>
         <footer class="footer">
             <p>Software von: Aleksandrs Unterkirhers</p>

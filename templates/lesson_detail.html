@@ -133,7 +133,7 @@
             <div class="form-row">
                 <div class="form-group col-md-6">
                     <label for="price">Preis</label>
-                    <input type="number" step="1" class="form-control" id="price" name="price" value="{{ lesson.price }}" required>
+                    <input type="number" step="0.05" class="form-control" id="price" name="price" value="{{ lesson.price }}" required>
                 </div>
                 <div class="form-group col-md-6">
                     <label for="price_adjustment">Price Adjustment</label>
@@ -146,7 +146,7 @@
             </div>
             <div class="form-group">
                 <label for="final_price">Endpreis</label>
-                <input type="number" step="0.01" class="form-control" id="final_price" name="final_price" value="{{ lesson.final_price }}" required>
+                <input type="number" step="0.05" class="form-control" id="final_price" name="final_price" value="{{ lesson.final_price }}" required>
             </div>
             <a href="{{ url_for('add_lesson', lesson_id=lesson.lesson_id) }}" class="btn btn-success">Neue Lektion mit Vorlage</a>
             

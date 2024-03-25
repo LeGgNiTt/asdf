@@ -1250,6 +1250,7 @@ def add_lesson(lesson_id):
         else:
             adjustment_value = price_adjustment.value
         ferienkurs = request.form.get('ferienkurs') is not None
+        ferienkurs_2 = request.form.get('ferienkurs_2') is not None
 
         student_ids = request.form.getlist('student_ids')
         if ferienkurs == True:
@@ -1274,6 +1275,27 @@ def add_lesson(lesson_id):
             db.session.commit()
             return redirect(url_for('modify_lessons'))
         
+        if ferienkurs_2 == True:
+            for i in range(0,5):
+                new_lesson = Lesson(
+                    date=date + timedelta(days=i),
+                    start_time=start_time,
+                    end_time=end_time,
+                    tutor_id=tutor_id,
+                    subject_id=subject_id,
+                    price=69,
+                    price_adjustment_id=3,
+                    final_price = 137.5,
+                    lesson_type_id = 3
+                )
+                for student_id in student_ids:
+                    student = Student.query.get(student_id)
+                    student.enrolled_lessons.append(new_lesson)
+
+                db.session.add(new_lesson)
+            db.session.commit()
+            return redirect(url_for('modify_lessons'))
+                    
         if len(student_ids) > 1:
             new_lesson = Lesson(
                 date=date,
