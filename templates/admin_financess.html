@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Globale Finanzübersicht</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    
     <style>
         .form-control, .btn-primary {
             border-radius: 0.25rem;
@@ -77,7 +78,8 @@
             </div>
         </div>
     </form>
-    <table class="table table-striped table-bordered">
+    <table class="table table-striped table-bordered" id="financeTable">
+
         <thead>
             <tr>
                 <th>Datum</th>
@@ -100,8 +102,8 @@
                     <td>{{ lesson.student_names|join(', ') }}</td>
                     <td>{{ lesson.price }}</td>
                     <td>{{ lesson.discount }}</td>
-                    <td>{{ lesson.final_price }}</td>
-                    <td>{{ lesson.tutor_payment }}</td>
+                    <td>{{ lesson.final_price | round(2) }}</td>
+                    <td>{{ lesson.tutor_payment | round(2) }}</td>                    
                     <td>{{ lesson.brutto }}</td>
                 </tr>
             {% endfor %}
@@ -116,7 +118,7 @@
                     <div class="card-header">Umsatz</div>
                     <div class="card-body">
                         
-                        <p class="card-text">{{ total_fp }}</p>
+                        <p class="card-text">{{ total_fp | round(2) }}</p>
                     </div>
                 </div>
             </div>
@@ -125,13 +127,33 @@
                     <div class="card-header">Bruttogewinn</div>
                     <div class="card-body">
                         
-                        <p class="card-text">{{ total_profit }}</p>
+                        <p class="card-text">{{ total_profit | round(2) }}</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent;
+    
+        const comparer = (idx, asc) => (a, b) => ((v1, v2) => 
+            v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)
+            )(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
+    
+        // Ensure we're only attaching this to the thead's th elements
+        document.querySelectorAll('#financeTable thead th').forEach(th => th.addEventListener('click', (() => {
+            const table = th.closest('table');
+            const tbody = table.querySelector('tbody');
+            Array.from(tbody.querySelectorAll('tr'))
+                .sort(comparer(Array.from(th.parentNode.children).indexOf(th), this.asc = !this.asc))
+                .forEach(tr => tbody.appendChild(tr)); // Append the sorted rows back to the tbody
+        })));
+    });
+    </script>
+    
+    
 
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
