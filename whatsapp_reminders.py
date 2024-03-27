@@ -75,7 +75,9 @@ def send_whatsapp_reminders():
                 send_whatsapp_template_message(tutor_phone_num, 'reminder_tutor', tutor_params)
                 db.session.add(Contacted(lesson_id=lesson.lesson_id, phone_num=tutor_phone_num))
             else:
-                print(f"Reminder to tutor {tutor.name} not sent: no phone number or already contacted")
+                print(f"Reminder to tutor {tutor.name} not sent: already contacted or invalid number")
+        else:
+            print(f"Reminder to tutor {tutor.name} not sent: no phone number")
         
         
         

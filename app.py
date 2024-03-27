@@ -1912,6 +1912,7 @@ def admin_finances():
             end_datetime = datetime.combine(date.today(), lesson['lesson'].end_time)
             duration_seconds = (end_datetime - start_datetime).total_seconds()
             duration_hours = duration_seconds / 3600
+            display_lesson[duration_hours] = duration_hours
             tutor_payment = paygrade.value * duration_hours
             display_lesson['tutor_payment'] = tutor_payment
             display_lesson['brutto'] = round_to_nearest_five_cents(lesson['lesson'].final_price - tutor_payment)
