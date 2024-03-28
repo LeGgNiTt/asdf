@@ -33,6 +33,8 @@ class PDFGenerator(FPDF):
             col_widths[i] = narrower_col_width
         col_widths[0] = col_widths[0] * 0.75
         col_widths[2] = col_widths[2] * 2
+        col_widths[3] = col_widths[3] * 0.5
+        col_widths[4] = col_widths[4] * 1.75    
         # Header
         self.set_font('Arial', 'B', 10)
         for i, header in enumerate(headers):

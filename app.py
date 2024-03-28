@@ -1902,17 +1902,18 @@ def admin_finances():
         display_lesson['discount'] = f"{discount * 100}%"
         display_lesson['final_price'] = lesson['lesson'].final_price
         total_fp += display_lesson['final_price']
+        start_datetime = datetime.combine(date.today(), lesson['lesson'].start_time)
+        end_datetime = datetime.combine(date.today(), lesson['lesson'].end_time)
+        duration_seconds = (end_datetime - start_datetime).total_seconds()
+        duration_hours = duration_seconds / 3600
+        display_lesson['duration_hours'] = round(duration_hours, 2)
         if has_occured:
             tutor_id = lesson['lesson'].tutor_id
             tutor = Tutor.query.get(tutor_id)
             user_id = tutor.user_id
             user = User.query.get(user_id)
             paygrade = Paygrade.query.get(user.paygrade_id)
-            start_datetime = datetime.combine(date.today(), lesson['lesson'].start_time)
-            end_datetime = datetime.combine(date.today(), lesson['lesson'].end_time)
-            duration_seconds = (end_datetime - start_datetime).total_seconds()
-            duration_hours = duration_seconds / 3600
-            display_lesson[duration_hours] = duration_hours
+            
             tutor_payment = paygrade.value * duration_hours
             display_lesson['tutor_payment'] = tutor_payment
             display_lesson['brutto'] = round_to_nearest_five_cents(lesson['lesson'].final_price - tutor_payment)
@@ -1949,9 +1950,13 @@ def finances_families():
                 duration_timedelta = end_datetime - start_time
                 duration_hours = duration_timedelta.seconds / 3600
                 total_students = lesson.students.count()
-                price_per_student = lesson.price / total_students
-                final_price_per_student = lesson.final_price / total_students
-                final_price_per_student = round_to_nearest_five_cents(final_price_per_student)
+                if total_students == 0:
+                    price_per_student = lesson.price
+                    final_price_per_student = lesson.final_price
+                else:
+                    price_per_student = lesson.price / total_students
+                    final_price_per_student = lesson.final_price / total_students
+                    final_price_per_student = round_to_nearest_five_cents(final_price_per_student)
                 for student in lesson.students:
                     if selected_family_id == "Alle" or student.family_id == int(selected_family_id):
                         family_name = Family.query.get(student.family_id).name
@@ -2135,6 +2140,7 @@ def download_family_finances_pdf():
     lessons_grouped_by_family = {}
     from_date = request.args.get('from_date')
     end_date = request.args.get('end_date')
+
     display_lessons = []
     if selected_family_id == "Alle":
         lessons = get_lessons_in_range(from_date, end_date, None, None, None)
@@ -2144,8 +2150,16 @@ def download_family_finances_pdf():
     for lesson_detail in lessons:
         lesson = lesson_detail['lesson']
         total_students = lesson.students.count()
-        price_per_student = lesson.price / total_students
-        final_price_per_student = lesson.final_price / total_students
+        if total_students == 0:
+            price_per_student = lesson.price
+            final_price_per_student = lesson.final_price
+        else:
+            price_per_student = lesson.price / total_students
+            final_price_per_student = lesson.final_price / total_students
+        start_time = datetime.combine(lesson.date, lesson.start_time)
+        end_datetime = datetime.combine(lesson.date, lesson.end_time)
+        duration_timedelta = end_datetime - start_time
+        duration_hours = duration_timedelta.seconds / 3600
         for student in lesson.students:
             if selected_family_id == "Alle" or student.family_id == int(selected_family_id):
                 family_name = Family.query.get(student.family_id).name
@@ -2161,6 +2175,7 @@ def download_family_finances_pdf():
                     'Fach' : Subject.query.get(lesson.subject_id).subject_name,
                     'Schüler' : f"{student.FirstName} {student.LastName} ({family_name})",
                     'Preis': f"{price_per_student:.2f}",
+                    'Dauer' : f"{duration_hours:.2f} Stunden", # 'Dauer' : '2.5 Stunden
                     'Rabatt' : f"{discount * 100}%",
                     'Endpreis': f"{final_price_per_student:.2f}"
                 }
@@ -2178,7 +2193,7 @@ def download_family_finances_pdf():
         pdf_title = f"Finanzübersicht für alle Familien ({from_date} - {end_date})"
     else:
         pdf_title = f"Finanzübersicht für Familie {family.name} ({from_date} - {end_date})"
-    headers = ['Datum', 'Fach', 'Schüler', 'Preis', 'Rabatt', 'Endpreis']
+    headers = ['Datum', 'Fach', 'Schüler', 'Preis', 'Dauer', 'Rabatt', 'Endpreis']
     if selected_family_id == "Alle":
         pdf_filename = f"family_finances_all_{from_date}_{end_date}.pdf"
     else:
