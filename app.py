@@ -1942,7 +1942,12 @@ def finances_families():
             else:
                 lessons = get_lessons_in_range(from_date, end_date, None, int(selected_family_id), None)
             for lesson_detail in lessons:
+                
                 lesson = lesson_detail['lesson']
+                start_time = datetime.combine(lesson.date, lesson.start_time)
+                end_datetime = datetime.combine(lesson.date, lesson.end_time)
+                duration_timedelta = end_datetime - start_time
+                duration_hours = duration_timedelta.seconds / 3600
                 total_students = lesson.students.count()
                 price_per_student = lesson.price / total_students
                 final_price_per_student = lesson.final_price / total_students
@@ -1961,6 +1966,7 @@ def finances_families():
                             'subject_name' : Subject.query.get(lesson.subject_id).subject_name,
                             'student_name' : f"{student.FirstName} {student.LastName} ({family_name})",
                             'price' : price_per_student,
+                            'duration_hours' : round(duration_hours, 2),
                             'discount' : f"{discount * 100}%",
                             'final_price' : final_price_per_student
                         }

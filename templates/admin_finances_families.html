@@ -73,6 +73,7 @@
                     <th>Fach</th>
                     <th>Schülername</th>
                     <th>Stundenpreis</th>
+                    <th>Dauer (Stunden)</th>
                     <th>Rabatt</th>
                     <th>Endpreis</th>
                 </tr>
@@ -84,6 +85,7 @@
                         <td>{{ lesson.subject_name }}</td>
                         <td>{{ lesson.student_name }}</td>
                         <td>{{ lesson.price }}</td>
+                        <td>{{ lesson.duration_hours }}</td>  <!-- Display duration -->
                         <td>{{ lesson.discount }}</td>
                         <td>{{ lesson.final_price }}</td>
                     </tr>
