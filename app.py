@@ -493,31 +493,8 @@ def login():
 @login_required
 @admin_required
 def admin_dashboard():
-    monthly_income = calculate_monthly_income()
-    lessons_count = get_lessons_count()
-    lessons = Lesson.query.all()
 
-    # Format lessons for display
-    formatted_lessons = []
-    for lesson in lessons:
-        tutor_name = Tutor.query.filter_by(tutor_id=lesson.tutor_id).first().name
-        students = lesson.students
-        student_name = [f"{student.FirstName} {student.LastName}" for student in students]
-        subject_name = Subject.query.filter_by(subject_id=lesson.subject_id).first().subject_name
-
-        start_datetime = datetime.combine(lesson.date, lesson.start_time)
-        end_datetime = datetime.combine(lesson.date, lesson.end_time)
-
-        formatted_lessons.append({
-            'id': lesson.lesson_id, 
-            'title': subject_name,
-            'start': start_datetime.isoformat(),
-            'end': end_datetime.isoformat(),
-            'tutor': tutor_name,
-            'student': student_name
-        })
-
-    return render_template('admin_dashboard.html', monthly_income_summary=monthly_income, lessons_count_summary=lessons_count, lessons=formatted_lessons)
+    return render_template('admin_dashboard.html')
 
 @app.route('/detailed_statistics')
 @admin_required
@@ -672,12 +649,27 @@ def edit_user(user_id):
 
 
 from datetime import datetime
+from flask import request, jsonify
+from dateutil.parser import parse  # dateutil handles ISO 8601 dates well
 
 @app.route('/api/lessons')
 @login_required
 @admin_required
 def get_lessons():
-    lessons = Lesson.query.all()
+    start_param = request.args.get('start')
+    end_param = request.args.get('end')
+    try:
+        start_time = parse(start_param) if start_param else None
+        end_time = parse(end_param) if end_param else None
+    except ValueError:
+        return jsonify({'error': 'Invalid date format. Please use ISO 8601 format.'}), 400
+    
+    if start_time and end_time:
+        lessons = Lesson.query.filter(Lesson.date >= start_time, Lesson.date <= end_time).all()
+    else:
+        lessons = Lesson.query.all()
+    
+    
     lessons_data = []
     for lesson in lessons:
         tutor = Tutor.query.filter_by(tutor_id=lesson.tutor_id).first()

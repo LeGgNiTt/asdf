@@ -104,18 +104,34 @@
                     right: 'month,agendaWeek,agendaDay'
                 },
                 defaultView: 'agendaWeek',
-                height: 800, // Die Höhe auf auto setzen
+                height: 800, // Set the height to auto
                 navLinks: true,
                 editable: true,
                 eventLimit: true,
-                events: '/api/lessons', // Ereignisse von der API-Endpunkt abrufen
+                events: function(start, end, timezone, callback) {
+                    $.ajax({
+                        url: '/api/lessons',
+                        type: 'GET',
+                        dataType: 'json',
+                        data: {
+                            // FullCalendar provides the start and end times of the current view
+                            start: start.format(),
+                            end: end.format()
+                        },
+                        success: function(response) {
+                            // Pass the event array to the callback to render on the calendar
+                            callback(response);
+                        }
+                    });
+                },
                 eventClick: function(calEvent, jsEvent, view) {
                     window.location.href = '/lesson/' + calEvent.id;
                 },
-                timeFormat: 'H:mm', // Zeitformat
+                timeFormat: 'H:mm', // Time format
                 locale: 'de'
             });
         });
     </script>
+    
 </body>
 </html>
