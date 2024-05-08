@@ -1899,6 +1899,7 @@ def admin_finances():
         duration_seconds = (end_datetime - start_datetime).total_seconds()
         duration_hours = duration_seconds / 3600
         display_lesson['duration_hours'] = round(duration_hours, 2)
+        display_lesson['final_price'] = display_lesson['price'] * display_lesson['duration_hours'] * (1 - discount)
         if has_occured:
             tutor_id = lesson['lesson'].tutor_id
             tutor = Tutor.query.get(tutor_id)
