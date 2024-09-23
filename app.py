@@ -11,6 +11,7 @@ from funcs import *
 from flask_migrate import Migrate
 from datetime import datetime, timedelta
 from functools import wraps
+from config import Config
 
 
 def admin_required(f):
@@ -53,22 +54,33 @@ def create_paygrade(amount):
 
 def create_admin_user(username, password):
     with app.app_context():
+        # Ensure the admin role exists
         admin_role = Role.query.filter_by(name='admin').first()
         if not admin_role:
             admin_role = Role(name='admin')
             db.session.add(admin_role)
             db.session.commit()
 
+        # Ensure the paygrade entry exists
+        create_paygrade(1)  # Assuming '1' is the value for the default paygrade
+
+        # Retrieve the paygrade entry
+        paygrade = Paygrade.query.filter_by(value=1).first()
+        if not paygrade:
+            print("Failed to create or retrieve the paygrade entry.")
+            return
+
+        # Create the admin user
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
         user = User.query.filter_by(username=username).first()
         if user is not None:
             print(f"User '{username}' already exists. No new user created.")
             return
 
-        admin_user = User(username=username, password_hash=hashed_password, role_id=admin_role.id, paygrade_id=1)
+        admin_user = User(username=username, password_hash=hashed_password, role_id=admin_role.id, paygrade_id=paygrade.id)
         db.session.add(admin_user)
         db.session.commit()
-        print(f"Admin user '{username}'  created.")
+        print(f"Admin user '{username}' created.")
 
 def create_role(role_name):
     with app.app_context():
@@ -194,17 +206,7 @@ def get_lessons_in_range(from_date, end_date, subject_id=None, family_id=None, t
 
 app = Flask(__name__)
 # Database configuration and initialization
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://aunterkirher:rootroot@localhost/showcase2'
-app.config['SQLALCHEMY_POOL_SIZE'] = 10
-app.config['SQLALCHEMY_POOL_TIMEOUT'] = 30
-app.config['SQLALCHEMY_POOL_RECYCLE'] = 280
-app.config['SQLALCHEMY_MAX_OVERFLOW'] = 2
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_pre_ping': True}
-app.config['SECRET_KEY'] = 'development'
-
-
-
-
+app.config.from_object(Config)
 db.init_app(app)
 with app.app_context():
     db.create_all()
@@ -216,9 +218,6 @@ bcrypt = Bcrypt(app)
 
 
 
-
-app.config['CELERY_BROKER_URL'] = 'db+mysql+pymysql://root:rootroot@localhost/showcase'
-app.config['CELERY_RESULT_BACKEND'] = 'db+mysql+pymysql://root:rootroot@localhost/showcase'
 
 
 import phonenumbers
@@ -1277,7 +1276,7 @@ def add_lesson(lesson_id):
                     subject_id=subject_id,
                     price=69,
                     price_adjustment_id=3,
-                    final_price = 137.5,
+                    final_price = 110,
                     lesson_type_id = 3
                 )
                 for student_id in student_ids:
@@ -2546,7 +2545,7 @@ def delete_student(student_id):
 
 
 if __name__ == '__main__':
-    create_role('tutor')
+    create_admin_user('root', 'root')
     
     app.run(debug=True)
     
