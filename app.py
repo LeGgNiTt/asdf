@@ -1219,6 +1219,19 @@ def round_to_nearest_five_cents(amount):
     # Rounds the amount to the nearest .05
     return round(amount * 20) / 20.0
 
+from datetime import datetime, timedelta
+from flask import flash, redirect, url_for
+
+def sanitize_time_input(time_string):
+    # Split by ':' and ensure it's in HH:MM format
+    try:
+        time_components = time_string.split(':')
+        sanitized_time = ':'.join(time_components[:2])
+        valid_time = datetime.strptime(sanitized_time, '%H:%M')
+        return valid_time
+    except (ValueError, IndexError):
+        # If parsing fails, return None
+        return None
 
 @app.route('/add_lesson', defaults={'lesson_id': None}, methods=['GET', 'POST'])
 @app.route('/add_lesson/<int:lesson_id>', methods=['GET', 'POST'])
@@ -1234,7 +1247,7 @@ def add_lesson(lesson_id):
         prepopulated_data = {
             'date': lesson.date,
             'start_time': lesson.start_time,
-            'end_time': lesson.end_time,	
+            'end_time': lesson.end_time,    
             'tutor_id': lesson.tutor_id,
             'subject_id': lesson.subject_id,
             'schooltype_id': schooltype_id,
@@ -1248,76 +1261,80 @@ def add_lesson(lesson_id):
         date = datetime.strptime(date, '%Y-%m-%d').date()
         start_time = request.form.get('start_time')
         end_time = request.form.get('end_time')
-        #calculate duration with endtime and starttime
-        duration = (datetime.strptime(end_time, '%H:%M') - datetime.strptime(start_time, '%H:%M')).seconds / 3600
+
+        # Sanitize and validate the time input
+        start_time = sanitize_time_input(start_time)
+        end_time = sanitize_time_input(end_time)
+
+        if start_time is None or end_time is None:
+            flash('Invalid time format. Please use HH:MM.', 'error')
+            return redirect(url_for('add_lesson', lesson_id=lesson_id))
+
+        # Calculate the duration
+        duration = (end_time - start_time).seconds / 3600
+
         tutor_id = request.form.get('tutor_id')
-        student_id = request.form.get('student_id')
+        student_ids = request.form.getlist('student_ids')
         subject_id = request.form.get('subject_id')
         price = request.form.get('price')
-        
+
         price_adjustment_id = request.form.get('price_adjustment_id')
         price_adjustment = PriceAdjustment.query.get(price_adjustment_id)
-        if price_adjustment is None:
-            adjustment_value = 0
-        else:
-            adjustment_value = price_adjustment.value
+        adjustment_value = price_adjustment.value if price_adjustment else 0
+
         ferienkurs = request.form.get('ferienkurs') is not None
         ferienkurs_2 = request.form.get('ferienkurs_2') is not None
 
-        student_ids = request.form.getlist('student_ids')
-        if ferienkurs == True:
-            for i in range(0,4):
+        if ferienkurs:
+            for i in range(4):
                 new_lesson = Lesson(
                     date=date + timedelta(days=i),
-                    start_time=start_time,
-                    end_time=end_time,
+                    start_time=start_time.time(),  # Extract time object from datetime
+                    end_time=end_time.time(),
                     tutor_id=tutor_id,
                     subject_id=subject_id,
                     price=111,
                     price_adjustment_id=3,
-                    final_price = 111,
-                    lesson_type_id = 3
+                    final_price=111,
+                    lesson_type_id=3
                 )
-
                 for student_id in student_ids:
                     student = Student.query.get(student_id)
                     student.enrolled_lessons.append(new_lesson)
-
                 db.session.add(new_lesson)
             db.session.commit()
             return redirect(url_for('modify_lessons'))
         
-        if ferienkurs_2 == True:
-            for i in range(0,5):
+        if ferienkurs_2:
+            for i in range(5):
                 new_lesson = Lesson(
                     date=date + timedelta(days=i),
-                    start_time=start_time,
-                    end_time=end_time,
+                    start_time=start_time.time(),
+                    end_time=end_time.time(),
                     tutor_id=tutor_id,
                     subject_id=subject_id,
                     price=69,
                     price_adjustment_id=3,
-                    final_price = 110,
-                    lesson_type_id = 3
+                    final_price=110,
+                    lesson_type_id=3
                 )
                 for student_id in student_ids:
                     student = Student.query.get(student_id)
                     student.enrolled_lessons.append(new_lesson)
-
                 db.session.add(new_lesson)
             db.session.commit()
             return redirect(url_for('modify_lessons'))
-                    
+
         if len(student_ids) > 1:
             new_lesson = Lesson(
                 date=date,
-                start_time=start_time,
-                end_time=end_time,
+                start_time=start_time.time(),
+                end_time=end_time.time(),
                 tutor_id=tutor_id,
                 subject_id=subject_id,
                 price=price,
-                final_price = round_to_nearest_five_cents(float(price) * duration * (1 - adjustment_value)),
-                lesson_type_id = 2 
+                final_price=round_to_nearest_five_cents(float(price) * duration * (1 - adjustment_value)),
+                lesson_type_id=2
             )
             for student_id in student_ids:
                 student = Student.query.get(student_id)
@@ -1326,27 +1343,24 @@ def add_lesson(lesson_id):
             db.session.commit()
             return redirect(url_for('modify_lessons'))
 
+        new_lesson = Lesson(
+            date=date,
+            start_time=start_time.time(),
+            end_time=end_time.time(),
+            tutor_id=tutor_id,
+            subject_id=subject_id,
+            price=price,
+            price_adjustment_id=price_adjustment_id,
+            final_price=round_to_nearest_five_cents(float(price) * duration * (1 - adjustment_value)),
+            lesson_type_id=1
+        )
+        for student_id in student_ids:
+            student = Student.query.get(student_id)
+            student.enrolled_lessons.append(new_lesson)
+        db.session.add(new_lesson)
+        db.session.commit()
+        return redirect(url_for('modify_lessons'))
 
-        else:
-            new_lesson = Lesson(
-                date=date,
-                start_time=start_time,
-                end_time=end_time,
-                tutor_id=tutor_id,
-                subject_id=subject_id,
-                price=price,
-                price_adjustment_id=price_adjustment_id,
-                final_price = round_to_nearest_five_cents(float(price) * duration * (1 - adjustment_value)),
-                lesson_type_id = 1
-            )
-            for student_id in student_ids:
-                student = Student.query.get(student_id)
-                student.enrolled_lessons.append(new_lesson) # Add the lesson to the student's enrolled lessons
-            db.session.add(new_lesson)
-            db.session.commit()
-            return redirect(url_for('modify_lessons'))
-
-    
     students = Student.query.order_by(Student.LastName).all()
     price_adjustments = PriceAdjustment.query.all()
     schooltypes = SchoolType.query.all()

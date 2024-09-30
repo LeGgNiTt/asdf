@@ -38,6 +38,12 @@
         }
         .dropdown-item.red {
             color: red;
+            background-color: #f8d7da; /* Light red background to indicate error */
+        }
+
+        .is-invalid {
+            border-color: #dc3545;
+            background-color: #f8d7da;
         }
     </style>
 </head>
@@ -202,7 +208,7 @@
             }
 
             function fetchSubjects(schooltypeId) {
-                fetch(`/api/subjects/${schooltypeId}`)
+                return fetch(`/api/subjects/${schooltypeId}`)
                 .then(response => response.json())
                 .then(subjects => {
                     populateDropdown(subjectSelect, subjects, 'Fach auswählen');
@@ -210,13 +216,32 @@
                 .catch(error => console.error('Fehler:', error));
             }
 
+
+            // During initialLoad(), ensure preselected students are checked for promotion usage
             function initialLoad() {
                 const preselectedSchooltypeId = schooltypeSelect.value;
+                const preselectedSubjectId = "{{ prepopulated_data['subject_id'] if prepopulated_data else '' }}";
+                
+                // Check prepopulated students
+                document.querySelectorAll('.student-checkbox:checked').forEach(checkbox => {
+                    checkPromotionUsage(checkbox.value);
+                });
+
                 if (preselectedSchooltypeId) {
                     handleSchooltypeSelection.call(schooltypeSelect);
-                    calculateFinalPrice();
                 }
+
+                if (preselectedSubjectId) {
+                    fetchSubjects(preselectedSchooltypeId).then(() => {
+                        subjectSelect.value = preselectedSubjectId;
+                        updateTutorList();  // Fetch tutors based on preselected subject and time
+                    });
+                }
+
+                calculateFinalPrice();
             }
+
+
 
             function populateDropdown(dropdown, items, defaultOptionText) {
                 let options = `<option value="">${defaultOptionText}</option>`;
@@ -306,40 +331,35 @@
             
             function calculateFinalPrice() {
                 const price = parseFloat(priceInput.value); // Price per hour
-                    if (isNaN(price)) {
-                        console.error('Price is not a valid number');
-                        return;
-                    }
-
-                    // Parsing start and end time to hours and minutes
-                    const [startHour, startMinute] = startTimeInput.value.split(':').map(Number);
-                    const [endHour, endMinute] = endTimeInput.value.split(':').map(Number);
-
-                    // Calculating duration in hours
-                    let duration = (endHour + endMinute / 60) - (startHour + startMinute / 60);
-
-                    // Ensure duration is positive; could be negative if end time is earlier than start time
-                    if (duration < 0) {
-                        console.error('End time is earlier than start time.');
-                        return;
-                    }
-
-                    const selectedAdjustmentId = priceAdjustmentSelect.value;
-                    const adjustmentValue = priceAdjustments[selectedAdjustmentId] ? parseFloat(priceAdjustments[selectedAdjustmentId]) : 0;
-                    
-                    // Check if adjustmentValue is NaN
-                    if (isNaN(adjustmentValue)) {
-                        console.error('Adjustment value is not a valid number');
-                        return;
-                    }
-
-                    // Final price calculation incorporating the duration
-                    let finalPrice = price * duration * (1 - adjustmentValue);
-                    finalPrice = Math.round(finalPrice / 0.05) * 0.05;
-
-                    // Set the final price, rounded to 2 decimal places
-                    finalPriceInput.value = finalPrice.toFixed(2);
+                
+                // Check if price is missing
+                if (isNaN(price) || price <= 0) {
+                    priceInput.classList.add('is-invalid');  // Add Bootstrap 'is-invalid' class
+                    return;  // Exit if price is invalid
+                } else {
+                    priceInput.classList.remove('is-invalid');  // Remove invalid class if input is valid
                 }
+
+                // Continue with price calculations...
+                const [startHour, startMinute] = startTimeInput.value.split(':').map(Number);
+                const [endHour, endMinute] = endTimeInput.value.split(':').map(Number);
+
+                // Calculating duration in hours
+                let duration = (endHour + endMinute / 60) - (startHour + startMinute / 60);
+
+                if (duration < 0) {
+                    console.error('End time is earlier than start time.');
+                    return;
+                }
+
+                const selectedAdjustmentId = priceAdjustmentSelect.value;
+                const adjustmentValue = priceAdjustments[selectedAdjustmentId] ? parseFloat(priceAdjustments[selectedAdjustmentId]) : 0;
+
+                let finalPrice = price * duration * (1 - adjustmentValue);
+                finalPrice = Math.round(finalPrice / 0.05) * 0.05;
+
+                finalPriceInput.value = finalPrice.toFixed(2);
+            }
 
             function checkPromotionUsage(studentId) {
                 fetch(`/api/check_promotion_usage/${studentId}`)
@@ -388,12 +408,16 @@
             priceAdjustmentSelect.addEventListener('change', calculateFinalPrice);
 
             // Add event listener to student checkboxes
+            // Add event listener to student checkboxes
             document.querySelectorAll('.student-checkbox').forEach(checkbox => {
                 checkbox.addEventListener('change', function() {
                     const studentId = this.value;
-                    checkPromotionUsage(studentId);  // No need for promotionId, since it's hardcoded
+                    if (this.checked) {
+                        checkPromotionUsage(studentId);  // Trigger when student is selected
+                    }
                 });
             });
+
 
             initialLoad(); 
         });
