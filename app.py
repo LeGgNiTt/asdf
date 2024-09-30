@@ -52,6 +52,17 @@ def create_paygrade(amount):
         else:
             print(f"Paygrade '{amount}' already exists.")
 
+def create_price_adjustment(name, value):
+    with app.app_context():
+        adjustment = PriceAdjustment.query.filter_by(name=name).first()
+        if not adjustment:
+            adjustment = PriceAdjustment(name=name, value=value)
+            db.session.add(adjustment)
+            db.session.commit()
+            print(f"Price adjustment '{name}' created.")
+        else:
+            print(f"Price adjustment '{name}' already exists.")
+
 def create_admin_user(username, password):
     with app.app_context():
         # Ensure the admin role exists
@@ -121,13 +132,16 @@ def get_schooltype_id_of_subject(subject_id):
     return subject.schooltype_id if subject else None
 
 def add_weekdays():
-    days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-    for day in days:
+    weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    for day in weekdays:
         existing_day = Weekday.query.filter_by(weekday_name=day).first()
         if not existing_day:
             new_day = Weekday(weekday_name=day)
             db.session.add(new_day)
-    db.session.commit()
+            db.session.commit()
+            print(f"Weekday '{day}' created.")
+        else:
+            print(f"Weekday '{day}' already exists.")
 
 
 def calculate_monthly_income():
@@ -302,6 +316,13 @@ def get_tutors_for_subject(subject_id):
     return jsonify([{'id': tutor.tutor_id, 'name': tutor.name} for tutor in tutors])
 
 from sqlalchemy import func
+
+
+def create_lesson_type(name, value):
+    lesson_type = LessonType(name=name, value=value)
+    db.session.add(lesson_type)
+    db.session.commit()
+    return lesson_type
 
 def is_tutor_available(tutor, date, start_time, end_time):
     # Convert date to weekday ID (0=Monday, 6=Sunday) and adjust to your system (1=Monday)
@@ -1518,6 +1539,16 @@ def format_date(value, format='%d-%m-%Y'):
     return datetime.strptime(value, '%Y-%m-%d').strftime(format)
 
 from collections import defaultdict
+from models import check_promotion_usage
+
+@app.route('/api/check_promotion_usage/<int:student_id>', methods=['GET'])
+def api_check_promotion_usage(student_id):
+    used = check_promotion_usage(student_id)
+    return jsonify({'used': used})
+
+
+
+
 
 @app.route('/tutor/edit_tutor', methods=['GET', 'POST'])
 @login_required
@@ -2545,7 +2576,5 @@ def delete_student(student_id):
 
 
 if __name__ == '__main__':
-    create_admin_user('root', 'root')
-    
     app.run(debug=True)
     

@@ -4,6 +4,7 @@ from flask_bcrypt import Bcrypt, check_password_hash
 from flask_login import UserMixin
 from sqlalchemy import Table, Column, Integer, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 db = SQLAlchemy()
 
@@ -88,6 +89,41 @@ class PriceAdjustment(db.Model):
     value = db.Column(db.Float, nullable=False)
 
     lessons = db.relationship('Lesson', backref='price_adjustment', lazy='dynamic')
+
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+
+from datetime import datetime
+
+def check_promotion_usage(student_id):
+    promotion_id = 1  # Hardcoding the ID for the 10% discount
+
+    logging.debug(f"Checking promotion usage for student_id={student_id}, promotion_id={promotion_id}")
+    
+    # Query all lessons (including future lessons) with the promotion and calculate total hours
+    total_hours = db.session.query(func.sum(
+        (func.time_to_sec(Lesson.end_time) - func.time_to_sec(Lesson.start_time)) / 3600
+    )).filter(
+        Lesson.price_adjustment_id == promotion_id,
+        Lesson.students.any(Student.StudentID == student_id)
+    ).scalar()
+    
+    logging.debug(f"Total hours calculated: {total_hours}")
+    
+    if total_hours is None:
+        total_hours = 0
+    
+    logging.debug(f"Total hours after None check: {total_hours}")
+    
+    # Check if the total hours are 4 or more
+    result = total_hours >= 4
+    logging.debug(f"Promotion usage result: {result}")
+    
+    return result
+
+
 
 class LessonType(db.Model):
     __tablename__ = 'lesson_type'

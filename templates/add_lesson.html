@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 
     <!-- jQuery (required for Bootstrap's JavaScript) -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 
     <!-- Popper.js (required for Bootstrap's JavaScript) -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
@@ -36,357 +36,378 @@
             border-top: 5px solid #343a40;
             height: 30px;   
         }
+        .dropdown-item.red {
+            color: red;
+        }
     </style>
-    </head>
-    <body>
-        <!-- Navigationsleiste -->
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-            <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item ">
-                        <a class="nav-link active" href="/modify_lessons">Lektion bearbeiten</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/modify_users">Benutzer bearbeiten</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/modify_subjects">Fächer bearbeiten</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/modify_family">Familie bearbeiten</a>
-                    </li>
-                    <!-- Weitere Links hinzufügen, falls erforderlich -->
-                </ul>
-            </div>
-        </nav>
-        <!-- Inhalt -->
-        <div class="container mt-4">
-            <h2>Lektion hinzufügen</h2>
-            <form method="post">
-
-                <!-- Ferienkurs Checkboxen -->
-                <div class="form-group">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" id="ferienkurs" name="ferienkurs">
-                        <label class="form-check-label" for="ferienkurs">
-                            4-Tage-Ferienkurs
-                        </label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" id="ferienkurs_2" name="ferienkurs_2">
-                        <label class="form-check-label" for="ferienkurs_2">
-                            5-Tage-Ferienkurs
-                        </label>
-                    </div>
-                </div>
-                <!-- Schüler Checkboxen -->
-                <div class="form-group">
-                    <label for="students">Schüler</label>
-                    <div style="height: 200px; overflow-y: scroll; border: 1px solid #ced4da; padding: .375rem .75rem; border-radius: .25rem;">
-                        {% for student in students %}
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="{{ student.StudentID }}" id="student{{ student.StudentID }}" name="student_ids" {% if prepopulated_data and student.StudentID in prepopulated_data['student_ids'] %}checked{% endif %}>
-                            <label class="form-check-label" for="student{{ student.StudentID }}">
-                                {{ student.FirstName }} {{ student.LastName }}
-                            </label>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <!-- Schulart Dropdown -->
-                <div class="form-group">
-                    <label for="schooltype">Schulart</label>
-                    <select class="form-control" id="schooltype" name="schooltype_id">
-                        <option value="">Wählen Sie eine Schulart aus</option>
-                        {% for schooltype in schooltypes %}
-                        <option value="{{ schooltype.schooltype_id }}" {% if prepopulated_data and prepopulated_data['schooltype_id'] == schooltype.schooltype_id %}selected{% endif %}>
-                            {{ schooltype.schooltype_name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <!-- Fach Dropdown (Anfangs leer) -->
-                <div class="form-group">
-                    <label for="subject">Fach</label>
-                    <select class="form-control" id="subject" name="subject_id">
-                        <!-- Optionen werden dynamisch befüllt -->
-                    </select>
-                </div>
-
-                <!-- Datum und Uhrzeit Felder -->
-                <div class="form-group">
-                    <label for="date">Datum</label>
-                    <input type="date" class="form-control" id="date" name="date" value="{{ prepopulated_data['date'] if prepopulated_data else '' }}" required>
-                </div>
-                <div class="form-group">
-                    <label for="start_time">Startzeit</label>
-                    <input type="time" class="form-control" id="start_time" name="start_time" value="{{ prepopulated_data['start_time'] if prepopulated_data else '' }}" required>
-                </div>
-                <div class="form-group">
-                    <label for="end_time">Endzeit</label>
-                    <input type="time" class="form-control" id="end_time" name="end_time" value="{{ prepopulated_data['end_time'] if prepopulated_data else '' }}" required>
-                </div>
-
-                <!-- Tutor Dropdown (Anfangs leer) -->
-                <!-- Tutor Table with Radio Buttons -->
-                <div class="form-group">
-                    <label for="tutor-table">Tutor</label>
-                    <div style="height: 200px; overflow-y: scroll; border: 1px solid #ced4da; padding: .375rem .75rem; border-radius: .25rem;">
-                        <table class="table" id="tutor-table">
-                            <thead>
-                                <tr>
-                                    <th></th>
-                                    <th>Name</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Tutor rows with radio buttons will be added here dynamically -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="price">Stundenpreis</label>
-                    <input type="number" class="form-control" id="price" name="price" value="{{ prepopulated_data['price'] if prepopulated_data else '90' }}" required>
-                </div>
-                <!-- Preisanpassung Dropdown -->
-                <div class="form-group">
-                    <label for="price_adjustment">Preisanpassung</label>
-                    <select class="form-control" id="price_adjustment" name="price_adjustment_id">
-                        <option value="">Wählen Sie eine Preisanpassung aus</option>
-                        {% for price_adjustment in price_adjustments %}
-                        <option value="{{ price_adjustment.id }}">{{ price_adjustment.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="final_price">Finaler Preis</label>
-                    <input type="text" class="form-control" id="final_price" name="final_price" readonly>
-                </div>
-
-                <!-- Regelmäßig Checkbox -->
-
-                <!-- Senden Button -->
-                <button type="submit" class="btn btn-primary">Lektion hinzufügen</button>
-                
-            </form>
+</head>
+<body>
+    <!-- Navigationsleiste -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/admin_dashboard">Admin Panel</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item ">
+                    <a class="nav-link active" href="/modify_lessons">Lektion bearbeiten</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_users">Benutzer bearbeiten</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_subjects">Fächer bearbeiten</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/modify_family">Familie bearbeiten</a>
+                </li>
+                <!-- Weitere Links hinzufügen, falls erforderlich -->
+            </ul>
         </div>
+    </nav>
+    <!-- Inhalt -->
+    <div class="container mt-4">
+        <h2>Lektion hinzufügen</h2>
+        <form method="post">
 
+            <!-- Ferienkurs Checkboxen -->
+            <div class="form-group">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="ferienkurs" name="ferienkurs">
+                    <label class="form-check-label" for="ferienkurs">
+                        4-Tage-Ferienkurs
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="ferienkurs_2" name="ferienkurs_2">
+                    <label class="form-check-label" for="ferienkurs_2">
+                        5-Tage-Ferienkurs
+                    </label>
+                </div>
+            </div>
+            <!-- Schüler Checkboxen -->
+            <div class="form-group">
+                <label for="students">Schüler</label>
+                <div style="height: 200px; overflow-y: scroll; border: 1px solid #ced4da; padding: .375rem .75rem; border-radius: .25rem;">
+                    {% for student in students %}
+                    <div class="form-check">
+                        <input class="form-check-input student-checkbox" type="checkbox" value="{{ student.StudentID }}" id="student{{ student.StudentID }}" name="student_ids" {% if prepopulated_data and student.StudentID in prepopulated_data['student_ids'] %}checked{% endif %}>
+                        <label class="form-check-label" for="student{{ student.StudentID }}">
+                            {{ student.FirstName }} {{ student.LastName }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
 
-        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-        <script>
-            var priceAdjustments = {
-                {% for adjustment in price_adjustments %}
-                "{{ adjustment.id }}": {{ adjustment.value }},
-                {% endfor %}
-            };
-        </script>
-        
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                
+            <!-- Schulart Dropdown -->
+            <div class="form-group">
+                <label for="schooltype">Schulart</label>
+                <select class="form-control" id="schooltype" name="schooltype_id">
+                    <option value="">Wählen Sie eine Schulart aus</option>
+                    {% for schooltype in schooltypes %}
+                    <option value="{{ schooltype.schooltype_id }}" {% if prepopulated_data and prepopulated_data['schooltype_id'] == schooltype.schooltype_id %}selected{% endif %}>
+                        {{ schooltype.schooltype_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Fach Dropdown (Anfangs leer) -->
+            <div class="form-group">
+                <label for="subject">Fach</label>
+                <select class="form-control" id="subject" name="subject_id">
+                    <!-- Optionen werden dynamisch befüllt -->
+                </select>
+            </div>
 
-                function handleSchooltypeSelection() {
-                    const schooltypeId = this.value;
-                    console.log('Schulartauswahl geändert', schooltypeId);
-                    if (schooltypeId) {
-                        fetchSubjects(schooltypeId);
-                    } else {
-                        clearDropdown(subjectSelect);
-                    }
-                }
+            <!-- Datum und Uhrzeit Felder -->
+            <div class="form-group">
+                <label for="date">Datum</label>
+                <input type="date" class="form-control" id="date" name="date" value="{{ prepopulated_data['date'] if prepopulated_data else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="start_time">Startzeit</label>
+                <input type="time" class="form-control" id="start_time" name="start_time" value="{{ prepopulated_data['start_time'] if prepopulated_data else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="end_time">Endzeit</label>
+                <input type="time" class="form-control" id="end_time" name="end_time" value="{{ prepopulated_data['end_time'] if prepopulated_data else '' }}" required>
+            </div>
 
-                function fetchSubjects(schooltypeId) {
-                    fetch(`/api/subjects/${schooltypeId}`)
-                    .then(response => response.json())
-                    .then(subjects => {
-                        populateDropdown(subjectSelect, subjects, 'Fach auswählen');
-                    })
-                    .catch(error => console.error('Fehler:', error));
-                }
+            <!-- Tutor Dropdown (Anfangs leer) -->
+            <!-- Tutor Table with Radio Buttons -->
+            <div class="form-group">
+                <label for="tutor-table">Tutor</label>
+                <div style="height: 200px; overflow-y: scroll; border: 1px solid #ced4da; padding: .375rem .75rem; border-radius: .25rem;">
+                    <table class="table" id="tutor-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Name</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Tutor rows with radio buttons will be added here dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="price">Stundenpreis</label>
+                <input type="number" class="form-control" id="price" name="price" value="{{ prepopulated_data['price'] if prepopulated_data else '90' }}" required>
+            </div>
+            <!-- Preisanpassung Dropdown -->
+            <div class="form-group">
+                <label for="price_adjustment">Preisanpassung</label>
+                <select class="form-control" id="price_adjustment" name="price_adjustment_id">
+                    <option value="">Wählen Sie eine Preisanpassung aus</option>
+                    {% for price_adjustment in price_adjustments %}
+                    <option value="{{ price_adjustment.id }}">{{ price_adjustment.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="final_price">Finaler Preis</label>
+                <input type="text" class="form-control" id="final_price" name="final_price" readonly>
+            </div>
 
-                function initialLoad() {
-                    const preselectedSchooltypeId = schooltypeSelect.value;
-                    if (preselectedSchooltypeId) {
-                        handleSchooltypeSelection.call(schooltypeSelect);
-                        calculateFinalPrice();
-                    }
-                }
+            <!-- Regelmäßig Checkbox -->
 
-                function populateDropdown(dropdown, items, defaultOptionText) {
-                    let options = `<option value="">${defaultOptionText}</option>`;
-                    items.forEach(item => {
-                        options += `<option value="${item.id}">${item.name}</option>`;
-                    });
-                    dropdown.innerHTML = options;
-                }
-
-                function clearDropdown(dropdown) {
-                    while (dropdown.firstChild) {
-                        dropdown.removeChild(dropdown.firstChild);
-                    }
-                }
-
-                function fetchTutorsForSubjectAndTime(subjectId, date, startTime, endTime) {
-                    fetch(`/api/tutors/${subjectId}/${date}/${startTime}/${endTime}`)
-                    .then(response => response.json())
-                    .then(tutors => {
-                        // Sort tutors by availability status
-                        tutors.sort((a, b) => {
-                            if (a.status === 'available' && b.status !== 'available') {
-                                return -1;
-                            }
-                            if (a.status !== 'available' && b.status === 'available') {
-                                return 1;
-                            }
-                            return 0;
-                        });
-
-                        const tutorTableBody = document.getElementById('tutor-table').querySelector('tbody');
-                        tutorTableBody.innerHTML = ''; // Clear existing rows
-                        tutors.forEach(tutor => {
-                            const row = document.createElement('tr');
-                            
-                            // Determine the color and availability of the radio button based on the tutor's status
-                            let color, isDisabled;
-                            switch (tutor.status) {
-                                case 'frei':
-                                    color = 'green';
-                                    isDisabled = false;
-                                    break;
-                                case 'nicht verfügbar':
-                                    color = 'red';
-                                    isDisabled = true;
-                                    break;
-                                case 'unterrichtet um diese Zeit':
-                                    color = 'orange';
-                                    isDisabled = true;
-                                    break;
-                                default:
-                                    color = 'black'; // Default color for unexpected status
-                                    isDisabled = true;
-                            }
-
-                            row.style.color = color;
-                            row.innerHTML = `
-                                <td><input type="radio" name="tutor_id" value="${tutor.id}" ${isDisabled ? 'disabled' : ''}></td>
-                                <td>${tutor.name}</td>
-                                <td>${tutor.status}</td>
-                            `;
-                            tutorTableBody.appendChild(row);
-                        });
-
-                    })
-                    .catch(error => console.error('Fehler:', error));
-                }
-                
-                function formatTime(timeString) {
-                    return timeString.split(':').slice(0, 2).join(':'); // Converts "HH:MM:SS" to "HH:MM"
-                }
-                
-                function updateTutorList() {
-                    const subjectId = subjectSelect.value;
-                    const date = dateInput.value;
-                    let startTime = startTimeInput.value;
-                    let endTime = endTimeInput.value;
-
-                    // Format the start and end times to "HH:MM"
-                    startTime = formatTime(startTime);
-                    endTime = formatTime(endTime);
+            <!-- Senden Button -->
+            <button type="submit" class="btn btn-primary">Lektion hinzufügen</button>
             
-                    if (subjectId && date && startTime && endTime) {
-                        fetchTutorsForSubjectAndTime(subjectId, date, startTime, endTime);
-                    }
+        </form>
+    </div>
+
+    <script>
+        var priceAdjustments = {
+            {% for adjustment in price_adjustments %}
+            "{{ adjustment.id }}": {{ adjustment.value }},
+            {% endfor %}
+        };
+    </script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            function handleSchooltypeSelection() {
+                const schooltypeId = this.value;
+                console.log('Schulartauswahl geändert', schooltypeId);
+                if (schooltypeId) {
+                    fetchSubjects(schooltypeId);
+                } else {
+                    clearDropdown(subjectSelect);
                 }
-                
-                function calculateFinalPrice() {
-                    const price = parseFloat(priceInput.value); // Price per hour
-                        if (isNaN(price)) {
-                            console.error('Price is not a valid number');
-                            return;
+            }
+
+            function fetchSubjects(schooltypeId) {
+                fetch(`/api/subjects/${schooltypeId}`)
+                .then(response => response.json())
+                .then(subjects => {
+                    populateDropdown(subjectSelect, subjects, 'Fach auswählen');
+                })
+                .catch(error => console.error('Fehler:', error));
+            }
+
+            function initialLoad() {
+                const preselectedSchooltypeId = schooltypeSelect.value;
+                if (preselectedSchooltypeId) {
+                    handleSchooltypeSelection.call(schooltypeSelect);
+                    calculateFinalPrice();
+                }
+            }
+
+            function populateDropdown(dropdown, items, defaultOptionText) {
+                let options = `<option value="">${defaultOptionText}</option>`;
+                items.forEach(item => {
+                    options += `<option value="${item.id}">${item.name}</option>`;
+                });
+                dropdown.innerHTML = options;
+            }
+
+            function clearDropdown(dropdown) {
+                while (dropdown.firstChild) {
+                    dropdown.removeChild(dropdown.firstChild);
+                }
+            }
+
+            function fetchTutorsForSubjectAndTime(subjectId, date, startTime, endTime) {
+                fetch(`/api/tutors/${subjectId}/${date}/${startTime}/${endTime}`)
+                .then(response => response.json())
+                .then(tutors => {
+                    // Sort tutors by availability status
+                    tutors.sort((a, b) => {
+                        if (a.status === 'available' && b.status !== 'available') {
+                            return -1;
                         }
-
-                        // Parsing start and end time to hours and minutes
-                        const [startHour, startMinute] = startTimeInput.value.split(':').map(Number);
-                        const [endHour, endMinute] = endTimeInput.value.split(':').map(Number);
-
-                        // Calculating duration in hours
-                        let duration = (endHour + endMinute / 60) - (startHour + startMinute / 60);
-
-                        // Ensure duration is positive; could be negative if end time is earlier than start time
-                        if (duration < 0) {
-                            console.error('End time is earlier than start time.');
-                            return;
+                        if (a.status !== 'available' && b.status === 'available') {
+                            return 1;
                         }
+                        return 0;
+                    });
 
-                        const selectedAdjustmentId = priceAdjustmentSelect.value;
-                        const adjustmentValue = priceAdjustments[selectedAdjustmentId] ? parseFloat(priceAdjustments[selectedAdjustmentId]) : 0;
+                    const tutorTableBody = document.getElementById('tutor-table').querySelector('tbody');
+                    tutorTableBody.innerHTML = ''; // Clear existing rows
+                    tutors.forEach(tutor => {
+                        const row = document.createElement('tr');
                         
-                        // Check if adjustmentValue is NaN
-                        if (isNaN(adjustmentValue)) {
-                            console.error('Adjustment value is not a valid number');
-                            return;
+                        // Determine the color and availability of the radio button based on the tutor's status
+                        let color, isDisabled;
+                        switch (tutor.status) {
+                            case 'frei':
+                                color = 'green';
+                                isDisabled = false;
+                                break;
+                            case 'nicht verfügbar':
+                                color = 'red';
+                                isDisabled = true;
+                                break;
+                            case 'unterrichtet um diese Zeit':
+                                color = 'orange';
+                                isDisabled = true;
+                                break;
+                            default:
+                                color = 'black'; // Default color for unexpected status
+                                isDisabled = true;
                         }
 
-                        // Final price calculation incorporating the duration
-                        let finalPrice = price * duration * (1 - adjustmentValue);
-                        finalPrice = Math.round(finalPrice / 0.05) * 0.05;
+                        row.style.color = color;
+                        row.innerHTML = `
+                            <td><input type="radio" name="tutor_id" value="${tutor.id}" ${isDisabled ? 'disabled' : ''}></td>
+                            <td>${tutor.name}</td>
+                            <td>${tutor.status}</td>
+                        `;
+                        tutorTableBody.appendChild(row);
+                    });
 
-                        // Set the final price, rounded to 2 decimal places
-                        finalPriceInput.value = finalPrice.toFixed(2);
+                })
+                .catch(error => console.error('Fehler:', error));
+            }
+            
+            function formatTime(timeString) {
+                return timeString.split(':').slice(0, 2).join(':'); // Converts "HH:MM:SS" to "HH:MM"
+            }
+            
+            function updateTutorList() {
+                const subjectId = subjectSelect.value;
+                const date = dateInput.value;
+                let startTime = startTimeInput.value;
+                let endTime = endTimeInput.value;
+
+                // Format the start and end times to "HH:MM"
+                startTime = formatTime(startTime);
+                endTime = formatTime(endTime);
+        
+                if (subjectId && date && startTime && endTime) {
+                    fetchTutorsForSubjectAndTime(subjectId, date, startTime, endTime);
+                }
+            }
+            
+            function calculateFinalPrice() {
+                const price = parseFloat(priceInput.value); // Price per hour
+                    if (isNaN(price)) {
+                        console.error('Price is not a valid number');
+                        return;
                     }
 
+                    // Parsing start and end time to hours and minutes
+                    const [startHour, startMinute] = startTimeInput.value.split(':').map(Number);
+                    const [endHour, endMinute] = endTimeInput.value.split(':').map(Number);
 
-                
-                const priceInput = document.getElementById('price');
-                const priceAdjustmentSelect = document.getElementById('price_adjustment');
-                const finalPriceInput = document.getElementById('final_price');
-                const schooltypeSelect = document.getElementById('schooltype');
-                const subjectSelect = document.getElementById('subject');
-                const dateInput = document.getElementById('date');
-                const startTimeInput = document.getElementById('start_time');
-                const endTimeInput = document.getElementById('end_time');
-                const tutorSelect = document.getElementById('tutor');
+                    // Calculating duration in hours
+                    let duration = (endHour + endMinute / 60) - (startHour + startMinute / 60);
 
-                schooltypeSelect.addEventListener('change', handleSchooltypeSelection);
-                subjectSelect.addEventListener('change', updateTutorList);
-                
-                dateInput.addEventListener('change', updateTutorList);
-                startTimeInput.addEventListener('change', function() {
-                    updateTutorList();
-                    calculateFinalPrice();
-                });
+                    // Ensure duration is positive; could be negative if end time is earlier than start time
+                    if (duration < 0) {
+                        console.error('End time is earlier than start time.');
+                        return;
+                    }
 
-                endTimeInput.addEventListener('change', function() {
-                    updateTutorList();
-                    calculateFinalPrice();
-                });
+                    const selectedAdjustmentId = priceAdjustmentSelect.value;
+                    const adjustmentValue = priceAdjustments[selectedAdjustmentId] ? parseFloat(priceAdjustments[selectedAdjustmentId]) : 0;
+                    
+                    // Check if adjustmentValue is NaN
+                    if (isNaN(adjustmentValue)) {
+                        console.error('Adjustment value is not a valid number');
+                        return;
+                    }
 
-                priceInput.addEventListener('change', calculateFinalPrice);
-                priceAdjustmentSelect.addEventListener('change', calculateFinalPrice);
+                    // Final price calculation incorporating the duration
+                    let finalPrice = price * duration * (1 - adjustmentValue);
+                    finalPrice = Math.round(finalPrice / 0.05) * 0.05;
 
-                initialLoad(); 
+                    // Set the final price, rounded to 2 decimal places
+                    finalPriceInput.value = finalPrice.toFixed(2);
+                }
+
+            function checkPromotionUsage(studentId) {
+                fetch(`/api/check_promotion_usage/${studentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const promotionSelect = document.getElementById('price_adjustment');
+                    const option = promotionSelect.querySelector('option[value="1"]');  // Assuming promotion_id for 10% discount is 1
+                    if (data.used) {
+                        option.classList.add('red');
+                        option.disabled = true;
+                    } else {
+                        option.classList.remove('red');
+                        option.disabled = false;
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+
+
+
+            const priceInput = document.getElementById('price');
+            const priceAdjustmentSelect = document.getElementById('price_adjustment');
+            const finalPriceInput = document.getElementById('final_price');
+            const schooltypeSelect = document.getElementById('schooltype');
+            const subjectSelect = document.getElementById('subject');
+            const dateInput = document.getElementById('date');
+            const startTimeInput = document.getElementById('start_time');
+            const endTimeInput = document.getElementById('end_time');
+            const tutorSelect = document.getElementById('tutor');
+
+            schooltypeSelect.addEventListener('change', handleSchooltypeSelection);
+            subjectSelect.addEventListener('change', updateTutorList);
+            
+            dateInput.addEventListener('change', updateTutorList);
+            startTimeInput.addEventListener('change', function() {
+                updateTutorList();
+                calculateFinalPrice();
             });
-            document.getElementById('ferienkurs').addEventListener('change', function() {
-                document.getElementById('ferienkurs_2').disabled = this.checked;
-                });
 
-            document.getElementById('ferienkurs_2').addEventListener('change', function() {
-                document.getElementById('ferienkurs').disabled = this.checked;
+            endTimeInput.addEventListener('change', function() {
+                updateTutorList();
+                calculateFinalPrice();
             });
 
-            </script>
-        <footer class="footer">
-            <p>Software von: Aleksandrs Unterkirhers</p>
-        </footer>
-    </body>
+            priceInput.addEventListener('change', calculateFinalPrice);
+            priceAdjustmentSelect.addEventListener('change', calculateFinalPrice);
 
+            // Add event listener to student checkboxes
+            document.querySelectorAll('.student-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const studentId = this.value;
+                    checkPromotionUsage(studentId);  // No need for promotionId, since it's hardcoded
+                });
+            });
+
+            initialLoad(); 
+        });
+
+        document.getElementById('ferienkurs').addEventListener('change', function() {
+            document.getElementById('ferienkurs_2').disabled = this.checked;
+        });
+
+        document.getElementById('ferienkurs_2').addEventListener('change', function() {
+            document.getElementById('ferienkurs').disabled = this.checked;
+        });
+    </script>
+    <footer class="footer">
+        <p>Software von: Aleksandrs Unterkirhers</p>
+    </footer>
+</body>
 </html>
