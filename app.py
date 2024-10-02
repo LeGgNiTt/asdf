@@ -216,11 +216,12 @@ def get_lessons_in_range(from_date, end_date, subject_id=None, family_id=None, t
 
 
 
-
+from config import DevelopmentConfig
+from config import ProductionConfig
 
 app = Flask(__name__)
 # Database configuration and initialization
-app.config.from_object(Config)
+app.config.from_object(DevelopmentConfig)  # Load the development config
 db.init_app(app)
 with app.app_context():
     db.create_all()

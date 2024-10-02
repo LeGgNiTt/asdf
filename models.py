@@ -98,7 +98,7 @@ logging.basicConfig(level=logging.DEBUG)
 from datetime import datetime
 
 def check_promotion_usage(student_id):
-    promotion_id = 1  # Hardcoding the ID for the 10% discount
+    promotion_id = 4  # Hardcoding the ID for the 10% discount
 
     logging.debug(f"Checking promotion usage for student_id={student_id}, promotion_id={promotion_id}")
     
